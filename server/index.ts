@@ -97,23 +97,23 @@ const PUBLIC_API_PATHS = [
   registerAuthRoutes(app);
   await registerRoutes(httpServer, app);
 
-  // Background: populate Baxtel data centre DB on startup if empty
+  // Background: populate 1GL data centre DB on startup if empty
   setImmediate(async () => {
     try {
       const { db } = await import("./db");
-      const { baxtelDatacentres } = await import("../shared/schema");
+      const { oneGLDatacentres } = await import("../shared/schema");
       const { count } = await import("drizzle-orm");
-      const [{ value }] = await db.select({ value: count() }).from(baxtelDatacentres);
+      const [{ value }] = await db.select({ value: count() }).from(oneGLDatacentres);
       if (Number(value) === 0) {
-        log("Baxtel DB empty — fetching European data centres from Mapbox tiles...", "baxtel");
-        const { scrapeBaxtelDatacentres } = await import("./baxtelData");
+        log("1GL DC DB empty — fetching European data centres from Mapbox tiles...", "1gl");
+        const { scrapeOneGLDatacentres } = await import("./baxtelData");
         const { storage } = await import("./storage");
-        const records = await scrapeBaxtelDatacentres(true);
-        const result = await storage.upsertBaxtelDatacentres(records);
-        log(`Baxtel: loaded ${records.length} records (inserted ${result.inserted}, updated ${result.updated})`, "baxtel");
+        const records = await scrapeOneGLDatacentres(true);
+        const result = await storage.upsertOneGLDatacentres(records);
+        log(`1GL: loaded ${records.length} records (inserted ${result.inserted}, updated ${result.updated})`, "1gl");
       }
     } catch (err: any) {
-      log(`Baxtel startup populate error: ${err.message}`, "baxtel");
+      log(`1GL startup populate error: ${err.message}`, "1gl");
     }
   });
 

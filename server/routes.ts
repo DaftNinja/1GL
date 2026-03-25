@@ -1419,15 +1419,15 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
-  // ─── Data Centre Dataset (1GigLabs primary + Baxtel fallback) ─────────────
-  app.get("/api/baxtel/datacentres", isAuthenticated, async (req, res) => {
+  // ─── Data Centre Dataset (1GigLabs primary + supplementary fallback) ───────
+  app.get("/api/1gl/datacentres", isAuthenticated, async (req, res) => {
     try {
       const { getDcInsightsRecords, isDcInsightsAvailable } = await import("./dcInsightsData");
       if (isDcInsightsAvailable()) {
         return res.json(getDcInsightsRecords());
       }
-      // Fallback: Baxtel DB records
-      const records = await storage.listBaxtelDatacentres();
+      // Fallback: 1GL DB records
+      const records = await storage.listOneGLDatacentres();
       res.json(records);
     } catch (err: any) {
       console.error("Datacentres list error:", err);
@@ -1435,8 +1435,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
-  // Supplementary refresh — fetches Baxtel API into the DB fallback store (admin only)
-  app.post("/api/baxtel/refresh", isAuthenticated, async (req, res) => {
+  // Supplementary refresh — fetches 1GL API into the DB fallback store (admin only)
+  app.post("/api/1gl/refresh", isAuthenticated, async (req, res) => {
     try {
       const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
       const userEmail = (req.session?.userEmail || "").toLowerCase();
@@ -1444,22 +1444,22 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         return res.status(403).json({ message: "Admin access required. Set ADMIN_EMAILS in environment secrets." });
       }
 
-      const { isBaxtelConfigured, scrapeBaxtelDatacentres, clearBaxtelCache } = await import("./baxtelData");
-      if (!isBaxtelConfigured()) {
-        return res.status(400).json({ message: "BAXTEL_MAPBOX_TOKEN is not configured. Baxtel API is unavailable." });
+      const { isOneGLConfigured, scrapeOneGLDatacentres, clearOneGLCache } = await import("./baxtelData");
+      if (!isOneGLConfigured()) {
+        return res.status(400).json({ message: "ONEGL_MAPBOX_TOKEN is not configured. 1GL tile API is unavailable." });
       }
-      clearBaxtelCache();
-      const records = await scrapeBaxtelDatacentres(true);
-      const result = await storage.upsertBaxtelDatacentres(records);
+      clearOneGLCache();
+      const records = await scrapeOneGLDatacentres(true);
+      const result = await storage.upsertOneGLDatacentres(records);
       res.json({
-        message: `Baxtel supplementary refresh complete`,
+        message: `1GL supplementary refresh complete`,
         scraped: records.length,
         inserted: result.inserted,
         updated: result.updated,
       });
     } catch (err: any) {
-      console.error("Baxtel refresh error:", err);
-      res.status(500).json({ message: err.message || "Failed to refresh Baxtel data" });
+      console.error("1GL refresh error:", err);
+      res.status(500).json({ message: err.message || "Failed to refresh 1GL data" });
     }
   });
 

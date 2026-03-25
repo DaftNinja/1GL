@@ -27,7 +27,7 @@ export interface DcInsightsRecord {
   source: "1gl";
   websiteUrl: null;
   scrapedAt: null;
-  baxtelId: string;
+  oneGLId: string;
 }
 
 let _cache: DcInsightsRecord[] | null = null;
@@ -66,7 +66,7 @@ export function getDcInsightsRecords(): DcInsightsRecord[] {
     source: "1gl" as const,
     websiteUrl: null,
     scrapedAt: null,
-    baxtelId: `1gl-${r.id}`,
+    oneGLId: `1gl-${r.id}`,
   }));
 
   return _cache;

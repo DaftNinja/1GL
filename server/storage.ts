@@ -1,4 +1,4 @@
-import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, auditLogs, reportComments, reportAssignments, reportActivity, baxtelDatacentres, type Analysis, type InsertAnalysis, type TamAnalysis, type InsertTamAnalysis, type PowerTrendAnalysis, type InsertPowerTrendAnalysis, type VerifiedExecutive, type InsertVerifiedExecutive, type AuditLog, type InsertAuditLog, type ReportComment, type InsertReportComment, type ReportAssignment, type InsertReportAssignment, type ReportActivity, type InsertReportActivity, type BaxtelDatacentre, type InsertBaxtelDatacentre } from "@shared/schema";
+import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, auditLogs, reportComments, reportAssignments, reportActivity, oneGLDatacentres, type Analysis, type InsertAnalysis, type TamAnalysis, type InsertTamAnalysis, type PowerTrendAnalysis, type InsertPowerTrendAnalysis, type VerifiedExecutive, type InsertVerifiedExecutive, type AuditLog, type InsertAuditLog, type ReportComment, type InsertReportComment, type ReportAssignment, type InsertReportAssignment, type ReportActivity, type InsertReportActivity, type OneGLDatacentre, type InsertOneGLDatacentre } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -33,8 +33,8 @@ export interface IStorage {
   updateReportAssignment(id: number, status: string): Promise<ReportAssignment | undefined>;
   createReportActivity(activity: InsertReportActivity): Promise<ReportActivity>;
   getReportActivity(analysisId: number, limit?: number): Promise<ReportActivity[]>;
-  listBaxtelDatacentres(): Promise<BaxtelDatacentre[]>;
-  upsertBaxtelDatacentres(records: InsertBaxtelDatacentre[]): Promise<{ inserted: number; updated: number }>;
+  listOneGLDatacentres(): Promise<OneGLDatacentre[]>;
+  upsertOneGLDatacentres(records: InsertOneGLDatacentre[]): Promise<{ inserted: number; updated: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -219,28 +219,28 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async listBaxtelDatacentres(): Promise<BaxtelDatacentre[]> {
-    return db.select().from(baxtelDatacentres).orderBy(baxtelDatacentres.name);
+  async listOneGLDatacentres(): Promise<OneGLDatacentre[]> {
+    return db.select().from(oneGLDatacentres).orderBy(oneGLDatacentres.name);
   }
 
-  async upsertBaxtelDatacentres(records: InsertBaxtelDatacentre[]): Promise<{ inserted: number; updated: number }> {
-    const dedupMap = new Map<string, InsertBaxtelDatacentre>();
+  async upsertOneGLDatacentres(records: InsertOneGLDatacentre[]): Promise<{ inserted: number; updated: number }> {
+    const dedupMap = new Map<string, InsertOneGLDatacentre>();
     for (const r of records) {
-      dedupMap.set(r.baxtelId, r);
+      dedupMap.set(r.oneGLId, r);
     }
     const uniqueRecords = Array.from(dedupMap.values());
 
-    const existingBefore = await db.select({ baxtelId: baxtelDatacentres.baxtelId }).from(baxtelDatacentres);
-    const existingIds = new Set(existingBefore.map(r => r.baxtelId));
+    const existingBefore = await db.select({ oneGLId: oneGLDatacentres.oneGLId }).from(oneGLDatacentres);
+    const existingIds = new Set(existingBefore.map(r => r.oneGLId));
 
     const now = new Date();
     const BATCH_SIZE = 50;
     for (let i = 0; i < uniqueRecords.length; i += BATCH_SIZE) {
       const batch = uniqueRecords.slice(i, i + BATCH_SIZE);
-      await db.insert(baxtelDatacentres)
+      await db.insert(oneGLDatacentres)
         .values(batch.map(r => ({ ...r, scrapedAt: now })))
         .onConflictDoUpdate({
-          target: baxtelDatacentres.baxtelId,
+          target: oneGLDatacentres.oneGLId,
           set: {
             name: sql`excluded.name`,
             lat: sql`excluded.lat`,
@@ -258,7 +258,7 @@ export class DatabaseStorage implements IStorage {
     let inserted = 0;
     let updated = 0;
     for (const r of uniqueRecords) {
-      if (existingIds.has(r.baxtelId)) {
+      if (existingIds.has(r.oneGLId)) {
         updated++;
       } else {
         inserted++;

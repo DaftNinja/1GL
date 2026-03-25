@@ -1,31 +1,31 @@
-import type { InsertBaxtelDatacentre } from "@shared/schema";
+import type { InsertOneGLDatacentre } from "@shared/schema";
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const CACHE_DIR = path.join(process.cwd(), ".cache", "baxtel");
+const CACHE_DIR = path.join(process.cwd(), ".cache", "1gl");
 const FILE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_TTL_MS = 30 * 60 * 1000;
 
-// The Mapbox public token used to fetch Baxtel tile data (set via BAXTEL_MAPBOX_TOKEN env var)
-const BAXTEL_MAPBOX_TOKEN = process.env.BAXTEL_MAPBOX_TOKEN;
-const BAXTEL_TILESET = "ericbell.baxtel_sites";
+// The Mapbox public token used to fetch 1GL tile data (set via ONEGL_MAPBOX_TOKEN env var)
+const ONEGL_MAPBOX_TOKEN = process.env.ONEGL_MAPBOX_TOKEN;
+const ONEGL_TILESET = "ericbell.baxtel_sites";
 
 // Europe bounding box (covers all 15 target countries + Iceland)
 const EUROPE_BOUNDS = { minLat: 34, maxLat: 72, minLng: -25, maxLng: 42 };
 const TILE_ZOOM = 5;
 
-let memoryCache: InsertBaxtelDatacentre[] | null = null;
+let memoryCache: InsertOneGLDatacentre[] | null = null;
 let memoryCacheTimestamp = 0;
 
-export function isBaxtelConfigured(): boolean {
-  return !!BAXTEL_MAPBOX_TOKEN;
+export function isOneGLConfigured(): boolean {
+  return !!ONEGL_MAPBOX_TOKEN;
 }
 
 async function ensureCacheDir() {
   await fs.mkdir(CACHE_DIR, { recursive: true });
 }
 
-async function readFileCache(): Promise<InsertBaxtelDatacentre[] | null> {
+async function readFileCache(): Promise<InsertOneGLDatacentre[] | null> {
   try {
     const cacheFile = path.join(CACHE_DIR, "datacentres.json");
     const stat = await fs.stat(cacheFile);
@@ -37,7 +37,7 @@ async function readFileCache(): Promise<InsertBaxtelDatacentre[] | null> {
   return null;
 }
 
-async function writeFileCache(records: InsertBaxtelDatacentre[]): Promise<void> {
+async function writeFileCache(records: InsertOneGLDatacentre[]): Promise<void> {
   try {
     await ensureCacheDir();
     await fs.writeFile(
@@ -45,7 +45,7 @@ async function writeFileCache(records: InsertBaxtelDatacentre[]): Promise<void> 
       JSON.stringify(records)
     );
   } catch (err: any) {
-    console.warn("Failed to write Baxtel file cache:", err.message);
+    console.warn("Failed to write 1GL file cache:", err.message);
   }
 }
 
@@ -81,16 +81,12 @@ function mvtCoordToLatLng(
   const extent = 4096;
   const z2 = Math.pow(2, zoom);
 
-  // Longitude: linear in Mercator X — no distortion, simple interpolation is exact
   const lng1 = tile2lng(tileX, zoom);
   const lng2 = tile2lng(tileX + 1, zoom);
   const lng = lng1 + (x / extent) * (lng2 - lng1);
 
-  // Latitude: MVT y coords are in Mercator space, NOT geographic degrees.
-  // Linearly interpolating geographic latitudes introduces a systematic error
-  // of up to ~0.1° at UK latitudes. We must interpolate in Mercator Y instead.
-  const mercY1 = Math.PI - (2 * Math.PI * tileY)       / z2; // north (Mercator Y, higher value)
-  const mercY2 = Math.PI - (2 * Math.PI * (tileY + 1)) / z2; // south
+  const mercY1 = Math.PI - (2 * Math.PI * tileY)       / z2;
+  const mercY2 = Math.PI - (2 * Math.PI * (tileY + 1)) / z2;
   const mercY  = mercY1 + (y / extent) * (mercY2 - mercY1);
   const lat = (180 / Math.PI) * Math.atan(Math.sinh(mercY));
 
@@ -103,19 +99,18 @@ async function fetchAndDecodeTile(
   x: number,
   y: number
 ): Promise<any[]> {
-  const url = `https://api.mapbox.com/v4/${BAXTEL_TILESET}/${z}/${x}/${y}.vector.pbf?access_token=${BAXTEL_MAPBOX_TOKEN}`;
+  const url = `https://api.mapbox.com/v4/${ONEGL_TILESET}/${z}/${x}/${y}.vector.pbf?access_token=${ONEGL_MAPBOX_TOKEN}`;
 
   const resp = await fetch(url);
   if (!resp.ok) {
     if (resp.status !== 404) {
-      console.warn(`Baxtel tile ${z}/${x}/${y} returned ${resp.status}`);
+      console.warn(`1GL tile ${z}/${x}/${y} returned ${resp.status}`);
     }
     return [];
   }
 
   const buf = await resp.arrayBuffer();
 
-  // Lazy-load decoders to avoid startup cost
   const [{ default: Pbf }, { VectorTile }] = await Promise.all([
     import("pbf"),
     import("@mapbox/vector-tile"),
@@ -140,18 +135,18 @@ async function fetchAndDecodeTile(
 }
 
 // ---------- Main scraper ----------
-async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
+async function fetchEuropeFromTiles(): Promise<InsertOneGLDatacentre[]> {
   const { minLat, maxLat, minLng, maxLng } = EUROPE_BOUNDS;
   const z = TILE_ZOOM;
 
   const minX = lng2tile(minLng, z);
   const maxX = lng2tile(maxLng, z);
-  const minY = lat2tile(maxLat, z); // inverted
+  const minY = lat2tile(maxLat, z);
   const maxY = lat2tile(minLat, z);
 
   const totalTiles = (maxX - minX + 1) * (maxY - minY + 1);
   console.log(
-    `Baxtel: fetching ${totalTiles} tiles at z${z} (x=${minX}-${maxX}, y=${minY}-${maxY})`
+    `1GL: fetching ${totalTiles} tiles at z${z} (x=${minX}-${maxX}, y=${minY}-${maxY})`
   );
 
   const allFeatures = new Map<string, any>();
@@ -163,16 +158,14 @@ async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
       try {
         const features = await fetchAndDecodeTile(z, x, y);
         for (const f of features) {
-          // Deduplicate by site_id + layer_id (same site can appear in multiple tiles)
           const key = `${f.site_id}_${f.layer_id}`;
           if (!allFeatures.has(key)) {
             allFeatures.set(key, f);
           }
         }
       } catch (err: any) {
-        console.warn(`Baxtel tile ${z}/${x}/${y} error:`, err.message);
+        console.warn(`1GL tile ${z}/${x}/${y} error:`, err.message);
       }
-      // Small delay to avoid overwhelming the API
       if (tileCount % 5 === 0) {
         await new Promise((r) => setTimeout(r, 100));
       }
@@ -180,15 +173,13 @@ async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
   }
 
   console.log(
-    `Baxtel: decoded ${allFeatures.size} unique features from ${tileCount} tiles`
+    `1GL: decoded ${allFeatures.size} unique features from ${tileCount} tiles`
   );
 
-  // Convert to InsertBaxtelDatacentre records
-  const records: InsertBaxtelDatacentre[] = [];
+  const records: InsertOneGLDatacentre[] = [];
   for (const f of Array.from(allFeatures.values())) {
     if (!f.lat || !f.lng || isNaN(f.lat) || isNaN(f.lng)) continue;
 
-    // Only include active stages
     const stage = (f.layer_stage || "").toLowerCase();
     if (
       stage === "decommissioned" ||
@@ -198,8 +189,7 @@ async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
       continue;
     }
 
-    // f.id is a unique record ID per site+layer combination; use as stable key
-    const baxtelId = String(f.id || `${f.site_id}_${f.layer_id}` || f.public_id || `${f.lat}_${f.lng}`);
+    const oneGLId = String(f.id || `${f.site_id}_${f.layer_id}` || f.public_id || `${f.lat}_${f.lng}`);
     const name = String(f.site_name || f.name || "Unknown");
 
     let capacityMW: number | null = null;
@@ -213,11 +203,11 @@ async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
       : null;
 
     records.push({
-      baxtelId,
+      oneGLId,
       name,
       lat: f.lat,
       lng: f.lng,
-      country: null, // derived from region in the frontend
+      country: null,
       operator: f.company_name || null,
       capacityMW,
       tier: f.layer_stage || null,
@@ -228,9 +218,9 @@ async function fetchEuropeFromTiles(): Promise<InsertBaxtelDatacentre[]> {
   return records;
 }
 
-export async function scrapeBaxtelDatacentres(
+export async function scrapeOneGLDatacentres(
   forceRefresh = false
-): Promise<InsertBaxtelDatacentre[]> {
+): Promise<InsertOneGLDatacentre[]> {
   if (!forceRefresh) {
     if (memoryCache && Date.now() - memoryCacheTimestamp < MEMORY_CACHE_TTL_MS) {
       return memoryCache;
@@ -253,7 +243,7 @@ export async function scrapeBaxtelDatacentres(
   return records;
 }
 
-export function clearBaxtelCache(): void {
+export function clearOneGLCache(): void {
   memoryCache = null;
   memoryCacheTimestamp = 0;
 }

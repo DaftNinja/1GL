@@ -432,9 +432,9 @@ interface UKPNDFESHeadroomResult {
   summary: { lpn: number; epn: number; spn: number; green: number; amber: number; red: number };
 }
 
-interface BaxtelDatacentre {
+interface OneGLDatacentre {
   id: number;
-  baxtelId: string;
+  oneGLId: string;
   name: string;
   lat: number;
   lng: number;
@@ -446,7 +446,7 @@ interface BaxtelDatacentre {
   scrapedAt: string | null;
   geoRegion: string | null;
   validation: string | null;
-  source: "1gl" | "baxtel" | null;
+  source: "1gl" | null;
 }
 
 interface UKPNDataCentre {
@@ -646,7 +646,7 @@ export default function PowerInfrastructureMap() {
   const [showNDPLayer, setShowNDPLayer] = useState(false);
   const [showDFESLayer, setShowDFESLayer] = useState(false);
   const [showSSENDCLayer, setShowSSENDCLayer] = useState(false);
-  const [showBaxtelLayer, setShowBaxtelLayer] = useState(true);
+  const [showOneGLLayer, setShowOneGLLayer] = useState(true);
   const [showEuNetworksLayer, setShowEuNetworksLayer] = useState(false);
   const [showEmodnetWindLayer, setShowEmodnetWindLayer] = useState(false);
   const [showEmodnetCablesLayer, setShowEmodnetCablesLayer] = useState(true);
@@ -661,7 +661,7 @@ export default function PowerInfrastructureMap() {
   const enwLayerRef = useRef<L.LayerGroup | null>(null);
   const ndpLayerRef = useRef<L.LayerGroup | null>(null);
   const dfesLayerRef = useRef<L.LayerGroup | null>(null);
-  const baxtelLayerRef = useRef<L.LayerGroup | null>(null);
+  const oneGLLayerRef = useRef<L.LayerGroup | null>(null);
   const euNetworksLayerRef = useRef<L.LayerGroup | null>(null);
   const emodnetWindLayerRef = useRef<L.LayerGroup | null>(null);
   const emodnetCablesLayerRef = useRef<L.LayerGroup | null>(null);
@@ -760,13 +760,13 @@ export default function PowerInfrastructureMap() {
     enabled: showNGEDOpportunity,
   });
 
-  const { data: baxtelData, isLoading: isBaxtelLoading, error: baxtelError } = useQuery<BaxtelDatacentre[]>({
-    queryKey: ["/api/baxtel/datacentres?v=9"],
+  const { data: oneGLData, isLoading: isOneGLLoading, error: oneGLError } = useQuery<OneGLDatacentre[]>({
+    queryKey: ["/api/1gl/datacentres?v=9"],
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: true,
     retry: 1,
-    enabled: showBaxtelLayer,
+    enabled: showOneGLLayer,
   });
 
   const { data: emodnetWindData, isLoading: isEmodnetWindLoading, error: emodnetWindError } = useQuery<any>({
@@ -1051,20 +1051,20 @@ export default function PowerInfrastructureMap() {
     if (!mapReady || !mapRef.current) return;
     const map = mapRef.current;
 
-    if (!baxtelLayerRef.current) {
-      baxtelLayerRef.current = L.layerGroup();
+    if (!oneGLLayerRef.current) {
+      oneGLLayerRef.current = L.layerGroup();
     }
-    const layer = baxtelLayerRef.current;
+    const layer = oneGLLayerRef.current;
     layer.clearLayers();
 
-    if (showBaxtelLayer && baxtelData?.length) {
+    if (showOneGLLayer && oneGLData?.length) {
       layer.addTo(map);
-      for (const dc of baxtelData) {
+      for (const dc of oneGLData) {
         if (dc.lat == null || dc.lng == null) continue;
         const dcCountry = getCountryFromLatLng(dc.lat, dc.lng);
         if (dcCountry && !enabledCountries.has(dcCountry)) continue;
 
-        const baxtelIcon = L.divIcon({
+        const oneGLIcon = L.divIcon({
           className: "",
           iconSize: [22, 22],
           iconAnchor: [11, 11],
@@ -1079,7 +1079,7 @@ export default function PowerInfrastructureMap() {
           </div>`,
         });
 
-        const marker = L.marker([dc.lat, dc.lng], { icon: baxtelIcon });
+        const marker = L.marker([dc.lat, dc.lng], { icon: oneGLIcon });
 
         const details: string[] = [];
         if (dc.operator) details.push(`<div style="font-size:12px;margin-bottom:2px"><strong>Operator:</strong> ${escapeHtml(dc.operator)}</div>`);
@@ -1101,7 +1101,7 @@ export default function PowerInfrastructureMap() {
     } else {
       map.removeLayer(layer);
     }
-  }, [mapReady, showBaxtelLayer, baxtelData, enabledCountries]);
+  }, [mapReady, showOneGLLayer, oneGLData, enabledCountries]);
 
   // ── euNetworks fibre overlay ──────────────────────────────────────────────
   useEffect(() => {
@@ -2460,41 +2460,41 @@ export default function PowerInfrastructureMap() {
             )}
 
             <div className="mt-3 pt-3 border-t border-slate-800">
-              <label className="flex items-center gap-1.5 cursor-pointer" data-testid="checkbox-baxtel-datacentres">
+              <label className="flex items-center gap-1.5 cursor-pointer" data-testid="checkbox-1gl-datacentres">
                 <Checkbox
-                  checked={showBaxtelLayer}
-                  onCheckedChange={() => setShowBaxtelLayer(prev => !prev)}
+                  checked={showOneGLLayer}
+                  onCheckedChange={() => setShowOneGLLayer(prev => !prev)}
                   className="h-3.5 w-3.5"
                 />
                 <Server className="w-3 h-3 text-violet-500" />
                 <span className="text-xs text-slate-300">DC Insights</span>
               </label>
-              {showBaxtelLayer && isBaxtelLoading && (
+              {showOneGLLayer && isOneGLLoading && (
                 <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>Loading DC Insights…</span>
                 </div>
               )}
-              {showBaxtelLayer && baxtelError && (
-                <div className="mt-2 text-[10px] text-red-500" data-testid="text-baxtel-error">
+              {showOneGLLayer && oneGLError && (
+                <div className="mt-2 text-[10px] text-red-500" data-testid="text-1gl-error">
                   <div className="flex items-center gap-1.5">
                     <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                     <span>Failed to load DC Insights data</span>
                   </div>
                   <button
                     className="mt-1 text-[10px] text-blue-500 underline cursor-pointer"
-                    data-testid="button-baxtel-retry"
-                    onClick={() => queryClient.resetQueries({ queryKey: ["/api/baxtel/datacentres"] })}
+                    data-testid="button-1gl-retry"
+                    onClick={() => queryClient.resetQueries({ queryKey: ["/api/1gl/datacentres"] })}
                   >
                     Retry
                   </button>
                 </div>
               )}
-              {showBaxtelLayer && baxtelData && (
+              {showOneGLLayer && oneGLData && (
                 <div className="mt-2 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-slate-500">Data Centres</span>
-                    <span className="text-[10px] font-semibold text-slate-200" data-testid="text-baxtel-total">{baxtelData.length}</span>
+                    <span className="text-[10px] font-semibold text-slate-200" data-testid="text-1gl-total">{oneGLData.length}</span>
                   </div>
                   <div className="text-[10px] text-slate-400 mt-1">1GigLabs validated dataset</div>
                 </div>

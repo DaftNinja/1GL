@@ -404,10 +404,10 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: tru
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
-// === BAXTEL DATA CENTRES ===
-export const baxtelDatacentres = pgTable("baxtel_datacentres", {
+// === 1GL DATA CENTRES ===
+export const oneGLDatacentres = pgTable("onegl_datacentres", {
   id: serial("id").primaryKey(),
-  baxtelId: text("baxtel_id").notNull().unique(),
+  oneGLId: text("onegl_id").notNull().unique(),
   name: text("name").notNull(),
   lat: doublePrecision("lat").notNull(),
   lng: doublePrecision("lng").notNull(),
@@ -419,9 +419,9 @@ export const baxtelDatacentres = pgTable("baxtel_datacentres", {
   scrapedAt: timestamp("scraped_at").defaultNow(),
 });
 
-export const insertBaxtelDatacentreSchema = createInsertSchema(baxtelDatacentres).omit({ id: true, scrapedAt: true });
+export const insertOneGLDatacentreSchema = createInsertSchema(oneGLDatacentres).omit({ id: true, scrapedAt: true });
 
-export type BaxtelDatacentre = typeof baxtelDatacentres.$inferSelect;
-export type InsertBaxtelDatacentre = z.infer<typeof insertBaxtelDatacentreSchema>;
+export type OneGLDatacentre = typeof oneGLDatacentres.$inferSelect;
+export type InsertOneGLDatacentre = z.infer<typeof insertOneGLDatacentreSchema>;
 
 export * from "./models/chat";
