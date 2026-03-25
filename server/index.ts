@@ -4,6 +4,9 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { setupAuth } from "./auth/setup";
 import { registerAuthRoutes } from "./auth/routes";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { db, pool } from "./db";
+import path from "path";
 
 const app = express();
 const httpServer = createServer(app);
@@ -84,6 +87,8 @@ const PUBLIC_API_PATHS = [
 ];
 
 (async () => {
+  await migrate(db, { migrationsFolder: path.join(__dirname, "../migrations") });
+
   await setupAuth(app);
 
   app.use("/api", (req: Request, res: Response, next: NextFunction) => {

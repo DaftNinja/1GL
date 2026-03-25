@@ -58,6 +58,9 @@ COPY --from=builder /app/public ./public
 # package.json is read by some runtime modules.
 COPY --from=builder /app/package.json ./
 
+# SQL migration files — applied automatically on startup via drizzle migrate().
+COPY --from=builder /app/migrations ./migrations
+
 EXPOSE 5000
 
 # Run as the non-root node user that ships with the base image.
