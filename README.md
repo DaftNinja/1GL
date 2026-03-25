@@ -37,15 +37,14 @@ A UK-based provider of managed colocation and connectivity services for IT provi
 
 Monorepo structure with React frontend, Express backend, and PostgreSQL database using Drizzle ORM.
 
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React Client  │────▶│  Express Server │────▶│   PostgreSQL    │
-│   (Vite + TS)   │◄────│   (Node + TS)   │◄────│  (Drizzle ORM)  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-│                       │
-▼                       ▼
-┌─────────────┐        ┌─────────────┐
-│  OpenAI API │        │  Audit Logs │
-└─────────────┘        └─────────────┘
+React (Frontend)
+
+Express (Backend)
+
+PostgreSQL (Database)
+
+Drizzle ORM (Data Layer)
+
 ---
 
 ## 🔐 Authentication & Security
