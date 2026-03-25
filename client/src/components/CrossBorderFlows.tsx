@@ -188,19 +188,10 @@ class FlowSVGLayer {
 
   constructor(map: L.Map) {
     this.map = map;
-    // Custom pane for arc visuals — above markerPane (600) so arcs render on top of labels.
-    // pointer-events:none so the pane div doesn't swallow map interactions.
-    if (!map.getPane("flowArcsPane")) {
-      map.createPane("flowArcsPane");
-      const el = map.getPane("flowArcsPane")!;
-      el.style.zIndex = "625";
-      el.style.pointerEvents = "none";
-    }
-    // Separate pane for transparent hit zones — needs pointer-events so hover works.
-    if (!map.getPane("flowHitPane")) {
-      map.createPane("flowHitPane");
-      map.getPane("flowHitPane")!.style.zIndex = "626";
-    }
+    // Raise the existing overlayPane above the markerPane (600) so arcs
+    // render on top of country-label markers for this map instance only.
+    const overlayPane = map.getPane("overlayPane");
+    if (overlayPane) overlayPane.style.zIndex = "625";
   }
 
   setOnArcHover(cb: (arc: FlowArc | null, latlng?: L.LatLng) => void) {
@@ -234,7 +225,6 @@ class FlowSVGLayer {
       if (!active) {
         // Inactive: single dashed grey line, no interaction needed
         const line = L.polyline(pts, {
-          pane: "flowArcsPane",
           color: "#94a3b8",
           weight: 1.5,
           opacity: relevant ? 0.35 : 0.1,
@@ -248,7 +238,6 @@ class FlowSVGLayer {
 
       // 1. Ghost line — thin solid track so the path is always visible
       const ghost = L.polyline(pts, {
-        pane: "flowArcsPane",
         color,
         weight: Math.max(1, weight - 1),
         opacity: relevant ? 0.25 : 0.08,
@@ -258,7 +247,6 @@ class FlowSVGLayer {
 
       // 2. Animated dash line — purely visual, no interaction
       const anim = L.polyline(pts, {
-        pane: "flowArcsPane",
         color,
         weight,
         opacity: relevant ? 0.85 : 0.15,
@@ -266,11 +254,8 @@ class FlowSVGLayer {
         bubblingMouseEvents: false,
       }).addTo(this.map);
 
-      // 3. Hit zone — wide transparent line; captures hover.
-      //    Uses flowHitPane (pointer-events enabled) so hover works even
-      //    though flowArcsPane has pointer-events:none.
+      // 3. Hit zone — wide transparent line on top; captures hover
       const hit = L.polyline(pts, {
-        pane: "flowHitPane",
         color,
         weight: Math.max(12, weight + 8),
         opacity: 0,
