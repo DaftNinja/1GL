@@ -7,7 +7,7 @@ const NESO_API_BASE = "https://api.neso.energy/api/3/action/datapackage_show";
 const DATASET_ID = "ssep-onshore-publication-zone-shapefile";
 const ALLOWED_HOSTS = ["api.neso.energy"];
 
-const CACHE_DIR = path.join(process.cwd(), ".cache", "neso");
+const CACHE_DIR = path.join("/tmp", "neso-cache");
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 30000;
 

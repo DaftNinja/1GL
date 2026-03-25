@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const CACHE_DIR = path.join(process.cwd(), ".cache", "neso");
+const CACHE_DIR = path.join("/tmp", "neso-cache");
 const FETCH_TIMEOUT_MS = 25000;
 const TTL_4H = 4 * 60 * 60 * 1000;
 const TTL_24H = 24 * 60 * 60 * 1000;
