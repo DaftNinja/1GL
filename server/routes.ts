@@ -950,6 +950,12 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       }
       const hourOffset = Math.max(0, Math.min(23, parseInt(req.query.hourOffset as string || "0", 10) || 0));
       const data = await getCrossBorderFlows(hourOffset);
+      const nonZero = data.filter(f => f.netMw !== 0).length;
+      console.log(`[ENTSOE] cross-border-flows: ${data.length} pairs, ${nonZero} non-zero, offset=${hourOffset}`);
+      if (data.length > 0 && nonZero > 0) {
+        const top3 = [...data].sort((a, b) => Math.abs(b.netMw) - Math.abs(a.netMw)).slice(0, 3);
+        console.log(`[ENTSOE] top flows: ${top3.map(f => `${f.from}→${f.to} ${f.netMw}MW`).join(", ")}`);
+      }
       res.json(data);
     } catch (err: any) {
       console.error("ENTSO-E cross-border flows route error:", err);

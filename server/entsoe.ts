@@ -844,7 +844,6 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
   try {
     const doc = await fetchEntsoe({
       documentType: "A11",
-      processType: "A16",
       in_Domain: toEic,
       out_Domain: fromEic,
       periodStart,
@@ -853,9 +852,10 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
     return parseFlowQuantity(doc);
   } catch (err: any) {
     if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-      return 0; // TSO hasn't submitted data for this window yet
+      return 0; // TSO hasn't submitted data for this border/window yet
     }
-    console.warn(`ENTSO-E physical flow error [${fromEic}→${toEic}]:`, err.message);
+    // Log unexpected errors (e.g. 401 auth, 400 bad params) so they show in Railway logs
+    console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: ${err.message}`);
     return 0;
   }
 }
