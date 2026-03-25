@@ -98,6 +98,8 @@ function formatDate(d: Date): string {
   );
 }
 
+const FETCH_TIMEOUT_MS = 20000;
+
 async function fetchEntsoe(params: Record<string, string>): Promise<any> {
   const token = getToken();
   if (!token) throw new Error("ENTSOE_API_KEY not configured");
@@ -110,6 +112,7 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
 
   const response = await fetch(url.toString(), {
     headers: { Accept: "application/xml" },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   const xml = await response.text();
@@ -629,13 +632,18 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const cached = cache.get(cacheKey);
   if (cached && isCacheValid(cached)) return cached.data;
 
-  // Fetch ENTSO-E prices and UK Elexon estimate in parallel
-  const [results, ukEstimate] = await Promise.all([
-    Promise.allSettled(
-      Object.keys(COUNTRY_EIC).map((country) => getCountryDayAheadPrices(country))
-    ),
-    getUKElexonPriceEstimate(),
-  ]);
+  // Fetch ENTSO-E prices in batches of 5 to avoid rate-limiting, UK Elexon in parallel
+  const countries = Object.keys(COUNTRY_EIC);
+  const batchSize = 5;
+  const allResults: PromiseSettledResult<any>[] = [];
+  for (let i = 0; i < countries.length; i += batchSize) {
+    const batch = countries.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(
+      batch.map((country) => getCountryDayAheadPrices(country))
+    );
+    allResults.push(...batchResults);
+  }
+  const [results, ukEstimate] = [allResults, await getUKElexonPriceEstimate()];
 
   const summaries: CountrySummary[] = [];
 
