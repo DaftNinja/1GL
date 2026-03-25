@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "Tesco Strategic Analysis 2025",
+      "content": "Market Leadership Through Value, Innovation & Digital Transformation"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Executive Overview",
+      "content": "1. Market Position & Scale; 2. Financial Performance 2024/25; 3. Strategic Transformation; 4. Competitive Landscape; 5. Future Outlook"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Scale",
+      "content": "Dominant leadership in UK grocery retail"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "The UK's Undisputed Market Leader",
+      "content": "Present Tesco's market dominance with latest 2025 market share data showing 28.7-29.4% share, highest in a decade. Visualize market position relative to competitors and highlight 32 consecutive periods of market share growth."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Multi-Format Retail Footprint",
+      "content": "Examine Tesco's diversified store portfolio including large superstores, convenience Express stores (1,675+ locations), and Metro formats. Highlight expansion plans for 150 new Express stores over three years."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Financial Performance 2024/25",
+      "content": "Strong growth amid competitive pressures"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Revenue & Profitability Growth",
+      "content": "Analyze Tesco's FY 2024/25 financial results: Group sales £63.6bn (+4.0%), adjusted operating profit £3.13bn (+10.9%), retail profit £2.97bn (+7.7%). Include revenue trends and margin analysis."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Cash Flow & Capital Allocation",
+      "content": "Examine free cash flow of £1.75bn (-15.2% YoY), net debt reduction to £9.45bn, capital expenditure of £1.46bn, and shareholder returns through £1bn buyback program."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Strategic Transformation",
+      "content": "Digital innovation and customer-centric initiatives"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Clubcard: The Loyalty Powerhouse",
+      "content": "Deep dive into Clubcard's strategic importance: 23 million UK households (80%+ of UK), 16.3 million app users, 84% transaction penetration, personalized offers driving 98% notification open rates, and retail media platform generating 9,000+ campaigns."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Digital & Omnichannel Excellence",
+      "content": "Analyze Tesco's digital transformation with 11.4% online sales growth, 37% UK online grocery market share, Whoosh rapid delivery covering 70% of UK, and new marketplace with 600,000+ third-party products."
+    },
+    {
+      "number": 12,
+      "type": "content",
+      "title": "Product Innovation & Quality",
+      "content": "Showcase 1,600+ new/improved products launched, Finest range achieving £2.5bn sales (+15% YoY), health-focused ranges, and value positioning with 2,300+ products price-reduced by average 9%."
+    },
+    {
+      "number": 13,
+      "type": "chapter",
+      "title": "04: Competitive Landscape",
+      "content": "Navigating intensifying market dynamics"
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Market Dynamics & Competitor Analysis",
+      "content": "Map the competitive landscape with detailed market share breakdown: Tesco 29.1%, Sainsbury's 16%, Asda 11.5% (declining), Aldi 11.1%, Lidl 7.4% (fastest growing), Morrisons 8.4%. Analyze discounter pressure and online disruption."
+    },
+    {
+      "number": 15,
+      "type": "content",
+      "title": "Sustainability & ESG Leadership",
+      "content": "Present Tesco's sustainability achievements: 65% reduction in Scope 1&2 emissions (exceeding 60% target), carbon neutrality by 2035, net zero by 2050, 100% renewable electricity, UK's largest corporate solar PPA, 720 electric delivery vans, and 82% food redistribution rate."
+    },
+    {
+      "number": 16,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Strategic positioning for continued growth"
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Outlook & Strategic Priorities",
+      "content": "Outline FY 2025/26 guidance of £2.7-3.0bn adjusted operating profit, £1.4-1.8bn free cash flow, £1.45bn new buyback program, Save to Invest £500m cost reduction target, and strategic focus on value, quality, and digital capabilities."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "Every Little Helps",
+      "content": "Tesco's relentless focus on customers, combined with market-leading scale, digital innovation, and operational excellence, positions the retailer to maintain its dominant market position while delivering sustainable shareholder value."
+    }
+  ]
+}

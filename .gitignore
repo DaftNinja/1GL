@@ -1,0 +1,21 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Large asset and cache directories — never push to GitHub
+attached_assets/
+.cache/
+.local/
+
+# Case study content files (large HTML/PPTX presentations — not source code)
+public/case-studies/*.html
+public/case-studies/**/*.html
+public/case-studies/**/*.png
+public/case-studies/**/*.numbers
+public/case-studies/**/*.pptx
+public/case-studies/**/*.xlsx
+public/case-studies/**/*.pdf
+public/case-studies/**/*.zip

@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "Lufthansa Strategic Analysis 2025",
+      "content": "Europe's Leading Airline Through Transformation & Innovation"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Executive Overview",
+      "content": "1. Market Position & Heritage; 2. Financial Performance 2024/25; 3. Strategic Transformation; 4. Business Segments; 5. Future Outlook"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "Europe's largest airline group with 70+ years of aviation excellence"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Europe's Leading Aviation Group",
+      "content": "Present Lufthansa's market position as Europe's largest airline group, 131.3 million passengers in 2024, €37.6bn revenue, and strategic positioning across five network airlines and diversified aviation services."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Multi-Hub Strategy & Global Network",
+      "content": "Examine Lufthansa's multi-hub model with Frankfurt, Munich, Vienna, Brussels, and Zurich hubs, 50%+ fleet based outside Germany, and strategic expansion through ITA Airways acquisition and Star Alliance leadership."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Financial Performance 2024/25",
+      "content": "Record revenue growth amid operational transformation"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Revenue & Profitability Recovery",
+      "content": "Analyze Lufthansa's FY 2024 results: €37.6bn revenue (+6%), €1.6bn adjusted EBIT, Q3 2025 performance with €11.2bn revenue (+4% YoY), €1.3bn adjusted EBIT, and nine-month net income of €1.09bn (+32%)."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Cash Flow & Capital Discipline",
+      "content": "Examine Lufthansa's Q3 2025 adjusted free cash flow of €818m (6x vs Q3 2024), €1.6bn adjusted free cash flow target for 2025, debt reduction progress, and fleet investment program of 230+ new aircraft by 2030."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Strategic Transformation",
+      "content": "Turnaround strategy focused on efficiency, digitalization, and profitability"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Next Level Strategy & Cost Reduction",
+      "content": "Deep dive into Lufthansa's transformation: 4,000 job cuts by 2030, €300m annual cost savings, AI-driven efficiency, 8-10% adjusted EBIT margin target by 2028, and €2.5bn+ annual adjusted free cash flow target."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Fleet Modernization & Allegris Product",
+      "content": "Showcase 230+ new aircraft by 2030 including 100 long-haul aircraft, 30% fuel efficiency improvement, Allegris cabin product launch, and Next Gen aircraft increasing to 65% of long-haul fleet by 2030."
+    },
+    {
+      "number": 12,
+      "type": "content",
+      "title": "Digital Transformation & AI Integration",
+      "content": "Examine Lufthansa's digital strategy: AI-driven efficiency gains, digitalization of processes, centralized network management, Group Function Boards for finance/HR/technology, and automation reducing administrative overhead."
+    },
+    {
+      "number": 13,
+      "type": "chapter",
+      "title": "04: Business Segments",
+      "content": "Diversified revenue streams across passenger, cargo, MRO, and services"
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Passenger Airlines & Network Strategy",
+      "content": "Analyze Lufthansa's passenger business: 83.1% average load factor, 42 million Q3 2025 passengers (+3%), short-haul fleet redistribution to Discover Airlines and City Airlines (50% by 2030), and long-haul focus strategy."
+    },
+    {
+      "number": 15,
+      "type": "content",
+      "title": "Cargo, MRO & Diversified Services",
+      "content": "Examine Lufthansa Cargo (10% revenue growth, €251m adjusted EBIT), Lufthansa Technik (€635m adjusted EBIT, €7.5bn new contracts), and synergies across maintenance, catering, and IT services business units."
+    },
+    {
+      "number": 16,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Sustainable growth and competitive positioning in European aviation"
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Sustainability & Competitive Positioning",
+      "content": "Present Lufthansa's sustainability commitments: 50% CO₂ reduction by 2030 vs 2019, net zero by 2050, AeroSHARK technology, SAF adoption, and competitive positioning vs IAG, Air France-KLM, and low-cost carriers."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "Nonstop You",
+      "content": "Lufthansa's comprehensive transformation strategy, combining operational excellence, digital innovation, and sustainable practices, positions Europe's leading airline group for continued growth and enhanced profitability in an evolving aviation landscape."
+    }
+  ]
+}

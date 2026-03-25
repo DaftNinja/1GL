@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "Equinor Strategic Analysis 2025",
+      "content": "Producing Energy Today, Developing Energy Systems for the Future"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Strategic Framework",
+      "content": "01. Market Position & Heritage: Norway's energy champion, 50+ years offshore expertise; 02. Financial Performance 2024: Strong results, operational excellence, robust returns; 03. Core Business: Oil & gas leadership, strong production, international portfolio; 04. Energy Transition: Renewable power growth, offshore wind leadership, low-carbon solutions; 05. Future Outlook: Balanced energy strategy, value creation, decarbonization roadmap"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "Norway's leading energy company with 50+ years of offshore expertise and global reach"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Global Energy Leader & Market Position",
+      "content": "Present Equinor's position as Norway's largest energy company and major supplier to Europe. Highlight integrated energy business spanning oil, gas, and renewables with strong operational performance. Emphasize role in European energy security, significant tax contributions (USD 20.6B in 2024), and commitment to safe operations with best-ever safety results."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Leadership & Strategic Vision",
+      "content": "Detail leadership under CEO Anders Opedal and strategic direction balancing energy production today with future energy systems development. Present governance approach to navigating energy transition, geopolitical uncertainty, and market unpredictability while maintaining capital discipline and shareholder value creation."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Financial Performance 2024",
+      "content": "Strong operational and financial results with disciplined capital allocation"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Financial Results & Key Metrics",
+      "content": "Present 2024 financial performance: adjusted operating income USD 29.8B, net income USD 8.83B, return on average capital employed 21%, and organic capital expenditures USD 12.1B. Highlight strong balance sheet with net debt to capital employed of 11.9%. Compare with previous year and show resilience despite market volatility."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Capital Discipline & Shareholder Returns",
+      "content": "Detail capital allocation framework maintaining firm discipline with USD 12.1B organic capex. Present strong balance sheet enabling investments and returns, dividend policy and shareholder distributions, and commitment to value creation through cycles. Highlight ability to fund both growth projects and shareholder returns simultaneously."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Core Business",
+      "content": "World-class oil & gas operations with strong production and international portfolio"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Oil & Gas Production Excellence",
+      "content": "Present 2024 operational performance: equity production of liquids and gas 2,067 mboe per day (stable vs 2023), strong operational performance across portfolio, and role as major energy supplier to Europe. Highlight offshore expertise, technological leadership, and continued development of Norwegian continental shelf resources."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "International Portfolio & Growth Projects",
+      "content": "Detail international operations and key growth projects. Present geographic diversification strategy, major development projects in Norway and internationally, and partnership approach. Highlight technological capabilities in harsh offshore environments and competitive cost position in global energy markets."
+    },
+    {
+      "number": 12,
+      "type": "chapter",
+      "title": "04: Energy Transition",
+      "content": "Accelerating renewable power growth and low-carbon solutions"
+    },
+    {
+      "number": 13,
+      "type": "content",
+      "title": "Renewable Power Growth",
+      "content": "Present renewable energy portfolio performance: equity production of renewable power increased 51% to 2,935 GWh in 2024, offshore wind leadership position, and onshore wind developments. Highlight floating offshore wind technology leadership and strategic partnerships enabling scale-up of renewable power generation."
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Low-Carbon Solutions & Decarbonization",
+      "content": "Detail low-carbon strategy and initiatives: carbon capture and storage projects, hydrogen and ammonia developments, electrification of offshore operations, and methane emission reduction programs. Present roadmap for decarbonizing oil & gas operations and developing new low-carbon business areas."
+    },
+    {
+      "number": 15,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Balanced energy strategy combining value creation with decarbonization ambitions"
+    },
+    {
+      "number": 16,
+      "type": "content",
+      "title": "Strategic Priorities & Energy Transition",
+      "content": "Outline strategic priorities: maintain oil & gas production competitiveness and cash generation, accelerate renewable power growth and scale-up, develop low-carbon solutions and new energy businesses, and achieve net-zero ambitions by 2050. Present balanced approach to meeting energy demand while transitioning portfolio."
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Value Creation & Risk Management",
+      "content": "Present value creation framework: operational excellence, capital discipline, technology leadership, and stakeholder engagement. Address risk management approach to geopolitical uncertainty, energy market volatility, and transition risks. Highlight competitive advantages: offshore expertise, strong balance sheet, integrated value chain, and Norwegian resource base."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "Equinor: Leading the Energy Transition",
+      "content": "With world-class offshore expertise, strong financial performance, and ambitious renewable energy growth, Equinor is uniquely positioned to navigate the energy transition while delivering value to shareholders and society."
+    }
+  ]
+}

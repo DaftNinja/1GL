@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "Ericsson Strategic Analysis 2025",
+      "content": "Connecting the World Through 5G Leadership and Enterprise Innovation"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Strategic Framework",
+      "content": "01. Market Position & Heritage: 150 years of connectivity innovation, global 5G leadership; 02. Business Portfolio & Segments: Networks, Cloud Software & Services, Enterprise, IPR Licensing; 03. Financial Performance 2024: Strong margins, robust cash flow, North America growth; 04. Technology Leadership: 5G innovation, programmable networks, network APIs; 05. Future Outlook & Growth: Enterprise expansion, IPR monetization, automation"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "150 years of connectivity innovation positioning Ericsson as global 5G infrastructure leader"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Global 5G Leadership & Market Position",
+      "content": "Present Ericsson's position as world leader in 5G technology and mobile infrastructure. Highlight technology leadership for performance, security, and sustainability at lowest total cost of ownership. Show global reach across 180+ countries, strong customer relationships with major communications service providers, and leadership in industry standards and patents."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Strategic Leadership & Governance",
+      "content": "Detail leadership team and board governance structure. Present CEO comment and strategic vision for programmable, automated, cloud-native networks. Highlight corporate governance framework ensuring strong decision-making, competitiveness, and effective strategy execution. Emphasize long-term value creation for shareholders and stakeholders."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Business Portfolio & Segments",
+      "content": "Four-segment structure driving comprehensive connectivity solutions"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Business Segments Performance",
+      "content": "Analyze 2024 segment performance: Networks (64% of sales, SEK 158.2B, strong North America growth), Cloud Software & Services (25% of sales, SEK 62.6B, turnaround progress), Enterprise (10% of sales, SEK 24.9B, private 5G growth), and IPR Licensing (SEK 14.0B, 5G agreements driving growth). Show geographic distribution and market dynamics."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Networks Technology Leadership",
+      "content": "Showcase Networks segment innovations: sustainable Massive MIMO radios with 25%+ energy savings, RAN software capabilities boosting performance and programmability, and 5G Standalone network contracts. Highlight leadership in critical innovations and strategic business opportunities. Present market share development and competitive positioning."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Financial Performance 2024",
+      "content": "Strong margins and cash generation despite challenging market conditions"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Financial Results & Key Metrics",
+      "content": "Present 2024 financial performance: net sales SEK 247.9B (-5% organic), adjusted gross margin 44.9% (improved), free cash flow SEK 40.0B (record), and net cash SEK 37.8B. Show Q1 2025 momentum with SEK 55B sales and 48.5% adjusted gross margin. Highlight improved operational performance and supply chain effectiveness."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "IPR Licensing Revenue Growth",
+      "content": "Detail Intellectual Property Rights licensing strategy and performance: SEK 14.0B revenue in 2024 (+26% vs 2023) from new 5G license agreements and renewals. Present target for IPR to reach 20% of sales by 2026. Highlight opportunities in automotive and IoT licensing, and network API aggregation strategy with 12 leading CSPs."
+    },
+    {
+      "number": 12,
+      "type": "chapter",
+      "title": "04: Technology Leadership",
+      "content": "Pioneering the programmable network era and enterprise connectivity"
+    },
+    {
+      "number": 13,
+      "type": "content",
+      "title": "5G Innovation & Programmable Networks",
+      "content": "Present 5G technology roadmap: high-performing programmable networks enabling differentiated on-demand services, Superior experience for consumers, Reliable solutions for businesses, and Capabilities for developers. Highlight open and programmable 5G Standalone networks, fixed wireless access growth with 100M+ global subscriptions, and mission-critical network expansion."
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Enterprise Solutions & Private 5G",
+      "content": "Detail Enterprise segment strategy: Enterprise Wireless Solutions growth (+17% in 2024) driven by private 5G and neutral host solutions, Global Communications Platform optimization focusing on profitable segments. Showcase enterprise 5G use cases and comprehensive connectivity solutions for businesses accelerating digitalization and optimizing processes."
+    },
+    {
+      "number": 15,
+      "type": "chapter",
+      "title": "05: Future Outlook & Growth",
+      "content": "Expanding market reach through enterprise growth and network API monetization"
+    },
+    {
+      "number": 16,
+      "type": "content",
+      "title": "Growth Strategy & Market Expansion",
+      "content": "Outline strategic growth priorities: broadening market beyond connectivity through new use cases, enterprise segment expansion with private 5G leadership, IPR licensing growth targeting 20% of sales, and Vonage turnaround focusing on higher-margin products. Address supply chain resilience investments and geopolitical risk mitigation."
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Network APIs & Developer Ecosystem",
+      "content": "Present network API strategy creating network effect: exposing network capabilities to developers and enterprises, enabling differentiated quality of service and new revenue streams for CSPs. Highlight joint venture with 12 CSPs to aggregate and sell network APIs, key agreements with Verizon, AT&T, KDDI, and AWS, and developer community engagement."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "Ericsson: Powering the Next Wave of Digitalization",
+      "content": "With 150 years of innovation heritage, leadership in 5G technology, and strong financial position, Ericsson is uniquely positioned to capture the enormous opportunities in programmable networks, enterprise connectivity, and the global digital transformation."
+    }
+  ]
+}

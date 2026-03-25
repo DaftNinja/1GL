@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "IKEA Strategic Analysis 2025",
+      "content": "Creating a Better Everyday Life for the Many People"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Strategic Framework",
+      "content": "01. Market Position & Heritage: Swedish roots, global reach, democratic design; 02. Business Model: Franchise system, omnichannel retail, affordable solutions; 03. Sustainability Leadership: 28% emissions reduction, renewable energy, circular economy; 04. Digital Transformation: E-commerce growth, customer experience, operational efficiency; 05. Future Outlook: Market expansion, sustainability goals, innovation pipeline"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "Swedish heritage of democratic design with global reach serving millions of customers"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Global Retail Leadership & Mission",
+      "content": "Present IKEA's position as world's largest furniture retailer with 470+ stores in 63 countries and strong e-commerce presence. Highlight mission to create better everyday life for many people through affordable, well-designed home furnishing solutions. Show franchise system with Inter IKEA Group and IKEA retailers enabling global scale with local adaptation. Emphasize democratic design principles balancing form, function, quality, sustainability, and low price."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Swedish Heritage & Values",
+      "content": "Detail Swedish roots and cultural values: simplicity, functionality, care for people and planet, and togetherness. Present founder Ingvar Kamprad's vision and legacy. Highlight unique corporate structure (Stichting INGKA Foundation) ensuring long-term independence and value creation. Emphasize human-centric culture and commitment to co-workers and customers."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Business Model",
+      "content": "Franchise-enabled global scale with omnichannel retail and affordable solutions"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Franchise System & Global Scale",
+      "content": "Analyze franchise business model: Inter IKEA Group owns IKEA concept and brand, IKEA retailers operate stores under franchise agreements, enabling rapid global expansion while maintaining consistency. Show franchise structure benefits: local market knowledge, shared best practices, economies of scale in sourcing and logistics, and entrepreneurial ownership. Highlight 470+ stores across 63 markets with diverse formats."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Omnichannel Retail & Customer Experience",
+      "content": "Present omnichannel strategy integrating physical stores, e-commerce, and customer touchpoints. Show digital transformation progress: online sales growth, click-and-collect services, planning tools, and seamless shopping experience. Highlight store formats evolution (city-center stores, planning studios) and service innovations. Emphasize customer-centric approach and accessibility."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Sustainability Leadership",
+      "content": "Ambitious climate action with 28% emissions reduction and renewable energy leadership"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Climate Action & Emissions Reduction",
+      "content": "Present climate achievements: 28% reduction in climate footprint vs FY16 baseline (8.4 million tonnes CO₂ equivalent) while growing business. Detail science-based targets to halve emissions by 2030 and reach net-zero by 2050 without offsets. Show progress drivers: renewable electricity reaching 81% in retail, 95% in logistics, 75% in production, and shift to electrified transport."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Circular Economy & Renewable Energy",
+      "content": "Detail circular economy initiatives: furniture take-back programs, repair services, circular product design, and waste reduction. Present renewable energy strategy: investment in wind and solar projects, energy independence goals, and supply chain decarbonization. Highlight sustainable materials sourcing, forest stewardship, and resource efficiency programs."
+    },
+    {
+      "number": 12,
+      "type": "chapter",
+      "title": "04: Digital Transformation",
+      "content": "E-commerce growth, enhanced customer experience, and operational efficiency"
+    },
+    {
+      "number": 13,
+      "type": "content",
+      "title": "Digital Innovation & Customer Experience",
+      "content": "Present digital transformation initiatives: e-commerce platform growth and optimization, augmented reality planning tools, mobile app enhancements, and personalized customer engagement. Show technology investments in supply chain automation, inventory management, and data analytics. Highlight digital services improving customer journey from inspiration to installation."
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Operational Excellence & Supply Chain",
+      "content": "Detail operational efficiency improvements: supply chain optimization, logistics network efficiency, automation in distribution centers, and cost management. Present flat-pack innovation benefits: reduced transport emissions, lower costs, and customer convenience. Highlight quality control systems, supplier partnerships, and continuous improvement culture."
+    },
+    {
+      "number": 15,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Market expansion, ambitious sustainability goals, and innovation pipeline"
+    },
+    {
+      "number": 16,
+      "type": "content",
+      "title": "Market Expansion & Format Innovation",
+      "content": "Outline growth strategy: new market entries in emerging economies, format innovation with city-center and smaller stores, service expansion (assembly, delivery, financing), and B2B opportunities. Present market penetration approach: phased expansion, local adaptation, and franchise partner selection. Highlight digital-first markets and omnichannel capabilities."
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Innovation Pipeline & Future Focus",
+      "content": "Present innovation priorities: smart home integration, sustainable materials development, modular furniture systems, and service business expansion. Detail sustainability goals for 2030: 100% renewable electricity, 50% emissions reduction, circular business models. Highlight emerging technologies: IoT furniture, subscription models, and life-at-home insights driving product development."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "IKEA: Designing a Better Tomorrow",
+      "content": "With Swedish values of simplicity and care, global scale through franchise system, and ambitious sustainability commitments, IKEA continues to create a better everyday life for millions while leading the transformation to a circular, climate-positive business model."
+    }
+  ]
+}

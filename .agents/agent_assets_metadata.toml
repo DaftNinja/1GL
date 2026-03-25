@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "-qZrVeWTMM2hoBw8a6ycX"
+uri = "file://1GigLabs_Platform_Overview.md"
+type = "text"
+title = "1GigLabs — Platform Overview"
+
+[[outputs]]
+id = "_POQmlNx8hR9NpKtib17r"
+uri = "file://public/case-studies/1GigLabs-Platform-Documentation.md"
+type = "text"
+title = "1GigLabs Platform Documentation"

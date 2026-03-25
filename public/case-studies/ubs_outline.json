@@ -1,0 +1,112 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "UBS Strategic Analysis 2025",
+      "content": "Global Wealth Management Leadership Through Transformation"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Executive Overview",
+      "content": "1. Market Position & Heritage; 2. Financial Performance 2024/25; 3. Credit Suisse Integration; 4. Strategic Transformation; 5. Future Outlook"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "World's largest private bank with 160+ years of Swiss banking heritage"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Global Wealth Management Leader",
+      "content": "Present UBS's market position as world's largest private bank with $6.9 trillion invested assets, leading global wealth management market share, and strategic positioning across Americas, EMEA, and APAC regions."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Diversified Business Portfolio",
+      "content": "Examine UBS's five business divisions: Global Wealth Management, Personal & Corporate Banking, Asset Management, Investment Bank, and Non-core & Legacy, highlighting revenue contribution and strategic focus areas."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Financial Performance 2024/25",
+      "content": "Strong profitability and capital generation supporting transformation"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Revenue & Profitability Excellence",
+      "content": "Analyze UBS's FY 2024 and Q3 2025 results: $5.1bn net profit (2024), $2.48bn Q3 2025 net profit (+74% YoY), $12.76bn Q3 2025 revenues, 14.8% CET1 ratio, and strong RoCET1 performance."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Capital Strength & Shareholder Returns",
+      "content": "Examine UBS's robust capital position with 14.8% CET1 ratio, $3bn share buyback program for 2025, $0.90 dividend (+29% YoY), and progressive capital return strategy."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "03: Credit Suisse Integration",
+      "content": "Historic transformation creating global banking powerhouse"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "Integration Progress & Milestones",
+      "content": "Deep dive into Credit Suisse integration: $10bn cumulative cost savings achieved (77% of $13bn target), 90%+ client accounts migrated outside Switzerland, legal mergers completed, and integration one quarter ahead of schedule."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Non-Core & Legacy Wind-Down",
+      "content": "Analyze NCL unit progress: $30.7bn risk-weighted assets (down from $34bn), 83% of original book closed, targeting below $22bn by end 2026, and successful de-risking strategy execution."
+    },
+    {
+      "number": 12,
+      "type": "chapter",
+      "title": "04: Strategic Transformation",
+      "content": "Global wealth management focus with technology leadership"
+    },
+    {
+      "number": 13,
+      "type": "content",
+      "title": "Global Wealth Management Growth",
+      "content": "Showcase GWM momentum: $4.7 trillion invested assets, $92bn net new assets YTD 2025 (vs $100bn full-year target), 6% revenue growth YoY in Q3 2025, and ultra-high-net-worth segment expansion."
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Technology & Innovation Leadership",
+      "content": "Examine UBS's technology strategy: 50,000 Microsoft Copilot licenses deployed, 75% cloud usage, GenAI integration, strategic collaboration with 360 ONE in India, and future-ready infrastructure investments."
+    },
+    {
+      "number": 15,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Strategic positioning for long-term value creation"
+    },
+    {
+      "number": 16,
+      "type": "content",
+      "title": "Growth Ambitions & Strategic Priorities",
+      "content": "Outline UBS's strategic targets: >$5 trillion wealth management invested assets by 2028, $200bn annual net new assets by 2028, US wealth management expansion, investment banking market share gains, and regulatory positioning."
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Risk Management & Sustainability",
+      "content": "Present UBS's risk framework: 93% collateralized lending positions, 57% mortgages in loan book, net zero by 2050 commitment, sustainable finance leadership, and regulatory compliance across multiple jurisdictions."
+    },
+    {
+      "number": 18,
+      "type": "final",
+      "title": "You & Us",
+      "content": "UBS's transformation into the world's leading wealth manager, underpinned by Swiss banking heritage, technological innovation, and strategic execution, positions the bank to deliver sustainable value for clients, shareholders, and society."
+    }
+  ]
+}

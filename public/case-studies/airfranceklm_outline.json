@@ -1,0 +1,118 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "Air France-KLM",
+      "content": "Strategic Analysis 2025 - Europe's Aviation Pioneer Through Transformation & Innovation"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Strategic Framework",
+      "content": "1. Market Position & Heritage: 90+ years of aviation excellence with dual-brand strategy; 2. Financial Performance 2024/25: Revenue growth and operational turnaround; 3. Strategic Transformation: Fleet modernization and digital innovation; 4. Business Segments: Diversified revenue across passenger, cargo, MRO, and loyalty; 5. Future Outlook: Sustainability leadership and competitive positioning"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Market Position & Heritage",
+      "content": "Europe's aviation pioneer with dual-brand heritage and global reach"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Group Overview & Market Position",
+      "content": "Present Air France-KLM's current market position as one of Europe's largest airline groups, formed through the landmark 2004 merger. Showcase key metrics: 78.2m passengers (2025 YTD), €24.8bn revenue (9M 2025), 500+ aircraft fleet serving 300+ destinations. Highlight the unique dual-brand strategy maintaining Air France and KLM as separate carriers with complementary networks, and the Group's position among top 3 European aviation groups alongside Lufthansa and IAG."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Historical Heritage & Merger Legacy",
+      "content": "Trace the rich aviation heritage of both airlines: KLM as the world's oldest airline (founded 1919) and Air France (formed 1933 from merger of five airlines). Explain the strategic rationale behind the 2004 merger that created Europe's largest airline group by revenue at the time (€800m deal). Discuss the cross-border alliance challenges, cultural integration, and how the Group has evolved to leverage synergies while preserving brand identities. Include ownership structure and major shareholders."
+    },
+    {
+      "number": 6,
+      "type": "chapter",
+      "title": "02: Financial Performance 2024/25",
+      "content": "Strong recovery trajectory with improved margins and operational efficiency"
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Revenue & Profitability Trends",
+      "content": "Analyze the strong financial recovery: 9M 2025 revenue of €24.8bn (+5.3% YoY), Q3 2025 operating result of €1.20bn with 13.1% margin. Show quarterly progression and comparison to pre-pandemic levels. Highlight key drivers: passenger network growth, maintenance business expansion (+13.4% revenue), and Flying Blue loyalty program performance. Include net income improvement and EBITDA trends."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Operational Metrics & Cash Flow",
+      "content": "Present key operational metrics: 78.2m passengers carried (9M 2025, +5.1% YoY), capacity growth of 4.4%, load factor of 87.6%. Detail the strong cash generation with recurring adjusted operating free cash flow of €715m (9M 2025) vs €23m prior year. Show balance sheet strength: €9.5bn cash at hand, leverage ratio of 1.6x (Net Debt/EBITDA), and debt management strategy. Include unit revenue and unit cost trends."
+    },
+    {
+      "number": 9,
+      "type": "content",
+      "title": "Business Segment Performance",
+      "content": "Break down performance by segment: Network Airlines (Air France and KLM) with their respective operating results and market positioning, Transavia low-cost operations with 20.3m passengers, Cargo business facing unit revenue pressures but maintaining capacity growth, and Maintenance business showing strong double-digit growth (+13.4% revenue, €221m operating result 9M 2025). Highlight the Flying Blue loyalty program's €646m revenue (+42% YoY) with 24.8% operating margin."
+    },
+    {
+      "number": 10,
+      "type": "chapter",
+      "title": "03: Strategic Transformation",
+      "content": "Fleet modernization, digital innovation, and operational excellence"
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Fleet Modernization Strategy",
+      "content": "Detail the ambitious fleet renewal program: investing €3bn annually in new-generation aircraft (Airbus A220, A350, Boeing 787, A321neo). Show current fleet composition and next-generation aircraft share reaching 32% in Q3 2025 (+8 points YoY). Explain the strategic decision to retire Airbus A380s and focus on fuel-efficient twinjets. Highlight fuel efficiency gains: 25% CO₂ reduction and 33% noise reduction from new aircraft. Include order book and delivery timeline through 2028."
+    },
+    {
+      "number": 12,
+      "type": "content",
+      "title": "Digital Transformation & Innovation",
+      "content": "Showcase digital initiatives across the Group: AI-powered operational optimization, enhanced customer experience through mobile and digital touchpoints, predictive maintenance programs, and data-driven revenue management. Highlight the Transform 2015 legacy and ongoing competitiveness programs. Include examples of operational efficiency improvements and technology investments supporting the Group's transformation."
+    },
+    {
+      "number": 13,
+      "type": "chapter",
+      "title": "04: Business Segments",
+      "content": "Diversified revenue streams across passenger, cargo, maintenance, and loyalty"
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Network Airlines & Transavia",
+      "content": "Detail the dual-brand airline strategy: Air France with its Paris-CDG hub (14.0% Q3 2025 operating margin), strong premium positioning and long-haul focus; KLM with Amsterdam-Schiphol hub (9.5% Q3 2025 operating margin), connecting carrier model and strong transatlantic presence. Show Transavia's low-cost positioning with 20.3m passengers (9M 2025) and European point-to-point network expansion. Include hub strategies, route networks, and competitive positioning."
+    },
+    {
+      "number": 15,
+      "type": "content",
+      "title": "Cargo, MRO & Flying Blue",
+      "content": "Present the diversified business portfolio: Cargo operations with global freighter network and belly capacity optimization (€1.7bn revenue 9M 2025); Maintenance business (Air France Industries KLM E&M) with €4.1bn revenue (+13.4% YoY), strong third-party growth, and order book of $10.4bn; Flying Blue loyalty program as a strategic asset with €646m revenue (+42% YoY), 24.8% operating margin, and expanding partnerships. Highlight synergies and cross-segment value creation."
+    },
+    {
+      "number": 16,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Sustainability leadership and strategic positioning for long-term growth"
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Sustainability & Decarbonization Strategy",
+      "content": "Detail the comprehensive sustainability roadmap: net zero emissions by 2050, -30% CO₂ per passenger/km by 2030 vs 2019 (SBTi-validated), current status as world's largest SAF purchaser (16% of global production in 2023). Explain the four-pillar strategy: fleet renewal (70% next-gen aircraft by 2030), SAF incorporation (10% by 2030, 63% by 2050), eco-piloting and operational measures (-4-5% CO₂), and intermodal partnerships (Air France-SNCF cooperation). Include EU Flight Emissions Label participation and regulatory compliance."
+    },
+    {
+      "number": 18,
+      "type": "content",
+      "title": "Competitive Positioning & Strategic Outlook",
+      "content": "Analyze competitive advantages: unique dual-brand strategy, strong European hub positions (Paris CDG and Amsterdam Schiphol), diversified revenue portfolio, SkyTeam alliance membership with Delta/Korean Air joint ventures, and leading sustainability credentials. Address challenges: rising operational costs (Schiphol +41% tariff), competition from low-cost carriers, and regulatory pressures. Present 2025 outlook: capacity growth 4-5%, net capex €3.2-3.4bn, leverage target 1.5-2.0x, and strategic priorities for sustained competitiveness."
+    },
+    {
+      "number": 19,
+      "type": "final",
+      "title": "Pioneering the Future of Aviation",
+      "content": "Air France-KLM: Europe's aviation leader, combining 100+ years of heritage with forward-looking innovation and sustainability commitment"
+    }
+  ]
+}

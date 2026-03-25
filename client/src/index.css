@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Geist', sans-serif;
+  --font-serif: 'Geist', sans-serif;
+
+  /* 1GigLabs - Blue Professional Palette */
+  --background: 0 0% 100%;
+  --foreground: 210 10% 10%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 210 10% 10%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 10% 10%;
+
+  --primary: 207 90% 54%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 207 20% 96%;
+  --secondary-foreground: 207 30% 25%;
+
+  --muted: 207 15% 95%;
+  --muted-foreground: 210 5% 45%;
+
+  --accent: 207 20% 96%;
+  --accent-foreground: 207 30% 25%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 210 6% 90%;
+  --input: 210 6% 90%;
+  --ring: 207 90% 54%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    @apply text-slate-900 tracking-tight;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+}
+
+/* Map tooltip — used by choropleth hover */
+.dark-map-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(8px);
+}
+.dark-map-tooltip::before {
+  display: none !important;
+}
+
+@keyframes crossBorderFlowAnim {
+  to { stroke-dashoffset: var(--flow-anim-len); }
+}
+
+@keyframes methodologyGlow {
+  0%, 100% { color: #64748b; }
+  50% { color: #9933ff; text-shadow: 0 0 8px rgba(153,51,255,0.5); }
+}
+
+.methodology-glow {
+  animation: methodologyGlow 2.4s ease-in-out infinite;
+}

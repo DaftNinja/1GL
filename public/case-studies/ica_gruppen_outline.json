@@ -1,0 +1,136 @@
+{
+  "pages": [
+    {
+      "number": 1,
+      "type": "cover",
+      "title": "ICA Gruppen",
+      "content": "Strategic Analysis & Business Overview 2024"
+    },
+    {
+      "number": 2,
+      "type": "table_of_contents",
+      "title": "Executive Overview",
+      "content": "01: Business Model & Core Operations; 02: Financial Performance 2024; 03: Market Position & Growth Strategy; 04: Sustainability & Innovation; 05: Future Outlook"
+    },
+    {
+      "number": 3,
+      "type": "chapter",
+      "title": "01: Business Model",
+      "content": "Understanding ICA Gruppen's diversified operations and market presence"
+    },
+    {
+      "number": 4,
+      "type": "content",
+      "title": "Company Overview",
+      "content": "Overview of ICA Gruppen as Sweden's leading grocery retail group with diversified operations across groceries, pharmacies, banking, insurance, and real estate. Present the company's mission to make every day a little easier for customers through personalized solutions, time savings, sustainable choices, and value for money. Highlight headquarters in Solna, Stockholm and 27,000 employees."
+    },
+    {
+      "number": 5,
+      "type": "content",
+      "title": "Business Portfolio Architecture",
+      "content": "Breakdown of ICA Gruppen's five core business areas and their strategic roles. ICA Sweden as the core grocery retail business with nearly 1,300 stores. Rimi Baltic operating 315 stores across Estonia, Latvia, and Lithuania. Apotek Hjärtat as the pharmacy operations with best-ever performance. ICA Bank providing banking and insurance services to strengthen customer loyalty. ICA Real Estate generating stable cash flows through strategic property management."
+    },
+    {
+      "number": 6,
+      "type": "content",
+      "title": "ICA Sweden: Core Grocery Operations",
+      "content": "Deep dive into ICA Sweden's market-leading position with 1,270 stores across four formats: Maxi ICA Stormarknad (hypermarkets), ICA Kvantum (large supermarkets), ICA Supermarket (mid-size stores), and ICA Nära (convenience stores). Explain the unique business model where independent ICA retailers own and operate their stores while having agreements with ICA Sweden for coordinated sourcing, logistics, marketing, and store development. Present store count, sales performance, and format distribution."
+    },
+    {
+      "number": 7,
+      "type": "content",
+      "title": "Store Format Strategy",
+      "content": "Detailed analysis of ICA Sweden's four store formats with 2024 performance metrics. Maxi ICA Stormarknad: 92 hypermarkets with SEK 51.3B sales (+7.7%). ICA Kvantum: 129 large supermarkets with SEK 36.6B sales (+5.7%). ICA Supermarket: 422 mid-size stores with SEK 43.4B sales (+4.7%). ICA Nära: 622 convenience stores with SEK 22.4B sales (+4.0%). Highlight how each format serves different customer needs and market segments."
+    },
+    {
+      "number": 8,
+      "type": "content",
+      "title": "Rimi Baltic: International Expansion",
+      "content": "Overview of Rimi Baltic's operations across the three Baltic countries with 315 total stores: 84 in Estonia, 140 in Latvia, and 91 in Lithuania. Present the combined market share of approximately 13% in the region. Highlight 2024 performance with 4.3% sales growth in local currency driven by higher volumes, improved market shares, and enhanced profitability through cost efficiency and optimized assortment strategies."
+    },
+    {
+      "number": 9,
+      "type": "chapter",
+      "title": "02: Financial Performance",
+      "content": "Analyzing 2024 results and key financial metrics"
+    },
+    {
+      "number": 10,
+      "type": "content",
+      "title": "2024 Financial Highlights",
+      "content": "Present ICA Gruppen's strong 2024 financial performance with net sales of SEK 157.2 billion (+6.5%) and operating profit of SEK 6.1 billion (+5.2%), corresponding to a 3.9% operating margin. Highlight the significant reduction in net debt by over SEK 6 billion to SEK 14.6 billion through strong cash flows, property divestments of SEK 1.3 billion, and successful share issue to independent ICA retailers. Emphasize volume-driven growth and strengthened earnings."
+    },
+    {
+      "number": 11,
+      "type": "content",
+      "title": "Business Segment Performance",
+      "content": "Breakdown of 2024 performance by business segment. ICA Sweden: SEK 110.2B net sales (+6.5%), 3.6% operating margin, volume-driven growth with increased customer flows. Rimi Baltic: Strong second half with improved market position and profitability. Apotek Hjärtat: Best year ever in operating profit and market share, with e-commerce growth exceeding market average. ICA Bank: Mixed performance with increased business volume but lower overall earnings due to insurance claims. ICA Real Estate: Stable cash flows with major divestments totaling SEK 1.3 billion."
+    },
+    {
+      "number": 12,
+      "type": "content",
+      "title": "Market Performance & Growth Drivers",
+      "content": "Analyze ICA's market performance in the context of Swedish food retail market growth of 4.1% in 2024, with food price inflation of only 1.4% compared to 12.1% in 2023. Highlight that market growth was primarily volume-driven. Present ICA's achievement of 5.8% sales growth in Swedish stores, outperforming the market through increased customer visits across all store formats. Emphasize the strategic focus on value-for-money products, price investments, and private label development (26.8% share)."
+    },
+    {
+      "number": 13,
+      "type": "chapter",
+      "title": "03: Digital & Loyalty Strategy",
+      "content": "Leveraging technology and customer relationships for competitive advantage"
+    },
+    {
+      "number": 14,
+      "type": "content",
+      "title": "Stammis Loyalty Program",
+      "content": "Present the Stammis loyalty program as a key competitive advantage with over 5 million members at year-end 2024. Explain how the program strengthens customer relationships across ICA Sweden, Apotek Hjärtat, and ICA Bank through data-driven insights. Highlight how customer data enables personalized offerings, targeted campaigns, and the right offering in the right channel at the right price, driving both loyalty and sales growth."
+    },
+    {
+      "number": 15,
+      "type": "content",
+      "title": "E-commerce & Digital Transformation",
+      "content": "Showcase ICA's digital transformation initiatives including the Ocado Smart Platform for e-commerce operations with 361 active e-commerce stores by end of 2024. Highlight the 8.0% growth in online sales, outpacing the market's 4.9% growth. Present the highly automated customer fulfillment center in Brunna serving 65 stores. Emphasize the renewed focus on e-commerce after post-pandemic decline, with online sales representing 2.9% of total store sales and growing."
+    },
+    {
+      "number": 16,
+      "type": "chapter",
+      "title": "04: Sustainability Leadership",
+      "content": "Commitment to environmental stewardship and climate action"
+    },
+    {
+      "number": 17,
+      "type": "content",
+      "title": "Science-Based Climate Targets",
+      "content": "Present ICA Gruppen's industry-leading climate commitments approved by the Science Based Targets initiative (SBTi) in 2024. Net-zero greenhouse gas emissions across the value chain by 2050. Near-term targets: 42% reduction in Scope 1 and 2 emissions by 2030, 42% reduction in Scope 3 emissions by 2030, 30.3% reduction in FLAG emissions by 2030. Long-term targets: 90% reduction in all emissions categories by 2050. Highlight the no-deforestation commitment by December 2025 for primary commodities."
+    },
+    {
+      "number": 18,
+      "type": "content",
+      "title": "Sustainability Initiatives in Action",
+      "content": "Detail concrete sustainability initiatives across operations. Fossil-free transport: Target of 100% fossil-free transport in Stockholm, Gothenburg, and Malmö by 2025, with 70% fossil-free goods transport achieved in Sweden in 2024. Food waste reduction: Commitment to halve food waste from warehouses and stores by 2025 vs 2016 baseline. Climate neutrality: Achieved climate neutrality in own operations in 2020 with 76% emission reduction since 2006, now offsetting remaining emissions through carbon credits while pursuing net-zero ambitions."
+    },
+    {
+      "number": 19,
+      "type": "chapter",
+      "title": "05: Future Outlook",
+      "content": "Strategic priorities and growth ambitions through 2030"
+    },
+    {
+      "number": 20,
+      "type": "content",
+      "title": "Strategic Priorities 2025 & Beyond",
+      "content": "Outline ICA Gruppen's strategic priorities and 2030 ambitions. Continued price investments to strengthen value proposition and customer loyalty. Digital transformation acceleration with enhanced e-commerce capabilities and data-driven personalization. Sustainability leadership through delivery of science-based climate targets. Market share expansion in core Swedish and Baltic markets through format optimization and customer experience enhancement. Cross-business synergies leveraging Stammis loyalty program across grocery, pharmacy, and banking operations."
+    },
+    {
+      "number": 21,
+      "type": "content",
+      "title": "Investment in Growth",
+      "content": "Highlight key investments and organizational changes driving future growth. Major investments in logistics efficiency and warehouse infrastructure. Digital & Technology organization formation combining Group IT, IT Services, and Strategy & Technology. Store network optimization with strategic divestments of over SEK 1.3 billion in real estate. Enhanced customer fulfillment capabilities with 65 stores connected to the Brunna automated center. Continued development of private label products to strengthen margins and customer value."
+    },
+    {
+      "number": 22,
+      "type": "final",
+      "title": "ICA Gruppen: Making Every Day Easier",
+      "content": "ICA Gruppen's unique cooperative model, diversified business portfolio, and commitment to sustainability position the company for continued success. With strong financial performance, market-leading positions, and ambitious climate targets, ICA is ready to make every day a little easier for millions of customers while delivering sustainable value to all stakeholders."
+    }
+  ]
+}
