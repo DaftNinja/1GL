@@ -2,8 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { setupAuth } from "./replit_integrations/auth/replitAuth";
-import { registerAuthRoutes } from "./replit_integrations/auth/routes";
+import { setupAuth } from "./auth/setup";
+import { registerAuthRoutes } from "./auth/routes";
 
 const app = express();
 const httpServer = createServer(app);
@@ -88,7 +88,7 @@ const PUBLIC_API_PATHS = [
 
   app.use("/api", (req: Request, res: Response, next: NextFunction) => {
     if (PUBLIC_API_PATHS.includes(req.path)) return next();
-    if (!(req.session as any)?.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();

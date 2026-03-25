@@ -1,0 +1,62 @@
+services:
+
+  # ─── Application ─────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-5000}:5000"
+    # DATABASE_URL is constructed here so it always resolves to the db service
+    # hostname. Do NOT set DATABASE_URL in your .env when using docker-compose;
+    # set POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB instead.
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-1giglabs}
+      SESSION_SECRET: ${SESSION_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      # ── Email ──────────────────────────────────────────────────────────────
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # ── Grid & energy data APIs ────────────────────────────────────────────
+      ENTSOE_API_KEY: ${ENTSOE_API_KEY:-}
+      UKPN_API_KEY: ${UKPN_API_KEY:-}
+      NGED_API_KEY: ${NGED_API_KEY:-}
+      SSEN_NERDA_API_KEY: ${SSEN_NERDA_API_KEY:-}
+      NPG_API_KEY: ${NPG_API_KEY:-}
+      ENW_API_KEY: ${ENW_API_KEY:-}
+      RTE_API_KEY: ${RTE_API_KEY:-}
+      FINGRID_API_KEY: ${FINGRID_API_KEY:-}
+      NED_API_KEY: ${NED_API_KEY:-}
+      EMBER_API_KEY: ${EMBER_API_KEY:-}
+      OEP_API_KEY: ${OEP_API_KEY:-}
+      HEIGIT_API_KEY: ${HEIGIT_API_KEY:-}
+      BAXTEL_MAPBOX_TOKEN: ${BAXTEL_MAPBOX_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── PostgreSQL 16 ───────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-1giglabs}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-1giglabs}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

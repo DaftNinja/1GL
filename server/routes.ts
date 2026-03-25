@@ -10,11 +10,10 @@ import OpenAI from "openai";
 import { registerChatRoutes } from "./replit_integrations/chat/routes";
 import { registerImageRoutes } from "./replit_integrations/image/routes";
 import { registerAudioRoutes } from "./replit_integrations/audio/routes";
-import { isAuthenticated } from "./replit_integrations/auth/replitAuth";
+import { isAuthenticated } from "./auth/setup";
 
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function registerRoutes(

@@ -1,0 +1,46 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+# Always reinstalled (and native modules recompiled) inside the container.
+node_modules/
+
+# ── Build output ──────────────────────────────────────────────────────────────
+# Always rebuilt inside the container; stale local builds must not leak in.
+dist/
+
+# ── Version control ───────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+# Never bake credentials into the image.
+.env
+.env.local
+.env.example
+
+# ── Large / generated asset directories ──────────────────────────────────────
+attached_assets/
+.cache/
+.local/
+
+# ── Large case-study files ────────────────────────────────────────────────────
+# These are excluded from git (see .gitignore) and should never enter the image.
+public/case-studies/*.html
+public/case-studies/**/*.html
+public/case-studies/**/*.png
+public/case-studies/**/*.numbers
+public/case-studies/**/*.pptx
+public/case-studies/**/*.xlsx
+public/case-studies/**/*.pdf
+public/case-studies/**/*.zip
+
+# ── Python / non-Node files ───────────────────────────────────────────────────
+main.py
+pyproject.toml
+uv.lock
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+*.md
+
+# ── Docker files themselves ───────────────────────────────────────────────────
+Dockerfile
+docker-compose.yml
+.dockerignore
