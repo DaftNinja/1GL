@@ -791,14 +791,14 @@ export interface CrossBorderFlow {
   updatedAt: string;
 }
 
-function parseFlowQuantity(doc: any): number {
+function parseFlowQuantity(doc: any): { qty: number; ts: number } {
   const root =
     doc["Publication_MarketDocument"] ||
     doc["GL_MarketDocument"] ||
     doc;
 
   let timeSeries = root["TimeSeries"];
-  if (!timeSeries) return 0;
+  if (!timeSeries) return { qty: 0, ts: 0 };
   if (!Array.isArray(timeSeries)) timeSeries = [timeSeries];
 
   let latestVal = 0;
@@ -837,10 +837,10 @@ function parseFlowQuantity(doc: any): number {
     }
   }
 
-  return latestVal;
+  return { qty: latestVal, ts: latestTime };
 }
 
-async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart: string, periodEnd: string): Promise<number> {
+async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart: string, periodEnd: string): Promise<{ value: number; ts: number }> {
   try {
     const doc = await fetchEntsoe({
       documentType: "A11",
@@ -849,14 +849,15 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
       periodStart,
       periodEnd,
     });
-    return parseFlowQuantity(doc);
+    const { qty, ts } = parseFlowQuantity(doc);
+    return { value: qty, ts };
   } catch (err: any) {
     if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-      return 0; // TSO hasn't submitted data for this border/window yet
+      return { value: 0, ts: 0 }; // TSO hasn't submitted data for this border/window yet
     }
     // Log unexpected errors (e.g. 401 auth, 400 bad params) so they show in Railway logs
     console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: ${err.message}`);
-    return 0;
+    return { value: 0, ts: 0 };
   }
 }
 
@@ -879,6 +880,7 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const periodEnd = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
   const flows: CrossBorderFlow[] = [];
+  let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
 
   const batchSize = 4;
   for (let i = 0; i < INTERCONNECTOR_PAIRS.length; i += batchSize) {
@@ -894,9 +896,15 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
           fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
         ]);
 
-        const outMw = outFlow.status === "fulfilled" ? outFlow.value : 0;
-        const inMw = inFlow.status === "fulfilled" ? inFlow.value : 0;
+        const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
+        const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
         const netMw = inMw - outMw;
+
+        // Propagate the latest data timestamp from either direction
+        const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
+        const inTs = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
+        const pairTs = Math.max(outTs, inTs);
+        if (pairTs > maxDataTs) maxDataTs = pairTs;
 
         return {
           from: pair.from,
@@ -904,7 +912,7 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
           netMw: Math.round(netMw),
           inMw: Math.round(inMw),
           outMw: Math.round(outMw),
-          updatedAt: now.toISOString(),
+          updatedAt: now.toISOString(), // filled in below once maxDataTs is known
         } as CrossBorderFlow;
       })
     );
@@ -915,6 +923,11 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
       }
     }
   }
+
+  // Replace the placeholder updatedAt with the actual most-recent ENTSO-E data timestamp.
+  // Falls back to the request time if no data points were found.
+  const dataTimestamp = maxDataTs > 0 ? new Date(maxDataTs).toISOString() : now.toISOString();
+  for (const f of flows) f.updatedAt = dataTimestamp;
 
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
   return flows;

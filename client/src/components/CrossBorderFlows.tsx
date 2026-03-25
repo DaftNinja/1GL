@@ -616,11 +616,21 @@ export default function CrossBorderFlows() {
 
         <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-400">
           <span>Source: ENTSO-E Transparency Platform · Document A11 · 1-hour cache</span>
-          {updatedAt && (
-            <span className="text-slate-500" data-testid="text-flows-timestamp">
-              Updated: {new Date(updatedAt).toLocaleString()}
-            </span>
-          )}
+          {updatedAt && (() => {
+            const dataDate = new Date(updatedAt);
+            const ageMs = Date.now() - dataDate.getTime();
+            const ageHours = Math.round(ageMs / (1000 * 60 * 60));
+            const isStale = ageHours >= 2;
+            return (
+              <span
+                className={isStale ? "text-amber-500" : "text-slate-500"}
+                title={isStale ? `ENTSO-E data is ${ageHours}h old — some TSOs publish with delay` : undefined}
+                data-testid="text-flows-timestamp"
+              >
+                {isStale && "⚠ "}Data as of {dataDate.toLocaleString()}
+              </span>
+            );
+          })()}
         </div>
       </CardContent>
     </Card>
