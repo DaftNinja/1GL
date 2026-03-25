@@ -777,7 +777,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       const data = await getDemandForecastData();
       res.json(data);
     } catch (err: any) {
-      console.error("NESO demand forecast error:", err);
+      console.error("[NESO] demand forecast error:", err?.message ?? err);
       res.status(500).json({ message: "Failed to fetch demand forecast data" });
     }
   });

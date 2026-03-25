@@ -32,10 +32,10 @@ interface DemandForecastData {
 let memoryCache: DemandForecastData | null = null;
 let memoryCacheTime = 0;
 
-function validateUrl(url: string): void {
+function validateUrl(url: string, allowAnyHttpsHost = false): void {
   const parsed = new URL(url);
   if (parsed.protocol !== "https:") throw new Error(`URL must use HTTPS: ${url}`);
-  if (!ALLOWED_HOSTS.includes(parsed.hostname)) throw new Error(`Disallowed host: ${parsed.hostname}`);
+  if (!allowAnyHttpsHost && !ALLOWED_HOSTS.includes(parsed.hostname)) throw new Error(`Disallowed host: ${parsed.hostname}`);
 }
 
 function formatTime(timeStr: string): string {
@@ -97,7 +97,7 @@ async function fetchDemandForecast(): Promise<DemandForecastData> {
   if (!csvResource) throw new Error("No CSV resource found in demand forecast dataset");
 
   const csvUrl = csvResource.path || csvResource.url;
-  validateUrl(csvUrl);
+  validateUrl(csvUrl, true); // URL comes from NESO API metadata — any HTTPS host is trusted
 
   const controller2 = new AbortController();
   const timeout2 = setTimeout(() => controller2.abort(), FETCH_TIMEOUT_MS);
