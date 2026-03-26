@@ -879,8 +879,12 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
   const periodEnd = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
+  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | window: ${periodStart} → ${periodEnd} | targetHour: ${targetHour.toISOString()}`);
+
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
+  const bordersWithData: string[] = [];
+  const bordersNoData: string[] = [];
 
   const batchSize = 4;
   for (let i = 0; i < INTERCONNECTOR_PAIRS.length; i += batchSize) {
@@ -906,6 +910,13 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
         const pairTs = Math.max(outTs, inTs);
         if (pairTs > maxDataTs) maxDataTs = pairTs;
 
+        const label = `${pair.from}→${pair.to}`;
+        if (pairTs > 0) {
+          bordersWithData.push(`${label}(${outMw}out/${inMw}in)`);
+        } else {
+          bordersNoData.push(label);
+        }
+
         return {
           from: pair.from,
           to: pair.to,
@@ -928,6 +939,14 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   // Falls back to the request time if no data points were found.
   const dataTimestamp = maxDataTs > 0 ? new Date(maxDataTs).toISOString() : now.toISOString();
   for (const f of flows) f.updatedAt = dataTimestamp;
+
+  console.log(`[ENTSOE A11] ${bordersWithData.length}/${INTERCONNECTOR_PAIRS.length} borders have data | latest data point: ${dataTimestamp}`);
+  if (bordersWithData.length > 0) {
+    console.log(`[ENTSOE A11] borders WITH data: ${bordersWithData.join(", ")}`);
+  }
+  if (bordersNoData.length > 0) {
+    console.log(`[ENTSOE A11] borders NO data (error 999 or no TSO submission): ${bordersNoData.join(", ")}`);
+  }
 
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
   return flows;
