@@ -40,12 +40,11 @@ function getNetDirection(flow: CrossBorderFlow) {
     : { exporterName: flow.from, importerName: flow.to };
 }
 
-// Only build options from latestOffset onwards — these are hours confirmed to have data.
-function buildHourOptions(latestOffset: number) {
+function buildHourOptions() {
   const options: Array<{ value: string; label: string }> = [];
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
-  for (let i = latestOffset; i < latestOffset + 24; i++) {
+  for (let i = 1; i <= 24; i++) {
     const endHour = new Date(now.getTime() - i * 60 * 60 * 1000);
     const startHour = new Date(endHour.getTime() - 60 * 60 * 1000);
     const fmt = (d: Date) => ({
@@ -55,10 +54,7 @@ function buildHourOptions(latestOffset: number) {
     });
     const s = fmt(startHour);
     const e = fmt(endHour);
-    const label = i === latestOffset
-      ? `Latest  ${s.hh}:00–${e.hh}:00 UTC`
-      : `${s.dd}/${s.mm}  ${s.hh}:00–${e.hh}:00 UTC`;
-    options.push({ value: String(i), label });
+    options.push({ value: String(i), label: `${s.dd}/${s.mm}  ${s.hh}:00–${e.hh}:00 UTC` });
   }
   return options;
 }
@@ -317,33 +313,15 @@ export default function CrossBorderFlows() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredArc, setHoveredArc] = useState<FlowArc | null>(null);
   const [tooltipLatLng, setTooltipLatLng] = useState<L.LatLng | null>(null);
-  // null = not yet determined; set once latest-hour probe resolves
-  const [hourOffset, setHourOffset] = useState<string | null>(null);
+  // Start at -4h immediately — most likely to have published data given ENTSO-E's delay
+  const [hourOffset, setHourOffset] = useState("4");
+  const [searchStatus, setSearchStatus] = useState<"loading" | "refining" | "searching" | "done" | "exhausted">("loading");
+  const refinedRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Step 1: find the most recent hour ENTSO-E has published data for
-  const { data: latestHour, isLoading: isDetecting, error: detectError } =
-    useQuery<{ latestOffset: number; dataHour: string }>({
-      queryKey: ["/api/entsoe/cross-border-flows/latest-hour"],
-      queryFn: () =>
-        fetch("/api/entsoe/cross-border-flows/latest-hour", { credentials: "include" }).then(r => {
-          if (!r.ok) throw new Error(`${r.status}`);
-          return r.json();
-        }),
-      staleTime: 30 * 60 * 1000,
-      retry: 1,
-    });
+  const hourOptions = buildHourOptions();
 
-  // Once we know the latest offset, initialise the hour selector to it
-  useEffect(() => {
-    if (latestHour?.latestOffset !== undefined && hourOffset === null) {
-      setHourOffset(String(latestHour.latestOffset));
-    }
-  }, [latestHour, hourOffset]);
-
-  const hourOptions = latestHour ? buildHourOptions(latestHour.latestOffset) : [];
-
-  // Step 2: fetch flows — only after we know which hour to target
   const { data: flows, isLoading, error, refetch, isFetching } = useQuery<CrossBorderFlow[]>({
     queryKey: ["/api/entsoe/cross-border-flows", hourOffset],
     queryFn: () =>
@@ -351,20 +329,89 @@ export default function CrossBorderFlows() {
         if (!r.ok) throw new Error(`${r.status}`);
         return r.json();
       }),
-    enabled: hourOffset !== null,
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
 
-  // Human-readable label for the currently selected hour, e.g. "11:00–12:00 UTC"
+  // Background refinement: once initial data loads, silently search for a better hour
+  useEffect(() => {
+    if (flows === undefined) return;
+    if (refinedRef.current) return;
+    refinedRef.current = true;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const currentOffset = parseInt(hourOffset);
+    const hasData = flows.some(f => Math.abs(f.netMw) >= 10);
+
+    async function run() {
+      if (hasData) {
+        // Data found — silently check if a more recent hour has data (-3, -2, -1)
+        setSearchStatus("refining");
+        for (let offset = 1; offset < currentOffset; offset++) {
+          if (controller.signal.aborted) return;
+          try {
+            const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
+              credentials: "include",
+              signal: controller.signal,
+            });
+            if (!r.ok) continue;
+            const data: CrossBorderFlow[] = await r.json();
+            if (data.some(f => Math.abs(f.netMw) >= 10)) {
+              if (!controller.signal.aborted) {
+                refinedRef.current = false; // allow the next load's effect to mark done
+                setHourOffset(String(offset));
+                setSearchStatus("done");
+              }
+              return;
+            }
+          } catch { return; }
+        }
+        if (!controller.signal.aborted) setSearchStatus("done");
+      } else {
+        // No data at -4h — step backwards until we find something
+        setSearchStatus("searching");
+        for (let offset = currentOffset + 1; offset <= 23; offset++) {
+          if (controller.signal.aborted) return;
+          try {
+            const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
+              credentials: "include",
+              signal: controller.signal,
+            });
+            if (!r.ok) continue;
+            const data: CrossBorderFlow[] = await r.json();
+            if (data.some(f => Math.abs(f.netMw) >= 10)) {
+              if (!controller.signal.aborted) {
+                refinedRef.current = false;
+                setHourOffset(String(offset));
+                setSearchStatus("done");
+              }
+              return;
+            }
+          } catch { return; }
+        }
+        if (!controller.signal.aborted) setSearchStatus("exhausted");
+      }
+    }
+
+    run();
+    return () => { controller.abort(); };
+  }, [flows]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Human-readable period label, e.g. "Cross-border flows at 11:00 UTC today"
   const displayHourLabel = (() => {
-    if (hourOffset === null) return null;
     const now = new Date();
     now.setUTCMinutes(0, 0, 0);
-    const end = new Date(now.getTime() - parseInt(hourOffset) * 60 * 60 * 1000);
-    const start = new Date(end.getTime() - 60 * 60 * 1000);
-    const hh = (d: Date) => d.getUTCHours().toString().padStart(2, "0");
-    return `${hh(start)}:00–${hh(end)}:00 UTC`;
+    const dataHour = new Date(now.getTime() - parseInt(hourOffset) * 60 * 60 * 1000);
+    const hh = dataHour.getUTCHours().toString().padStart(2, "0");
+    const isToday =
+      dataHour.getUTCDate() === now.getUTCDate() &&
+      dataHour.getUTCMonth() === now.getUTCMonth();
+    if (isToday) return `Cross-border flows at ${hh}:00 UTC today`;
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `Cross-border flows at ${hh}:00 UTC on ${dataHour.getUTCDate()} ${monthNames[dataHour.getUTCMonth()]}`;
   })();
 
   const initMap = useCallback((node: HTMLDivElement | null) => {
@@ -489,7 +536,7 @@ export default function CrossBorderFlows() {
             <CardTitle className="text-lg flex items-center gap-2" data-testid="text-cross-border-title">
               <ArrowRightLeft className="w-4 h-4 text-blue-500" />
               Cross-border Physical Flows
-              {!isDetecting && !isLoading && !hasError && flows && flows.length > 0 && (
+              {!isLoading && !hasError && flows && flows.length > 0 && (
                 <Badge variant="outline" className="text-xs font-normal border-blue-200 text-blue-600 gap-1">
                   <Radio className="w-3 h-3 animate-pulse" />
                   ENTSO-E Live
@@ -502,21 +549,24 @@ export default function CrossBorderFlows() {
                 <span className="ml-1 text-blue-500 font-medium">· Viewing {selectedCountry}'s perspective</span>
               )}
             </p>
-            {displayHourLabel && (
-              <p className="text-xs text-slate-400 mt-0.5">
-                Showing flows for <span className="font-medium text-slate-500">{displayHourLabel}</span>
-              </p>
-            )}
+            <p className="text-xs text-slate-400 mt-0.5">
+              {searchStatus === "searching"
+                ? "Searching for latest available ENTSO-E data…"
+                : <span className="font-medium text-slate-500">{displayHourLabel}</span>
+              }
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Select
-              value={hourOffset ?? ""}
-              onValueChange={setHourOffset}
-              disabled={isDetecting || hourOptions.length === 0}
+              value={hourOffset}
+              onValueChange={(v) => {
+                refinedRef.current = true; // don't auto-refine manual selections
+                setHourOffset(v);
+              }}
             >
               <SelectTrigger className="w-[190px] h-8 text-xs" data-testid="select-hour-offset">
-                <SelectValue placeholder={isDetecting ? "Detecting…" : "Select hour"} />
+                <SelectValue placeholder="Select hour" />
               </SelectTrigger>
               <SelectContent className="z-[9999]">
                 {hourOptions.map(opt => (
@@ -526,7 +576,7 @@ export default function CrossBorderFlows() {
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching || hourOffset === null}
+            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}
               className="gap-1.5 h-8" data-testid="button-refresh-flows">
               <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
@@ -566,14 +616,7 @@ export default function CrossBorderFlows() {
       </CardHeader>
 
       <CardContent className="p-0 relative">
-        {(isDetecting || (hourOffset === null && !detectError)) && (
-          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="detecting-cross-border">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-            <p className="text-sm font-medium text-slate-600">Finding latest available data from ENTSO-E…</p>
-            <p className="text-xs text-slate-400">Checking which hours have been published</p>
-          </div>
-        )}
-        {isLoading && !flows && hourOffset !== null && (
+        {isLoading && !flows && (
           <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="loading-cross-border">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             <p className="text-sm text-slate-400">Loading cross-border flow data…</p>
@@ -593,7 +636,24 @@ export default function CrossBorderFlows() {
             </Button>
           </div>
         )}
-        {noData && !hasError && (
+        {noData && !hasError && searchStatus === "searching" && (
+          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="searching-cross-border">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+            <p className="text-sm font-medium text-slate-600">Loading cross-border flow data…</p>
+            <p className="text-xs text-slate-400">Checking recently published hours from ENTSO-E</p>
+          </div>
+        )}
+        {noData && !hasError && searchStatus === "exhausted" && (
+          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="exhausted-cross-border">
+            <ArrowRightLeft className="w-8 h-8 text-slate-300" />
+            <p className="text-sm text-slate-500">Cross-border flow data is temporarily unavailable from ENTSO-E.</p>
+            <p className="text-xs text-slate-400">Data is typically published with a 2–4 hour delay.</p>
+            <Button size="sm" variant="outline" onClick={() => { refinedRef.current = false; refetch(); }} className="mt-1">
+              Try Again
+            </Button>
+          </div>
+        )}
+        {noData && !hasError && searchStatus === "loading" && !isLoading && (
           <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="nodata-cross-border">
             <ArrowRightLeft className="w-8 h-8 text-slate-300" />
             <p className="text-sm text-slate-500">No cross-border flow data available.</p>
