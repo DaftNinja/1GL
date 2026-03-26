@@ -861,6 +861,46 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
   }
 }
 
+// Two high-volume interconnectors used as lightweight data-availability probes.
+// If either has ENTSO-E data for a given hour, we treat that hour as available.
+const PROBE_PAIRS: Array<{ from: string; to: string }> = [
+  { from: "Germany", to: "France" },
+  { from: "Norway",  to: "Sweden" },
+];
+const LATEST_OFFSET_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+async function probeHourHasData(offset: number): Promise<boolean> {
+  const now = new Date();
+  now.setUTCMinutes(0, 0, 0);
+  const targetHour = new Date(now.getTime() - offset * 60 * 60 * 1000);
+  // Narrow ±1h window for precise per-hour detection
+  const periodStart = formatDate(new Date(targetHour.getTime() - 60 * 60 * 1000));
+  const periodEnd   = formatDate(new Date(targetHour.getTime() + 60 * 60 * 1000));
+  for (const pair of PROBE_PAIRS) {
+    const fromEic = COUNTRY_EIC[pair.from]?.eic;
+    const toEic   = COUNTRY_EIC[pair.to]?.eic;
+    if (!fromEic || !toEic) continue;
+    const { ts } = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
+    if (ts > 0) return true;
+  }
+  return false;
+}
+
+export async function findLatestAvailableHourOffset(): Promise<number> {
+  const cacheKey = "latest-available-offset";
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.fetchedAt < LATEST_OFFSET_CACHE_TTL_MS) {
+    return cached.data as number;
+  }
+  let found = 1; // fallback: 1 hour ago
+  for (let offset = 0; offset <= 23; offset++) {
+    if (await probeHourHasData(offset)) { found = offset; break; }
+  }
+  console.log(`[ENTSOE A11] latest available hour offset: ${found}`);
+  cache.set(cacheKey, { data: found, fetchedAt: Date.now() });
+  return found;
+}
+
 export async function getCrossBorderFlows(hourOffset: number = 0): Promise<CrossBorderFlow[]> {
   const cacheKey = `cross-border-flows:${hourOffset}`;
   const cached = cache.get(cacheKey);

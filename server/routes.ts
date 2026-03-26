@@ -942,6 +942,23 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  app.get("/api/entsoe/cross-border-flows/latest-hour", isAuthenticated, async (req, res) => {
+    try {
+      const { findLatestAvailableHourOffset, isEntsoeConfigured } = await import("./entsoe");
+      if (!isEntsoeConfigured()) {
+        return res.status(503).json({ message: "ENTSOE_API_KEY not configured" });
+      }
+      const latestOffset = await findLatestAvailableHourOffset();
+      const now = new Date();
+      now.setUTCMinutes(0, 0, 0);
+      const dataHour = new Date(now.getTime() - latestOffset * 60 * 60 * 1000);
+      res.json({ latestOffset, dataHour: dataHour.toISOString() });
+    } catch (err: any) {
+      console.error("ENTSO-E latest-hour route error:", err);
+      res.status(500).json({ message: "Failed to detect latest available hour", error: err.message });
+    }
+  });
+
   app.get("/api/entsoe/cross-border-flows", isAuthenticated, async (req, res) => {
     try {
       const { getCrossBorderFlows, isEntsoeConfigured } = await import("./entsoe");
