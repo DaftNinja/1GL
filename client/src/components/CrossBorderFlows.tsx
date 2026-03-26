@@ -222,19 +222,7 @@ class FlowSVGLayer {
       const weight = lineWeight(arc.netMw);
       const pts = bezierLatLngPoints(arc.originLat, arc.originLng, arc.destLat, arc.destLng);
 
-      if (!active) {
-        // Inactive: single dashed grey line, no interaction needed
-        const line = L.polyline(pts, {
-          color: "#94a3b8",
-          weight: 1.5,
-          opacity: relevant ? 0.35 : 0.1,
-          dashArray: "5 6",
-          interactive: false,
-        }).addTo(this.map);
-        // Store as a degenerate ArcLayer so clear() can remove it
-        this.arcLayers.push({ ghost: line, anim: line, hit: line, arc, weight: 1.5, color: "#94a3b8" });
-        continue;
-      }
+      if (!active) continue; // flow < 10 MW — skip rather than show a blank line
 
       // 1. Ghost line — thin solid track so the path is always visible
       const ghost = L.polyline(pts, {
@@ -294,14 +282,9 @@ class FlowSVGLayer {
 
   private _updateStyles() {
     for (const al of this.arcLayers) {
-      const active = Math.abs(al.arc.netMw) >= 10;
       const relevant = this._isRelevant(al.arc);
-      if (!active) {
-        al.ghost.setStyle({ opacity: relevant ? 0.35 : 0.1 });
-      } else {
-        al.ghost.setStyle({ opacity: relevant ? 0.25 : 0.08 });
-        al.anim.setStyle({ opacity: relevant ? 0.85 : 0.15 });
-      }
+      al.ghost.setStyle({ opacity: relevant ? 0.25 : 0.08 });
+      al.anim.setStyle({ opacity: relevant ? 0.85 : 0.15 });
     }
   }
 
@@ -388,15 +371,7 @@ export default function CrossBorderFlows() {
       const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
       if (!fromCoord || !toCoord) continue;
 
-      if (!flow) {
-        arcs.push({
-          originLat: fromCoord[0], originLng: fromCoord[1],
-          destLat: toCoord[0], destLng: toCoord[1],
-          netMw: 0, fromName: ic.from, toName: ic.to,
-          icFrom: ic.from, icTo: ic.to, outMw: 0, inMw: 0,
-        });
-        continue;
-      }
+      if (!flow) continue; // no ENTSO-E data for this border — skip entirely
 
       const { exporterName, importerName } = getNetDirection(flow);
       const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
