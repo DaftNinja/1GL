@@ -901,8 +901,8 @@ export async function findLatestAvailableHourOffset(): Promise<number> {
   return found;
 }
 
-export async function getCrossBorderFlows(dayOffset: number = 1): Promise<CrossBorderFlow[]> {
-  const cacheKey = `cross-border-flows-day:${dayOffset}`;
+export async function getCrossBorderFlows(hourOffset: number = 12): Promise<CrossBorderFlow[]> {
+  const cacheKey = `cross-border-flows:${hourOffset}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CROSS_BORDER_CACHE_TTL_MS) {
     return cached.data;
@@ -912,13 +912,15 @@ export async function getCrossBorderFlows(dayOffset: number = 1): Promise<CrossB
   if (!token) return [];
 
   const now = new Date();
-  // Full UTC day window for the target day (00:00 → 00:00 next day)
-  const targetDayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOffset, 0, 0, 0));
-  const targetDayEnd   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOffset + 1, 0, 0, 0));
-  const periodStart = formatDate(targetDayStart);
-  const periodEnd   = formatDate(targetDayEnd);
+  now.setUTCMinutes(0, 0, 0);
+  const targetHour = new Date(now.getTime() - hourOffset * 60 * 60 * 1000);
+  // ±6h window: Balkan/SE-European TSOs publish with up to 3–4h lag on ENTSO-E TP.
+  // parseFlowQuantity picks the latest available point, so the window just needs to
+  // contain the target hour slot; wider is more tolerant of late TSO submissions.
+  const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
+  const periodEnd   = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
-  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | day offset: ${dayOffset} | window: ${periodStart} → ${periodEnd}`);
+  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs

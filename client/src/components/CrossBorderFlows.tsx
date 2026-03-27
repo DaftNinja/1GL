@@ -40,18 +40,19 @@ function getNetDirection(flow: CrossBorderFlow) {
     : { exporterName: flow.from, importerName: flow.to };
 }
 
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-function buildDayOptions() {
+function buildHourOptions() {
   const options: Array<{ value: string; label: string }> = [];
   const now = new Date();
-  for (let i = 0; i <= 7; i++) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
-    const label = i === 0
-      ? `Today (${d.getUTCDate()} ${MONTH_SHORT[d.getUTCMonth()]})`
-      : `${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-    options.push({ value: String(i), label });
+  now.setUTCMinutes(0, 0, 0);
+  for (let i = 0; i <= 36; i++) {
+    const h = new Date(now.getTime() - i * 60 * 60 * 1000);
+    const hh = h.getUTCHours().toString().padStart(2, "0");
+    const dd = h.getUTCDate();
+    const mon = MONTH_SHORT[h.getUTCMonth()];
+    const yyyy = h.getUTCFullYear();
+    options.push({ value: String(i), label: `${dd} ${mon} ${yyyy}, ${hh}:00 UTC` });
   }
   return options;
 }
@@ -310,19 +311,19 @@ export default function CrossBorderFlows() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredArc, setHoveredArc] = useState<FlowArc | null>(null);
   const [tooltipLatLng, setTooltipLatLng] = useState<L.LatLng | null>(null);
-  // Default to yesterday (dayOffset=1) — A11 data typically published with ~24h delay
-  const [dayOffset, setDayOffset] = useState("1");
+  // Default to current hour minus 12 — safe starting point given ~11h A11 publication delay
+  const [hourOffset, setHourOffset] = useState("12");
   const [searchStatus, setSearchStatus] = useState<"loading" | "refining" | "searching" | "done" | "exhausted">("loading");
   const refinedRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const dayOptions = buildDayOptions();
+  const hourOptions = buildHourOptions();
 
   const { data: flows, isLoading, error, refetch, isFetching } = useQuery<CrossBorderFlow[]>({
-    queryKey: ["/api/entsoe/cross-border-flows", dayOffset],
+    queryKey: ["/api/entsoe/cross-border-flows", hourOffset],
     queryFn: () =>
-      fetch(`/api/entsoe/cross-border-flows?dayOffset=${dayOffset}`, { credentials: "include" }).then(r => {
+      fetch(`/api/entsoe/cross-border-flows?hourOffset=${hourOffset}`, { credentials: "include" }).then(r => {
         if (!r.ok) throw new Error(`${r.status}`);
         return r.json();
       }),
@@ -330,7 +331,8 @@ export default function CrossBorderFlows() {
     retry: 1,
   });
 
-  // Background refinement: once initial data loads, check if a more recent day has data
+  // Background refinement: once -12h data loads, search forward for the most recent
+  // available hour (-11, -10, -9 …); if -12h is empty, step backward (-13, -14 …)
   useEffect(() => {
     if (flows === undefined) return;
     if (refinedRef.current) return;
@@ -340,41 +342,44 @@ export default function CrossBorderFlows() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const currentDay = parseInt(dayOffset);
+    const currentOffset = parseInt(hourOffset);
     const hasData = flows.some(f => Math.abs(f.netMw) >= 10);
 
     async function run() {
       if (hasData) {
-        // Yesterday has data — silently check if today's data is available yet
+        // Data found at -12h — scan forward (smaller offsets = more recent) to find the latest available hour
         setSearchStatus("refining");
-        if (currentDay > 0) {
+        let bestOffset = currentOffset;
+        for (let offset = currentOffset - 1; offset >= 0; offset--) {
           if (controller.signal.aborted) return;
           try {
-            const r = await fetch(`/api/entsoe/cross-border-flows?dayOffset=0`, {
+            const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
               credentials: "include",
               signal: controller.signal,
             });
-            if (r.ok) {
-              const data: CrossBorderFlow[] = await r.json();
-              if (data.some(f => Math.abs(f.netMw) >= 10)) {
-                if (!controller.signal.aborted) {
-                  refinedRef.current = false;
-                  setDayOffset("0");
-                  setSearchStatus("done");
-                  return;
-                }
-              }
+            if (!r.ok) break;
+            const data: CrossBorderFlow[] = await r.json();
+            if (data.some(f => Math.abs(f.netMw) >= 10)) {
+              bestOffset = offset;
+            } else {
+              break; // gap in data — stop here
             }
-          } catch { /* ignore */ }
+          } catch { break; }
         }
-        if (!controller.signal.aborted) setSearchStatus("done");
+        if (!controller.signal.aborted) {
+          if (bestOffset !== currentOffset) {
+            refinedRef.current = false;
+            setHourOffset(String(bestOffset));
+          }
+          setSearchStatus("done");
+        }
       } else {
-        // No data for yesterday — step back day by day up to 7 days ago
+        // No data at -12h — step backward (-13, -14 …) until we find something
         setSearchStatus("searching");
-        for (let d = currentDay + 1; d <= 7; d++) {
+        for (let offset = currentOffset + 1; offset <= 36; offset++) {
           if (controller.signal.aborted) return;
           try {
-            const r = await fetch(`/api/entsoe/cross-border-flows?dayOffset=${d}`, {
+            const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
               credentials: "include",
               signal: controller.signal,
             });
@@ -383,7 +388,7 @@ export default function CrossBorderFlows() {
             if (data.some(f => Math.abs(f.netMw) >= 10)) {
               if (!controller.signal.aborted) {
                 refinedRef.current = false;
-                setDayOffset(String(d));
+                setHourOffset(String(offset));
                 setSearchStatus("done");
               }
               return;
@@ -398,11 +403,13 @@ export default function CrossBorderFlows() {
     return () => { controller.abort(); };
   }, [flows]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Human-readable period label, e.g. "Cross-border flows: 26 March 2026"
-  const displayDayLabel = (() => {
+  // Human-readable period label, e.g. "Cross-border flows: 27 Mar 2026, 06:00 UTC"
+  const displayHourLabel = (() => {
     const now = new Date();
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - parseInt(dayOffset)));
-    return `Cross-border flows: ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    now.setUTCMinutes(0, 0, 0);
+    const h = new Date(now.getTime() - parseInt(hourOffset) * 60 * 60 * 1000);
+    const hh = h.getUTCHours().toString().padStart(2, "0");
+    return `Cross-border flows: ${h.getUTCDate()} ${MONTH_SHORT[h.getUTCMonth()]} ${h.getUTCFullYear()}, ${hh}:00 UTC`;
   })();
 
   const initMap = useCallback((node: HTMLDivElement | null) => {
@@ -543,25 +550,25 @@ export default function CrossBorderFlows() {
             <p className="text-xs text-slate-400 mt-0.5">
               {searchStatus === "searching"
                 ? "Searching for latest available ENTSO-E data…"
-                : <span className="font-medium text-slate-500">{displayDayLabel}</span>
+                : <span className="font-medium text-slate-500">{displayHourLabel}</span>
               }
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Select
-              value={dayOffset}
+              value={hourOffset}
               onValueChange={(v) => {
                 refinedRef.current = true; // don't auto-refine manual selections
-                setDayOffset(v);
+                setHourOffset(v);
               }}
             >
-              <SelectTrigger className="w-[210px] h-8 text-xs" data-testid="select-day-offset">
-                <SelectValue placeholder="Select date" />
+              <SelectTrigger className="w-[210px] h-8 text-xs" data-testid="select-hour-offset">
+                <SelectValue placeholder="Select hour" />
               </SelectTrigger>
               <SelectContent className="z-[9999]">
-                {dayOptions.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value} data-testid={`select-day-${opt.value}`}>
+                {hourOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value} data-testid={`select-hour-${opt.value}`}>
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -638,7 +645,7 @@ export default function CrossBorderFlows() {
           <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="exhausted-cross-border">
             <ArrowRightLeft className="w-8 h-8 text-slate-300" />
             <p className="text-sm text-slate-500">Cross-border flow data is temporarily unavailable from ENTSO-E.</p>
-            <p className="text-xs text-slate-400">Physical flow data (A11) is typically published with a 24-hour delay.</p>
+            <p className="text-xs text-slate-400">Physical flow data (A11) is typically published with an 11-hour delay.</p>
             <Button size="sm" variant="outline" onClick={() => { refinedRef.current = false; refetch(); }} className="mt-1">
               Try Again
             </Button>
@@ -684,7 +691,7 @@ export default function CrossBorderFlows() {
         </div>
 
         <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-400">
-          <span>Source: ENTSO-E Transparency Platform · Document A11 · ~24h publication delay</span>
+          <span>Source: ENTSO-E Transparency Platform · Document A11 · ~11h publication delay</span>
           {updatedAt && (
             <span className="text-slate-500" data-testid="text-flows-timestamp">
               Latest data point: {new Date(updatedAt).toLocaleString()}
