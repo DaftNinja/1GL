@@ -44,10 +44,15 @@ async function resolveResourceUrl(resourceId: string, apiKey: string): Promise<s
       signal: controller.signal,
       headers: { Authorization: apiKey },
     });
+    // --- TEMPORARY DIAGNOSTIC LOGGING ---
+    const rawText = await res.text().catch(() => "");
+    console.log(`[NGED-DEBUG] resource_show status: ${res.status} for resource ${resourceId}`);
+    console.log(`[NGED-DEBUG] resource_show response (first 200 chars): ${rawText.slice(0, 200)}`);
+    // --- END TEMPORARY LOGGING ---
     if (!res.ok) {
-      throw new Error(`CKAN resource_show ${res.status} for ${resourceId}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      throw new Error(`CKAN resource_show ${res.status} for ${resourceId}: ${rawText.slice(0, 200)}`);
     }
-    const json = await res.json() as { success: boolean; result?: { url?: string } };
+    const json = JSON.parse(rawText) as { success: boolean; result?: { url?: string } };
     if (!json.success || !json.result?.url) {
       throw new Error(`CKAN resource_show did not return a URL for resource ${resourceId}`);
     }
@@ -649,6 +654,13 @@ function normaliseStatus(raw: string): string {
 
 export async function getGenerationRegister(): Promise<NGEDGenerationRegisterResult> {
   if (cacheGenReg && Date.now() - cacheGenRegTime < MEM_TTL) return cacheGenReg;
+
+  // --- TEMPORARY DIAGNOSTIC LOGGING ---
+  const apiKeyPresent = !!(process.env.NGED_API_KEY || process.env.NATIONAL_GRID_API_KEY);
+  console.log(`[NGED-DEBUG] getGenerationRegister called`);
+  console.log(`[NGED-DEBUG] NGED_API_KEY present: ${apiKeyPresent}`);
+  console.log(`[NGED-DEBUG] resource_show URL: ${CKAN_RESOURCE_SHOW}?id=${RESOURCE_IDS.generationRegister}`);
+  // --- END TEMPORARY LOGGING ---
 
   const csv = await fetchAuthenticatedCSV(RESOURCE_IDS.generationRegister, "gcr.csv");
   const rows = parseCSVLines(csv);
