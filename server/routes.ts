@@ -45,18 +45,34 @@ export async function registerRoutes(
         }
       }
 
-      // Fetch live ENTSO-E price data to enrich the AI prompt
+      // Fetch live ENTSO-E price data to enrich the AI prompt.
+      // Failures are fully isolated — ENTSO-E outages must never block the AI response.
       let liveEntsoeContext = "";
+      let entsoeDataWarning = "";
       try {
         const { getCountryDayAheadPrices, getCountryGeneration, isEntsoeConfigured } = await import("./entsoe");
         if (isEntsoeConfigured()) {
+          // Enforce a hard 10-second ceiling on the combined ENTSO-E fetch so that
+          // even a slow/degraded API cannot delay the overall HTTP response.
+          const entsoeTimeout = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), 10000)
+          );
+
           const [priceData, genData] = await Promise.allSettled([
-            getCountryDayAheadPrices(country),
-            getCountryGeneration(country),
+            Promise.race([getCountryDayAheadPrices(country), entsoeTimeout]),
+            Promise.race([getCountryGeneration(country), entsoeTimeout]),
           ]);
 
           const prices = priceData.status === "fulfilled" ? priceData.value : null;
           const gen = genData.status === "fulfilled" ? genData.value : null;
+
+          if (priceData.status === "rejected") {
+            console.warn(`[routes] ENTSO-E prices fetch rejected for ${country}:`, priceData.reason?.message);
+            entsoeDataWarning = "Live ENTSO-E price data unavailable (API outage) — analysis uses historical benchmarks.";
+          }
+          if (genData.status === "rejected") {
+            console.warn(`[routes] ENTSO-E generation fetch rejected for ${country}:`, genData.reason?.message);
+          }
 
           if (prices && prices.monthly.length > 0) {
             const recent = prices.monthly.slice(-6);
@@ -68,6 +84,8 @@ export async function registerRoutes(
               .map(m => `${m.year}-${String(m.month).padStart(2,"0")}: avg €${m.avgEurMwh.toFixed(2)} (min €${m.minEurMwh.toFixed(2)}, max €${m.maxEurMwh.toFixed(2)})`)
               .join("\n");
             liveEntsoeContext += `\nLIVE ENTSO-E DAY-AHEAD PRICES — ${country} (fetched ${new Date().toISOString().slice(0,10)}, ${prices.currency}/MWh):\nAnnual averages: ${annualLines}\nRecent 6 months:\n${monthlyLines}\nLatest day avg: ${prices.latestDayAvg != null ? `€${prices.latestDayAvg.toFixed(2)}/MWh (${prices.latestDayDate})` : "N/A"}\n`;
+          } else if (!prices) {
+            entsoeDataWarning = entsoeDataWarning || "Live ENTSO-E price data unavailable — analysis uses historical benchmarks.";
           }
 
           if (gen && gen.fuels.length > 0) {
@@ -78,7 +96,9 @@ export async function registerRoutes(
           }
         }
       } catch (e: any) {
+        // Catch-all: ENTSO-E failures must never propagate to the user
         console.warn("Could not fetch live ENTSO-E data for prompt:", e.message);
+        entsoeDataWarning = "Live ENTSO-E data temporarily unavailable — analysis uses historical benchmarks.";
       }
 
       const completion = await openai.chat.completions.create({
@@ -736,7 +756,13 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         metadata: { country }, ipAddress: req.ip || req.socket.remoteAddress || null,
       }).catch(() => {});
 
-      res.status(201).json(analysis);
+      // Surface a warning to the client when live ENTSO-E data was unavailable so
+      // the UI can inform the user that pricing figures are based on historical data.
+      const responsePayload = entsoeDataWarning
+        ? { ...analysis, liveDataWarning: entsoeDataWarning }
+        : analysis;
+
+      res.status(201).json(responsePayload);
     } catch (err) {
       console.error("Power Trends generation error:", err);
       if (err instanceof z.ZodError) {
