@@ -901,8 +901,8 @@ export async function findLatestAvailableHourOffset(): Promise<number> {
   return found;
 }
 
-export async function getCrossBorderFlows(hourOffset: number = 0): Promise<CrossBorderFlow[]> {
-  const cacheKey = `cross-border-flows:${hourOffset}`;
+export async function getCrossBorderFlows(dayOffset: number = 1): Promise<CrossBorderFlow[]> {
+  const cacheKey = `cross-border-flows-day:${dayOffset}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CROSS_BORDER_CACHE_TTL_MS) {
     return cached.data;
@@ -912,14 +912,13 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   if (!token) return [];
 
   const now = new Date();
-  now.setUTCMinutes(0, 0, 0);
-  const targetHour = new Date(now.getTime() - hourOffset * 60 * 60 * 1000);
-  // 6-hour lookback: Balkan/SE-European TSOs publish with up to 3–4h lag on ENTSO-E TP.
-  // parseFlowQuantity always picks the latest available point in the window.
-  const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
-  const periodEnd = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
+  // Full UTC day window for the target day (00:00 → 00:00 next day)
+  const targetDayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOffset, 0, 0, 0));
+  const targetDayEnd   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOffset + 1, 0, 0, 0));
+  const periodStart = formatDate(targetDayStart);
+  const periodEnd   = formatDate(targetDayEnd);
 
-  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | window: ${periodStart} → ${periodEnd} | targetHour: ${targetHour.toISOString()}`);
+  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | day offset: ${dayOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
@@ -963,7 +962,7 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
           netMw: Math.round(netMw),
           inMw: Math.round(inMw),
           outMw: Math.round(outMw),
-          updatedAt: now.toISOString(), // filled in below once maxDataTs is known
+          updatedAt: new Date().toISOString(), // filled in below once maxDataTs is known
         } as CrossBorderFlow;
       })
     );
@@ -977,7 +976,7 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
 
   // Replace the placeholder updatedAt with the actual most-recent ENTSO-E data timestamp.
   // Falls back to the request time if no data points were found.
-  const dataTimestamp = maxDataTs > 0 ? new Date(maxDataTs).toISOString() : now.toISOString();
+  const dataTimestamp = maxDataTs > 0 ? new Date(maxDataTs).toISOString() : new Date().toISOString();
   for (const f of flows) f.updatedAt = dataTimestamp;
 
   console.log(`[ENTSOE A11] ${bordersWithData.length}/${INTERCONNECTOR_PAIRS.length} borders have data | latest data point: ${dataTimestamp}`);
