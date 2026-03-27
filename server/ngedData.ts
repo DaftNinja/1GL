@@ -44,11 +44,7 @@ async function resolveResourceUrl(resourceId: string, apiKey: string): Promise<s
       signal: controller.signal,
       headers: { Authorization: apiKey },
     });
-    // --- TEMPORARY DIAGNOSTIC LOGGING ---
     const rawText = await res.text().catch(() => "");
-    console.log(`[NGED-DEBUG] resource_show status: ${res.status} for resource ${resourceId}`);
-    console.log(`[NGED-DEBUG] resource_show response (first 200 chars): ${rawText.slice(0, 200)}`);
-    // --- END TEMPORARY LOGGING ---
     if (!res.ok) {
       throw new Error(`CKAN resource_show ${res.status} for ${resourceId}: ${rawText.slice(0, 200)}`);
     }
@@ -174,8 +170,6 @@ async function fetchAuthenticatedCSV(resourceId: string, cacheFile: string, bypa
         return await fs.readFile(cachePath, "utf-8");
       }
     } catch {}
-  } else {
-    console.log(`[NGED-DEBUG] Cache bypass active — skipping disk cache for ${cacheFile}`);
   }
 
   const downloadUrl = await resolveResourceUrl(resourceId, apiKey);
@@ -659,14 +653,7 @@ function normaliseStatus(raw: string): string {
 export async function getGenerationRegister(bypassCache = false): Promise<NGEDGenerationRegisterResult> {
   if (!bypassCache && cacheGenReg && Date.now() - cacheGenRegTime < MEM_TTL) return cacheGenReg;
 
-  // --- TEMPORARY DIAGNOSTIC LOGGING ---
-  const apiKeyPresent = !!(process.env.NGED_API_KEY || process.env.NATIONAL_GRID_API_KEY);
-  console.log(`[NGED-DEBUG] getGenerationRegister called (bypassCache=${bypassCache})`);
-  console.log(`[NGED-DEBUG] NGED_API_KEY present: ${apiKeyPresent}`);
-  console.log(`[NGED-DEBUG] resource_show URL: ${CKAN_RESOURCE_SHOW}?id=${RESOURCE_IDS.generationRegister}`);
-  // --- END TEMPORARY LOGGING ---
-
-  const csv = await fetchAuthenticatedCSV(RESOURCE_IDS.generationRegister, "gcr.csv", bypassCache);
+  const csv = await fetchAuthenticatedCSV(RESOURCE_IDS.generationRegister, "gcr.csv");
   const rows = parseCSVLines(csv);
   if (rows.length < 2) {
     return {
