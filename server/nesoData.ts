@@ -152,14 +152,33 @@ async function fetchAndConvert(): Promise<SSEPData> {
   }
 
   const resources = meta.result.resources as any[];
+  if (!resources?.length) throw new Error("NESO SSEP dataset returned no resources");
 
+  console.log(`[NESO] ${resources.length} resources found in dataset ${DATASET_ID}:`);
+  for (const r of resources) {
+    console.log(`[NESO]   position=${r.position} name="${r.name}" format=${r.format} path=${r.path || r.url}`);
+  }
+
+  // Match by name keywords; fall back to positional order (onshore=0, offshore=1, economic=2)
+  // for future-proofing against NESO naming changes.
   const resourceMap: Record<string, string> = {};
   for (const r of resources) {
-    const name = (r.name || "").toLowerCase();
-    if (name.includes("onshore")) resourceMap.onshore = r.path || r.url;
-    else if (name.includes("offshore")) resourceMap.offshore = r.path || r.url;
-    else if (name.includes("economic")) resourceMap.economic = r.path || r.url;
+    const name = (r.name || r.title || "").toLowerCase();
+    const downloadUrl = r.path || r.url;
+    if (!downloadUrl) continue;
+    if (name.includes("onshore")) resourceMap.onshore = downloadUrl;
+    else if (name.includes("offshore")) resourceMap.offshore = downloadUrl;
+    else if (name.includes("economic")) resourceMap.economic = downloadUrl;
   }
+
+  // Positional fallback: dataset publishes exactly [onshore, offshore, economic] in order
+  const zipResources = resources.filter(r => (r.format || "").toUpperCase() === "ZIP" && (r.path || r.url));
+  if (!resourceMap.onshore && zipResources[0]) resourceMap.onshore = zipResources[0].path || zipResources[0].url;
+  if (!resourceMap.offshore && zipResources[1]) resourceMap.offshore = zipResources[1].path || zipResources[1].url;
+  if (!resourceMap.economic && zipResources[2]) resourceMap.economic = zipResources[2].path || zipResources[2].url;
+
+  if (!resourceMap.onshore) throw new Error("Could not locate onshore ZIP resource in NESO SSEP dataset");
+  console.log(`[NESO] Mapped: onshore=${!!resourceMap.onshore} offshore=${!!resourceMap.offshore} economic=${!!resourceMap.economic}`);
 
   const results: Record<string, GeoJSONFeatureCollection> = {};
 
