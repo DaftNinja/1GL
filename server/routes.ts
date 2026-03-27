@@ -1390,6 +1390,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   });
 
   app.get("/api/nged/generation-register", isAuthenticated, async (req, res) => {
+    // TEMPORARY: confirm env var visibility at request time
+    console.log(`[NGED-ROUTE] generation-register hit | NGED_API_KEY set: ${!!process.env.NGED_API_KEY} | NATIONAL_GRID_API_KEY set: ${!!process.env.NATIONAL_GRID_API_KEY}`);
     try {
       const { getGenerationRegister } = await import("./ngedData");
       const bypassCache = req.query.nocache === "1"; // TEMPORARY: ?nocache=1 bypasses memory + disk cache
