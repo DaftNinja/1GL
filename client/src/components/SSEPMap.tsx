@@ -34,11 +34,11 @@ function escapeHtml(str: string): string {
 }
 
 export function SSEPMap() {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupsRef = useRef<Record<string, L.LayerGroup | L.GeoJSON>>({});
   const [activeLayers, setActiveLayers] = useState<Set<LayerType>>(
-    new Set(["onshore", "offshore"])
+    new Set<LayerType>(["onshore", "offshore"])
   );
   const [mapReady, setMapReady] = useState(false);
 

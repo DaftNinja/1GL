@@ -268,7 +268,7 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
 
     const annualAvg: Record<string, number> = {};
     for (const [yr, prices] of byYear.entries()) {
-      annualAvg[yr] = Math.round((prices.reduce((s, p) => s + p, 0) / prices.length) * 100) / 100;
+      annualAvg[yr] = Math.round((prices.reduce((s: number, p: number) => s + p, 0) / prices.length) * 100) / 100;
     }
 
     // Latest day: get the last 24 entries

@@ -2,10 +2,11 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcrypt";
 import { authStorage } from "./storage";
+import type { User as AuthUser } from "@shared/models/auth";
 
 declare global {
   namespace Express {
-    interface User extends import("@shared/models/auth").User {}
+    interface User extends AuthUser {}
   }
 }
 

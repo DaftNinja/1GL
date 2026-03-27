@@ -1623,7 +1623,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
 
   app.get("/api/submarine-cables/cable/:id", isAuthenticated, async (req, res) => {
     try {
-      const cableId = req.params.id;
+      const cableId = req.params.id as string;
       const cached = subCableDetailCache.get(cableId);
       if (cached && Date.now() - cached.fetchedAt < SUB_CABLE_TTL) {
         res.setHeader("Cache-Control", "public, max-age=86400");
