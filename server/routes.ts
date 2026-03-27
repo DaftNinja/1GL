@@ -1392,7 +1392,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   app.get("/api/nged/generation-register", isAuthenticated, async (req, res) => {
     try {
       const { getGenerationRegister } = await import("./ngedData");
-      const data = await getGenerationRegister();
+      const bypassCache = req.query.nocache === "1"; // TEMPORARY: ?nocache=1 bypasses memory + disk cache
+      const data = await getGenerationRegister(bypassCache);
       res.json(data);
     } catch (err: any) {
       console.error("NGED generation register error:", err);
