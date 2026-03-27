@@ -41,6 +41,11 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 
+# unzip is needed by nesoData.ts as a fallback; the primary extraction path
+# uses fflate (pure JS), but keeping unzip available costs ~200 KB.
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 # Production node_modules — native modules (bcrypt) are already compiled for
 # this architecture so no build tools are needed here.
 COPY --from=builder /app/node_modules ./node_modules

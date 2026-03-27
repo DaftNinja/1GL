@@ -2,6 +2,7 @@ import * as shp from "shapefile";
 import * as fs from "fs/promises";
 import * as path from "path";
 import proj4 from "proj4";
+import { unzipSync } from "fflate";
 
 const NESO_API_BASE = "https://api.neso.energy/api/3/action/datapackage_show";
 const DATASET_ID = "ssep-onshore-publication-zone-shapefile";
@@ -53,28 +54,22 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
 }
 
 async function extractZip(zipPath: string, destDir: string): Promise<string> {
-  const { exec } = await import("child_process");
-  const { promisify } = await import("util");
-  const execAsync = promisify(exec);
   await fs.mkdir(destDir, { recursive: true });
-  await execAsync(`unzip -o "${zipPath}" -d "${destDir}"`, { timeout: 15000 });
 
-  const findShp = async (dir: string): Promise<string> => {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        const result = await findShp(fullPath);
-        if (result) return result;
-      } else if (entry.name.endsWith(".shp")) {
-        return fullPath;
-      }
-    }
-    return "";
-  };
+  const zipBuffer = await fs.readFile(zipPath);
+  const entries = unzipSync(new Uint8Array(zipBuffer));
 
-  const shpFile = await findShp(destDir);
-  if (!shpFile) throw new Error(`No .shp file found in ${destDir}`);
+  let shpFile = "";
+  for (const [filename, data] of Object.entries(entries)) {
+    // Skip directory entries (zero-length with trailing slash)
+    if (filename.endsWith("/")) continue;
+    const destPath = path.join(destDir, filename);
+    await fs.mkdir(path.dirname(destPath), { recursive: true });
+    await fs.writeFile(destPath, data);
+    if (filename.endsWith(".shp")) shpFile = destPath;
+  }
+
+  if (!shpFile) throw new Error(`No .shp file found in ${zipPath}`);
   return shpFile;
 }
 

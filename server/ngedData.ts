@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const CACHE_DIR = path.join(process.cwd(), ".cache", "nged");
+const CACHE_DIR = path.join("/tmp", "nged-cache");
 const FETCH_TIMEOUT_MS = 30000;
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
