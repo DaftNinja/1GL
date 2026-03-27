@@ -75,50 +75,11 @@ interface CacheEntry<T> {
   fetchedAt: number;
 }
 
-const CACHE_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours — tolerant of extended outages
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const cache = new Map<string, CacheEntry<any>>();
 
 function isCacheValid<T>(entry: CacheEntry<T>): boolean {
   return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
-}
-
-// ─── Circuit Breaker ─────────────────────────────────────────────────────────
-// Tracks the last N ENTSO-E request outcomes. When the failure rate exceeds
-// CIRCUIT_FAILURE_THRESHOLD the circuit opens and all calls short-circuit to
-// cached/null immediately, preventing a cascade of 5-second timeouts.
-
-const CIRCUIT_WINDOW       = 10;   // rolling window size (requests)
-const CIRCUIT_FAILURE_THRESHOLD = 0.5; // open when >50 % of window failed
-const CIRCUIT_RESET_MS     = 5 * 60 * 1000; // auto-reset after 5 minutes
-
-const circuitOutcomes: boolean[] = []; // true = success, false = failure
-let circuitOpenAt: number | null = null;
-
-function recordCircuitOutcome(success: boolean): void {
-  circuitOutcomes.push(success);
-  if (circuitOutcomes.length > CIRCUIT_WINDOW) circuitOutcomes.shift();
-}
-
-function isCircuitOpen(): boolean {
-  if (circuitOpenAt !== null) {
-    if (Date.now() - circuitOpenAt >= CIRCUIT_RESET_MS) {
-      // Auto-reset: give the API another chance
-      circuitOpenAt = null;
-      circuitOutcomes.length = 0;
-      console.log("[ENTSOE circuit] reset after 5-minute cooldown — probing API again");
-      return false;
-    }
-    return true;
-  }
-  if (circuitOutcomes.length < CIRCUIT_WINDOW) return false;
-  const failures = circuitOutcomes.filter(v => !v).length;
-  const rate = failures / circuitOutcomes.length;
-  if (rate > CIRCUIT_FAILURE_THRESHOLD) {
-    circuitOpenAt = Date.now();
-    console.warn(`[ENTSOE circuit] OPEN — ${failures}/${circuitOutcomes.length} recent requests failed (${Math.round(rate * 100)}%)`);
-    return true;
-  }
-  return false;
 }
 
 function getToken(): string | null {
@@ -137,37 +98,9 @@ function formatDate(d: Date): string {
   );
 }
 
-const FETCH_TIMEOUT_MS = 5000; // Fail fast — 5 s prevents cascading 30 s HTTP timeouts
-const REQUEST_TIMEOUT_MS = 10000; // Hard ceiling for any external call visible to users
-const MAX_RETRIES = 2; // Retry up to 2 times (3 total attempts) with exponential backoff
+const FETCH_TIMEOUT_MS = 20000;
 
-// ─── Retry helper ────────────────────────────────────────────────────────────
-// Retries on network errors and 5xx responses. Never retries 4xx (client errors).
-async function withRetry<T>(
-  label: string,
-  fn: () => Promise<T>,
-): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await fn();
-    } catch (err: any) {
-      lastErr = err;
-      const is5xx = /ENTSO-E API 5\d\d/.test(err?.message ?? "");
-      const isNetwork = !err?.message?.includes("ENTSO-E API"); // timeout / fetch error
-      if (attempt < MAX_RETRIES && (is5xx || isNetwork)) {
-        const delayMs = 1000 * Math.pow(2, attempt); // 1 s, 2 s
-        console.warn(`[ENTSOE retry] ${label} attempt ${attempt + 1} failed (${err.message}), retrying in ${delayMs}ms`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      } else {
-        break;
-      }
-    }
-  }
-  throw lastErr;
-}
-
-async function fetchEntsoeRaw(params: Record<string, string>): Promise<any> {
+async function fetchEntsoe(params: Record<string, string>): Promise<any> {
   const token = getToken();
   if (!token) throw new Error("ENTSOE_API_KEY not configured");
 
@@ -198,32 +131,6 @@ async function fetchEntsoeRaw(params: Record<string, string>): Promise<any> {
   }
 
   return parseStringPromise(xml, { explicitArray: false, mergeAttrs: true });
-}
-
-// Public fetch wrapper: enforces circuit breaker + retry + request-level timeout
-async function fetchEntsoe(params: Record<string, string>): Promise<any> {
-  if (isCircuitOpen()) {
-    throw new Error("ENTSO-E circuit open — skipping request");
-  }
-
-  const label = `${params.documentType ?? "?"} ${params.out_Domain ?? params.in_Domain ?? ""}`;
-
-  // Wrap the entire retry sequence in a hard REQUEST_TIMEOUT_MS ceiling so that
-  // even a worst-case 2-retry sequence (5s + 1s + 5s + 2s + 5s) can't exceed 10 s
-  // from the caller's perspective.
-  try {
-    const result = await Promise.race([
-      withRetry(label, () => fetchEntsoeRaw(params)),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`ENTSO-E request timeout after ${REQUEST_TIMEOUT_MS}ms`)), REQUEST_TIMEOUT_MS)
-      ),
-    ]);
-    recordCircuitOutcome(true);
-    return result;
-  } catch (err) {
-    recordCircuitOutcome(false);
-    throw err;
-  }
 }
 
 // ─── Day-Ahead Prices (documentType A44) ────────────────────────────────────
@@ -302,20 +209,7 @@ function parsePriceDocument(doc: any): Array<{ datetime: Date; price: number }> 
 export async function getCountryDayAheadPrices(country: string): Promise<PriceResult | null> {
   const cacheKey = `prices:${country}`;
   const cached = cache.get(cacheKey);
-
-  if (cached && isCacheValid(cached)) {
-    console.log(`[ENTSOE cache] HIT prices:${country} (age ${Math.round((Date.now() - cached.fetchedAt) / 60000)}m)`);
-    return cached.data;
-  }
-
-  // Stale-while-revalidate: return stale data immediately and refresh in background
-  if (cached) {
-    console.log(`[ENTSOE cache] STALE prices:${country} — returning stale data, refreshing in background`);
-    refreshCountryDayAheadPrices(country).catch(() => {});
-    return cached.data;
-  }
-
-  console.log(`[ENTSOE cache] MISS prices:${country} — fetching live`);
+  if (cached && isCacheValid(cached)) return cached.data;
 
   const eicInfo = COUNTRY_EIC[country];
   if (!eicInfo) return null;
@@ -412,78 +306,6 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
   }
 }
 
-// Background refresh used by stale-while-revalidate — same logic, no stale fallback
-async function refreshCountryDayAheadPrices(country: string): Promise<void> {
-  const cacheKey = `prices:${country}`;
-  const eicInfo = COUNTRY_EIC[country];
-  if (!eicInfo || !getToken()) return;
-  try {
-    const now = new Date();
-    now.setUTCHours(22, 0, 0, 0);
-    const oneYearAgo = new Date(now.getTime() - 364 * 24 * 60 * 60 * 1000);
-    oneYearAgo.setUTCHours(0, 0, 0, 0);
-    const doc = await fetchEntsoe({
-      documentType: "A44",
-      in_Domain: eicInfo.eic,
-      out_Domain: eicInfo.eic,
-      periodStart: formatDate(oneYearAgo),
-      periodEnd: formatDate(now),
-    });
-    const points = parsePriceDocument(doc);
-    if (points.length === 0) return;
-    // Re-use the same aggregation logic from getCountryDayAheadPrices
-    const byYearMonth = new Map<string, number[]>();
-    const byYear = new Map<string, number[]>();
-    for (const { datetime, price } of points) {
-      const ym = `${datetime.getUTCFullYear()}-${String(datetime.getUTCMonth() + 1).padStart(2, "0")}`;
-      const yr = String(datetime.getUTCFullYear());
-      if (!byYearMonth.has(ym)) byYearMonth.set(ym, []);
-      byYearMonth.get(ym)!.push(price);
-      if (!byYear.has(yr)) byYear.set(yr, []);
-      byYear.get(yr)!.push(price);
-    }
-    const monthly = Array.from(byYearMonth.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([ym, prices]) => {
-        const [y, m] = ym.split("-").map(Number);
-        const avg = prices.reduce((s, p) => s + p, 0) / prices.length;
-        return {
-          year: y, month: m,
-          avgEurMwh: Math.round(avg * 100) / 100,
-          minEurMwh: Math.round(Math.min(...prices) * 100) / 100,
-          maxEurMwh: Math.round(Math.max(...prices) * 100) / 100,
-          sampleCount: prices.length,
-        };
-      });
-    const annualAvg: Record<string, number> = {};
-    for (const [yr, prices] of byYear.entries()) {
-      annualAvg[yr] = Math.round((prices.reduce((s, p) => s + p, 0) / prices.length) * 100) / 100;
-    }
-    const sortedByDate = [...points].sort((a, b) => b.datetime.getTime() - a.datetime.getTime());
-    const latestDate = sortedByDate[0]?.datetime;
-    let latestDayAvg: number | null = null;
-    let latestDayDate: string | null = null;
-    if (latestDate) {
-      const latestDay = latestDate.toISOString().slice(0, 10);
-      const latestDayPrices = sortedByDate
-        .filter((p) => p.datetime.toISOString().slice(0, 10) === latestDay)
-        .map((p) => p.price);
-      if (latestDayPrices.length > 0) {
-        latestDayAvg = Math.round((latestDayPrices.reduce((s, p) => s + p, 0) / latestDayPrices.length) * 100) / 100;
-        latestDayDate = latestDay;
-      }
-    }
-    const result: PriceResult = {
-      country, eicCode: eicInfo.eic, monthly, latestDayAvg, latestDayDate,
-      annualAvg, currency: eicInfo.currency || "EUR", fetchedAt: new Date().toISOString(),
-    };
-    cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
-    console.log(`[ENTSOE cache] background refresh complete for prices:${country}`);
-  } catch (err: any) {
-    console.warn(`[ENTSOE cache] background refresh failed for prices:${country}: ${err.message}`);
-  }
-}
-
 // ─── Actual Generation by Fuel (documentType A75) ──────────────────────────
 
 interface GenerationFuel {
@@ -503,18 +325,7 @@ interface GenerationResult {
 export async function getCountryGeneration(country: string): Promise<GenerationResult | null> {
   const cacheKey = `gen:${country}`;
   const cached = cache.get(cacheKey);
-
-  if (cached && isCacheValid(cached)) {
-    console.log(`[ENTSOE cache] HIT gen:${country}`);
-    return cached.data;
-  }
-
-  if (cached) {
-    console.log(`[ENTSOE cache] STALE gen:${country} — returning stale data`);
-    return cached.data;
-  }
-
-  console.log(`[ENTSOE cache] MISS gen:${country} — fetching live`);
+  if (cached && isCacheValid(cached)) return cached.data;
 
   const eicInfo = COUNTRY_EIC[country];
   if (!eicInfo) return null;
@@ -647,18 +458,7 @@ export interface GenerationTimeSeriesResult {
 export async function getCountryGenerationTimeSeries(country: string): Promise<GenerationTimeSeriesResult | null> {
   const cacheKey = `gen-ts:${country}`;
   const cached = cache.get(cacheKey);
-
-  if (cached && isCacheValid(cached)) {
-    console.log(`[ENTSOE cache] HIT gen-ts:${country}`);
-    return cached.data;
-  }
-
-  if (cached) {
-    console.log(`[ENTSOE cache] STALE gen-ts:${country} — returning stale data`);
-    return cached.data;
-  }
-
-  console.log(`[ENTSOE cache] MISS gen-ts:${country} — fetching live`);
+  if (cached && isCacheValid(cached)) return cached.data;
 
   const eicInfo = COUNTRY_EIC[country];
   if (!eicInfo) return null;
@@ -830,63 +630,27 @@ async function getUKElexonPriceEstimate(): Promise<{
 export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const cacheKey = "all-countries-summary";
   const cached = cache.get(cacheKey);
+  if (cached && isCacheValid(cached)) return cached.data;
 
-  if (cached && isCacheValid(cached)) {
-    console.log(`[ENTSOE cache] HIT all-countries-summary`);
-    return cached.data;
-  }
-
-  // Stale-while-revalidate: return stale data immediately and refresh in background
-  if (cached) {
-    console.log(`[ENTSOE cache] STALE all-countries-summary — returning stale data, refreshing in background`);
-    buildAllCountriesSummary().then(summaries => {
-      cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
-      console.log(`[ENTSOE cache] background refresh complete for all-countries-summary`);
-    }).catch(err => {
-      console.warn(`[ENTSOE cache] background refresh failed for all-countries-summary: ${err.message}`);
-    });
-    return cached.data;
-  }
-
-  console.log(`[ENTSOE cache] MISS all-countries-summary — fetching live`);
-  const summaries = await buildAllCountriesSummary();
-  // Cache even partial results so subsequent requests are served immediately
-  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
-  return summaries;
-}
-
-// Builds the all-countries summary, returning partial results for countries that succeeded.
-// Countries that fail (ENTSO-E 503, timeout, circuit open) are included with null price data
-// rather than aborting the entire response.
-async function buildAllCountriesSummary(): Promise<CountrySummary[]> {
   // Fetch ENTSO-E prices in batches of 5 to avoid rate-limiting, UK Elexon in parallel
   const countries = Object.keys(COUNTRY_EIC);
   const batchSize = 5;
   const allResults: PromiseSettledResult<any>[] = [];
-  let succeeded = 0;
-  let failed = 0;
-
   for (let i = 0; i < countries.length; i += batchSize) {
     const batch = countries.slice(i, i + batchSize);
     const batchResults = await Promise.allSettled(
       batch.map((country) => getCountryDayAheadPrices(country))
     );
-    for (const r of batchResults) {
-      if (r.status === "fulfilled" && r.value) succeeded++;
-      else failed++;
-    }
     allResults.push(...batchResults);
   }
-
-  const ukEstimate = await getUKElexonPriceEstimate();
-  console.log(`[ENTSOE] all-countries-summary: ${succeeded} succeeded, ${failed} failed (partial results returned)`);
+  const [results, ukEstimate] = [allResults, await getUKElexonPriceEstimate()];
 
   const summaries: CountrySummary[] = [];
 
-  for (let i = 0; i < allResults.length; i++) {
+  for (let i = 0; i < results.length; i++) {
     const country = Object.keys(COUNTRY_EIC)[i];
     const eicInfo = COUNTRY_EIC[country];
-    const result = allResults[i];
+    const result = results[i];
 
     if (country === "United Kingdom") {
       // UK has no ENTSO-E price post-Brexit — use Elexon N2EX estimate
@@ -917,7 +681,6 @@ async function buildAllCountriesSummary(): Promise<CountrySummary[]> {
         eicCode: eicInfo.eic,
       });
     } else {
-      // Include the country with null data rather than omitting it — partial results
       summaries.push({
         country,
         code: eicInfo.name,
@@ -929,6 +692,7 @@ async function buildAllCountriesSummary(): Promise<CountrySummary[]> {
     }
   }
 
+  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
   return summaries;
 }
 
