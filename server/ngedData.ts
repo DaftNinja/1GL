@@ -45,7 +45,9 @@ async function resolveResourceUrl(resourceId: string, apiKey: string): Promise<s
       headers: { Authorization: apiKey },
     });
     if (!res.ok) {
-      throw new Error(`CKAN resource_show ${res.status} for ${resourceId}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const errBody = (await res.text().catch(() => "")).slice(0, 200);
+      console.error(`[NGED][TEMP_LOG] resource_show HTTP ${res.status} for ${resourceId}: ${errBody}`);
+      throw new Error(`CKAN resource_show ${res.status} for ${resourceId}: ${errBody}`);
     }
     const json = await res.json() as { success: boolean; result?: { url?: string } };
     if (!json.success || !json.result?.url) {
@@ -170,6 +172,7 @@ async function fetchAuthenticatedCSV(resourceId: string, cacheFile: string): Pro
   } catch {}
 
   const downloadUrl = await resolveResourceUrl(resourceId, apiKey);
+  console.log(`[NGED][TEMP_LOG] Resolved download URL for ${cacheFile}: ${downloadUrl}`);
   console.log(`[NGED] Resolved download URL for ${cacheFile}`);
 
   const controller = new AbortController();
@@ -181,7 +184,9 @@ async function fetchAuthenticatedCSV(resourceId: string, cacheFile: string): Pro
       redirect: "follow",
     });
     if (!res.ok) {
-      throw new Error(`NGED download ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+      const errBody = (await res.text().catch(() => "")).slice(0, 200);
+      console.error(`[NGED][TEMP_LOG] download HTTP ${res.status} from ${downloadUrl}: ${errBody}`);
+      throw new Error(`NGED download ${res.status}: ${errBody}`);
     }
     const text = await res.text();
     await fs.writeFile(cachePath, text);

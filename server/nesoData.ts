@@ -43,8 +43,13 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
+    console.log(`[NESO][TEMP_LOG] Downloading shapefile: ${url}`);
     const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new Error(`Failed to download ${url}: ${response.status}`);
+    if (!response.ok) {
+      const errBody = (await response.text().catch(() => "")).slice(0, 200);
+      console.error(`[NESO][TEMP_LOG] shapefile download HTTP ${response.status} from ${url}: ${errBody}`);
+      throw new Error(`Failed to download ${url}: ${response.status}`);
+    }
     const arrayBuffer = await response.arrayBuffer();
     await fs.writeFile(destPath, Buffer.from(arrayBuffer));
   } finally {
@@ -144,8 +149,14 @@ async function fetchAndConvert(): Promise<SSEPData> {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let meta;
   try {
-    const metaRes = await fetch(`${NESO_API_BASE}?id=${DATASET_ID}`, { signal: controller.signal });
-    if (!metaRes.ok) throw new Error(`NESO API error: ${metaRes.status}`);
+    const metaUrl = `${NESO_API_BASE}?id=${DATASET_ID}`;
+    console.log(`[NESO][TEMP_LOG] Fetching SSEP metadata: ${metaUrl}`);
+    const metaRes = await fetch(metaUrl, { signal: controller.signal });
+    if (!metaRes.ok) {
+      const errBody = (await metaRes.text().catch(() => "")).slice(0, 200);
+      console.error(`[NESO][TEMP_LOG] metadata HTTP ${metaRes.status}: ${errBody}`);
+      throw new Error(`NESO API error: ${metaRes.status}`);
+    }
     meta = await metaRes.json();
   } finally {
     clearTimeout(timeout);
