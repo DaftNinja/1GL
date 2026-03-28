@@ -329,15 +329,31 @@ export async function getRegionDemand(): Promise<EiaRegionDemandResult> {
 
 // ── Interchange Data ──────────────────────────────────────────────────────────
 
+/** Parse an EIA period string ("2026-03-27T07") into a UTC Date. */
+function eiaParseHour(period: string): Date {
+  // "2026-03-27T07" → treat as UTC hour
+  const [datePart, hourPart] = period.split("T");
+  const [yyyy, mm, dd] = (datePart ?? "").split("-").map(Number);
+  const hh = parseInt(hourPart ?? "0", 10);
+  return new Date(Date.UTC(yyyy, mm - 1, dd, hh));
+}
+
+/** Format a Date as an EIA period string "YYYY-MM-DDTHH". */
+function eiaFormatHour(d: Date): string {
+  const yyyy = d.getUTCFullYear();
+  const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd   = String(d.getUTCDate()).padStart(2, "0");
+  const hh   = String(d.getUTCHours()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}`;
+}
 
 export async function getInterchangeData(): Promise<InterchangeResult> {
   const cached = fromCache<InterchangeResult>("eia:interchange", REALTIME_TTL_MS);
   if (cached) return cached;
 
-  // Step 1: discover the actual latest available period — no date filter,
-  // just ask for 1 row sorted newest-first. The EIA interchange dataset has
-  // a publication delay that can exceed 24 hours, so we never assume the
-  // data is within any fixed window.
+  // Step 1: probe for the actual latest available period.
+  // EIA interchange has a publication delay that can exceed 24 hours, so
+  // we never assume the data is within any fixed window from now.
   console.log(`[EIA] interchange: probing for latest available period`);
   const probeJson = await fetchEia("/electricity/rto/interchange-data/data", [
     ["frequency", "hourly"],
@@ -355,18 +371,25 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     return toCache("eia:interchange", { data: [], byPair: {}, latestPeriod: null, fetchedAt: new Date().toISOString() });
   }
 
-  // Step 2: fetch ALL rows for that exact period, paginating if needed.
+  // Step 2: fetch a 6-hour window ending at latestPeriod.
+  // Eastern and western interconnections publish on different schedules —
+  // western may be 2–4 hours ahead of eastern. Querying the window ensures
+  // we capture both, then most-recent-wins per BA pair gives the freshest
+  // value for each direction.
+  const startPeriod = eiaFormatHour(new Date(eiaParseHour(latestPeriod).getTime() - 6 * 60 * 60 * 1000));
+  console.log(`[EIA] interchange: querying window ${startPeriod} → ${latestPeriod}`);
+
   let allRows: any[] = [];
   let offset = 0;
   const PAGE = 1000;
   let page = 0;
 
   while (true) {
-    console.log(`[EIA] interchange page ${page} (offset=${offset}, period=${latestPeriod})`);
+    console.log(`[EIA] interchange page ${page} (offset=${offset})`);
     const pageJson = await fetchEia("/electricity/rto/interchange-data/data", [
       ["frequency", "hourly"],
       ["data[0]", "value"],
-      ["start", latestPeriod],
+      ["start", startPeriod],
       ["end",   latestPeriod],
       ["sort[0][column]", "period"],
       ["sort[0][direction]", "desc"],
@@ -384,10 +407,15 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     page++;
   }
 
-  console.log(`[EIA] interchange total rows fetched: ${allRows.length}`);
+  console.log(`[EIA] interchange total rows in window: ${allRows.length}`);
 
+  // Most-recent-wins per BA pair: data is sorted period desc so the first
+  // occurrence of each fromBA→toBA key is the most recent report for that pair.
+  const seenPairs = new Set<string>();
   const byPair: Record<string, number> = {};
   const points: InterchangePoint[] = [];
+  // Track BA counts per period for diagnostics
+  const periodBACount: Record<string, Set<string>> = {};
 
   for (const row of allRows) {
     const raw = parseFloat(row.value ?? row["value"]);
@@ -400,11 +428,22 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     const toBAName   = row["toba-name"]   ?? toBA;
 
     points.push({ period, fromBA, fromBAName, toBA, toBAName, valueMW: raw });
-    byPair[`${fromBA}->${toBA}`] = raw;
+
+    const pairKey = `${fromBA}->${toBA}`;
+    if (!seenPairs.has(pairKey)) {
+      seenPairs.add(pairKey);
+      byPair[pairKey] = raw;
+      // Attribute this BA to the period it was sourced from
+      if (!periodBACount[period]) periodBACount[period] = new Set();
+      periodBACount[period].add(fromBA);
+    }
   }
 
-  const uniqueFromBAs = [...new Set(points.map(p => p.fromBA))].sort();
-  console.log(`[EIA] interchange unique fromBA (${uniqueFromBAs.length}): ${uniqueFromBAs.join(", ")}`);
+  // Log which periods contributed BAs (confirms both interconnections covered)
+  const periodSummary = Object.entries(periodBACount)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([p, bas]) => `${p}: ${bas.size} BAs (${[...bas].sort().join(", ")})`);
+  console.log(`[EIA] interchange period coverage:\n  ${periodSummary.join("\n  ")}`);
   console.log(`[EIA] interchange byPair pairs: ${Object.keys(byPair).length}, latestPeriod: ${latestPeriod}`);
 
   return toCache("eia:interchange", { data: points, byPair, latestPeriod, fetchedAt: new Date().toISOString() });
