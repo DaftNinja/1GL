@@ -306,11 +306,11 @@ class FlowSVGLayer {
       const timer = setTimeout(() => {
         const el = anim.getElement() as SVGPathElement | null;
         if (!el) return;
-        const len = el.getTotalLength ? Math.ceil(el.getTotalLength()) : 300;
-        const dashLen = Math.max(10, Math.round(len * 0.07));
-        const gap = len - dashLen;
-        el.style.strokeDasharray = `${dashLen} ${gap}`;
-        el.style.setProperty("--flow-anim-len", `${-len}px`);
+        // Fixed dash pattern so animation is visible at any zoom level.
+        // The original len-relative formula produced gap ≤ 0 on short arcs
+        // (e.g. EU country pairs at zoom 2), rendering them as solid lines.
+        el.style.strokeDasharray = "8 12";          // 8px dash, 12px gap
+        el.style.setProperty("--flow-anim-len", "-20px"); // one pattern repeat
         el.style.animation = "crossBorderFlowAnim 500ms linear infinite";
       }, 60);
       this.animTimers.push(timer);
