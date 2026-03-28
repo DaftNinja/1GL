@@ -45,9 +45,25 @@ export async function registerRoutes(
         }
       }
 
-      // Fetch live ENTSO-E price data to enrich the AI prompt
+      // Fetch World Bank macro indicators and live ENTSO-E data in parallel
+      let worldBankContext = "";
       let liveEntsoeContext = "";
-      try {
+
+      await Promise.allSettled([
+        // World Bank indicators
+        (async () => {
+          try {
+            const { getCountryIndicators, formatIndicatorsForPrompt } = await import("./worldBankData");
+            const wbResult = await getCountryIndicators(country);
+            if (wbResult) worldBankContext = formatIndicatorsForPrompt(wbResult);
+          } catch (e: any) {
+            console.warn("Could not fetch World Bank indicators for prompt:", e.message);
+          }
+        })(),
+
+        // ENTSO-E prices & generation
+        (async () => {
+          try {
         const { getCountryDayAheadPrices, getCountryGeneration, isEntsoeConfigured } = await import("./entsoe");
         if (isEntsoeConfigured()) {
           const [priceData, genData] = await Promise.allSettled([
@@ -77,9 +93,11 @@ export async function registerRoutes(
             liveEntsoeContext += `LIVE ENTSO-E GENERATION MIX — ${country} (last 30 days, ${gen.period}):\n${topFuels}\nRenewable share: ${gen.renewableSharePct}%\n`;
           }
         }
-      } catch (e: any) {
-        console.warn("Could not fetch live ENTSO-E data for prompt:", e.message);
-      }
+          } catch (e: any) {
+            console.warn("Could not fetch live ENTSO-E data for prompt:", e.message);
+          }
+        })(),
+      ]);
 
       const completion = await openai.chat.completions.create({
         model: "gpt-5.1",
@@ -639,7 +657,7 @@ Key insight: Nordic hydro-dominated markets (NO, SE) historically had Europe's c
 Sources: ENTSO-E Transparency Platform via Open Power System Data; DE-LU Electricity Market 2019-2025 dataset (Kaggle, updated 2026-03-11).
 
 NOTE: dataSources will be injected server-side — do NOT include it in the JSON output.
-${liveEntsoeContext ? `\nLIVE DATA UPDATE (fetched in real-time from ENTSO-E Transparency Platform — use this to ground powerPricing figures):\n${liveEntsoeContext}` : ''}
+${worldBankContext ? `\n${worldBankContext}\n` : ""}${liveEntsoeContext ? `\nLIVE DATA UPDATE (fetched in real-time from ENTSO-E Transparency Platform — use this to ground powerPricing figures):\n${liveEntsoeContext}` : ""}
 CRITICAL: Ground your analysis in real market data and cite specific sources. All monetary values in EUR (or GBP for UK). The analysis must be actionable for both investors and data centre operators.`
           },
           {
@@ -1560,6 +1578,21 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       console.error("EIA demand error:", err);
       const r = eiaErrorResponse(err);
       res.status(r.status).json(r.body);
+    }
+  });
+
+  // ─── World Bank Open Data ─────────────────────────────────────────────────
+  app.get("/api/worldbank/indicators", isAuthenticated, async (req, res) => {
+    try {
+      const country = typeof req.query.country === "string" ? req.query.country : "";
+      if (!country) return res.status(400).json({ message: "country query parameter is required" });
+      const { getCountryIndicators } = await import("./worldBankData");
+      const result = await getCountryIndicators(country);
+      if (!result) return res.status(404).json({ message: `No World Bank mapping for country: ${country}` });
+      res.json(result);
+    } catch (err) {
+      console.error("World Bank indicators error:", err);
+      res.status(500).json({ message: "Failed to fetch World Bank indicators" });
     }
   });
 
