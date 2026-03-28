@@ -329,35 +329,45 @@ export async function getRegionDemand(): Promise<EiaRegionDemandResult> {
 
 // ── Interchange Data ──────────────────────────────────────────────────────────
 
-function eiaHourString(d: Date): string {
-  const yyyy = d.getUTCFullYear();
-  const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dd   = String(d.getUTCDate()).padStart(2, "0");
-  const hh   = String(d.getUTCHours()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T${hh}`;
-}
 
 export async function getInterchangeData(): Promise<InterchangeResult> {
   const cached = fromCache<InterchangeResult>("eia:interchange", REALTIME_TTL_MS);
   if (cached) return cached;
 
-  // Different BA regions publish on different schedules — Western Interconnection
-  // may be 1–2 hours ahead of Eastern. Query the last 4 hours so every BA
-  // region is covered, then keep the most-recent row per BA pair.
-  const startPeriod = eiaHourString(new Date(Date.now() - 4 * 60 * 60 * 1000));
-  console.log(`[EIA] interchange fetching start=${startPeriod} (last 4 hours)`);
+  // Step 1: discover the actual latest available period — no date filter,
+  // just ask for 1 row sorted newest-first. The EIA interchange dataset has
+  // a publication delay that can exceed 24 hours, so we never assume the
+  // data is within any fixed window.
+  console.log(`[EIA] interchange: probing for latest available period`);
+  const probeJson = await fetchEia("/electricity/rto/interchange-data/data", [
+    ["frequency", "hourly"],
+    ["data[0]", "value"],
+    ["sort[0][column]", "period"],
+    ["sort[0][direction]", "desc"],
+    ["length", "1"],
+    ["offset", "0"],
+  ]);
+  const latestPeriod: string | null = probeJson?.response?.data?.[0]?.period ?? null;
+  console.log(`[EIA] interchange: latest available period = ${latestPeriod}`);
 
+  if (!latestPeriod) {
+    console.warn("[EIA] interchange: probe returned no rows");
+    return toCache("eia:interchange", { data: [], byPair: {}, latestPeriod: null, fetchedAt: new Date().toISOString() });
+  }
+
+  // Step 2: fetch ALL rows for that exact period, paginating if needed.
   let allRows: any[] = [];
   let offset = 0;
   const PAGE = 1000;
   let page = 0;
 
   while (true) {
-    console.log(`[EIA] interchange page ${page} (offset=${offset})`);
+    console.log(`[EIA] interchange page ${page} (offset=${offset}, period=${latestPeriod})`);
     const pageJson = await fetchEia("/electricity/rto/interchange-data/data", [
       ["frequency", "hourly"],
       ["data[0]", "value"],
-      ["start", startPeriod],
+      ["start", latestPeriod],
+      ["end",   latestPeriod],
       ["sort[0][column]", "period"],
       ["sort[0][direction]", "desc"],
       ["length", String(PAGE)],
@@ -365,8 +375,8 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     ]);
 
     const pageRows: any[] = pageJson?.response?.data ?? [];
-    const total: number = pageJson?.response?.total ?? 0;
-    console.log(`[EIA] interchange page ${page}: ${pageRows.length} rows (total: ${total})`);
+    const total: number   = pageJson?.response?.total ?? 0;
+    console.log(`[EIA] interchange page ${page}: ${pageRows.length} rows (total declared: ${total})`);
     allRows = allRows.concat(pageRows);
 
     if (offset + PAGE >= total || pageRows.length < PAGE) break;
@@ -374,14 +384,10 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     page++;
   }
 
-  console.log(`[EIA] interchange total rows: ${allRows.length}`);
+  console.log(`[EIA] interchange total rows fetched: ${allRows.length}`);
 
-  // Parse rows. Data is sorted period desc, so the first occurrence of each
-  // BA pair is the most recent — use a seen-set to enforce most-recent-wins.
-  const seenPairs = new Set<string>();
   const byPair: Record<string, number> = {};
   const points: InterchangePoint[] = [];
-  let latestPeriod: string | null = null;
 
   for (const row of allRows) {
     const raw = parseFloat(row.value ?? row["value"]);
@@ -394,14 +400,7 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     const toBAName   = row["toba-name"]   ?? toBA;
 
     points.push({ period, fromBA, fromBAName, toBA, toBAName, valueMW: raw });
-
-    const pairKey = `${fromBA}->${toBA}`;
-    if (!seenPairs.has(pairKey)) {
-      seenPairs.add(pairKey);
-      byPair[pairKey] = raw;
-      // Track overall latest period (rows are desc-sorted so first non-null wins)
-      if (!latestPeriod && period) latestPeriod = period;
-    }
+    byPair[`${fromBA}->${toBA}`] = raw;
   }
 
   const uniqueFromBAs = [...new Set(points.map(p => p.fromBA))].sort();
