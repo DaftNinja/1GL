@@ -1442,6 +1442,87 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ─── ONS (Operador Nacional do Sistema Elétrico — Brazil) Data ───────────
+  app.get("/api/ons/generation", isAuthenticated, async (_req, res) => {
+    try {
+      const { getGeneration } = await import("./onsData");
+      res.json(await getGeneration());
+    } catch (err) {
+      console.error("ONS generation error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS generation data" });
+    }
+  });
+
+  app.get("/api/ons/demand", isAuthenticated, async (_req, res) => {
+    try {
+      const { getDemand } = await import("./onsData");
+      res.json(await getDemand());
+    } catch (err) {
+      console.error("ONS demand error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS demand data" });
+    }
+  });
+
+  app.get("/api/ons/load-curve", isAuthenticated, async (_req, res) => {
+    try {
+      const { getLoadCurve } = await import("./onsData");
+      res.json(await getLoadCurve());
+    } catch (err) {
+      console.error("ONS load curve error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS load curve data" });
+    }
+  });
+
+  app.get("/api/ons/capacity", isAuthenticated, async (_req, res) => {
+    try {
+      const { getCapacity } = await import("./onsData");
+      res.json(await getCapacity());
+    } catch (err) {
+      console.error("ONS capacity error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS capacity data" });
+    }
+  });
+
+  app.get("/api/ons/cross-border", isAuthenticated, async (_req, res) => {
+    try {
+      const { getInternationalExchange } = await import("./onsData");
+      res.json(await getInternationalExchange());
+    } catch (err) {
+      console.error("ONS cross-border error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS international exchange data" });
+    }
+  });
+
+  app.get("/api/ons/subsystem-exchange", isAuthenticated, async (_req, res) => {
+    try {
+      const { getSubsystemExchange } = await import("./onsData");
+      res.json(await getSubsystemExchange());
+    } catch (err) {
+      console.error("ONS subsystem exchange error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS subsystem exchange data" });
+    }
+  });
+
+  app.get("/api/ons/capacity-factor", isAuthenticated, async (_req, res) => {
+    try {
+      const { getCapacityFactor } = await import("./onsData");
+      res.json(await getCapacityFactor());
+    } catch (err) {
+      console.error("ONS capacity factor error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS capacity factor data" });
+    }
+  });
+
+  app.get("/api/ons/thermal-dispatch", isAuthenticated, async (_req, res) => {
+    try {
+      const { getThermalDispatch } = await import("./onsData");
+      res.json(await getThermalDispatch());
+    } catch (err) {
+      console.error("ONS thermal dispatch error:", err);
+      res.status(500).json({ message: "Failed to fetch ONS thermal dispatch data" });
+    }
+  });
+
   // ─── EIA (US Energy Information Administration) Data ─────────────────────
   function eiaErrorResponse(err: unknown): { status: number; body: { message: string } } {
     const msg = err instanceof Error ? err.message : String(err);
