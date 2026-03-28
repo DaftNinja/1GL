@@ -174,13 +174,25 @@ const BA_CENTRES: Record<string, [number, number]> = {
   SC:   [34.00, -81.03],
   SCEG: [34.00, -81.03],
   LGEE: [38.25, -85.76],
-  SEC:  [30.33, -81.66],
+  SEC:  [30.44, -84.28],
   TAL:  [30.44, -84.28],
+  FPC:  [28.06, -82.41],
+  CPLE: [35.77, -78.64],
+  CPLW: [35.23, -80.84],
+  JEA:  [30.33, -81.66],
+  SPA:  [34.75, -92.29],
+  TEC:  [27.95, -82.46],
+  YAD:  [35.33, -80.18],
+  HST:  [29.76, -95.37],
+  GVL:  [29.65, -82.32],
+  NSB:  [29.03, -80.93],
+  OVEC: [38.75, -82.00],
+  GLHB: [42.33, -83.05],
   // Canada
-  IESO: [44.00, -79.50],
+  IESO: [43.65, -79.38],
   BCHA: [49.26, -123.11],
-  HQT:  [46.81, -71.21],
-  NBSO: [45.95, -66.64],
+  HQT:  [45.50, -73.57],
+  NBSO: [45.96, -66.64],
   MHEB: [49.90, -97.14],
   CAN:  [49.00, -97.00],
   // Mexico
@@ -602,6 +614,21 @@ export default function CrossBorderFlows() {
       const allPairs = Object.entries(interchange.byPair);
       console.log("[EIA arcs] total pairs in byPair:", allPairs.length);
 
+      // Log all unique BA codes seen in the API response
+      const allBAs = new Set<string>();
+      for (const [pairKey] of allPairs) {
+        const [f, t] = pairKey.split("->");
+        if (f) allBAs.add(f);
+        if (t) allBAs.add(t);
+      }
+      console.log("[EIA arcs] unique BAs in response:", [...allBAs].sort().join(", "));
+
+      // Split: which are in BA_CENTRES, which are not
+      const knownBAs   = [...allBAs].filter(ba => ba in BA_CENTRES).sort();
+      const unknownBAs = [...allBAs].filter(ba => !(ba in BA_CENTRES) && !AGGREGATE_BAS.has(ba)).sort();
+      console.log("[EIA arcs] BAs with coords:", knownBAs.join(", "));
+      if (unknownBAs.length) console.warn("[EIA arcs] BAs MISSING from BA_CENTRES:", unknownBAs.join(", "));
+
       const nonAggregate = allPairs.filter(([pairKey]) => {
         const [fromBA, toBA] = pairKey.split("->");
         return fromBA && toBA && !AGGREGATE_BAS.has(fromBA) && !AGGREGATE_BAS.has(toBA);
@@ -610,7 +637,7 @@ export default function CrossBorderFlows() {
 
       const missing: string[] = [];
       let matchCount = 0;
-      for (const [pairKey, valueMW] of nonAggregate) {
+      for (const [pairKey] of nonAggregate) {
         const [fromBA, toBA] = pairKey.split("->");
         if (!fromBA || !toBA) continue;
         const hasFrom = fromBA in BA_CENTRES;
@@ -621,8 +648,8 @@ export default function CrossBorderFlows() {
           matchCount++;
         }
       }
-      console.log("[EIA arcs] pairs with both coords:", matchCount, "/ missing:", missing.length);
-      if (missing.length) console.log("[EIA arcs] missing coords:", missing);
+      console.log("[EIA arcs] pairs with both coords:", matchCount, "/ still missing:", missing.length);
+      if (missing.length) console.log("[EIA arcs] missing coord pairs:", missing);
 
       for (const [pairKey, valueMW] of nonAggregate) {
         if (Math.abs(valueMW) < 50) continue;
