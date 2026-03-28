@@ -137,23 +137,29 @@ function getApiKey(): string {
 }
 
 /**
- * Build the request URL preserving literal bracket notation that the EIA v2
- * API requires (e.g. `data[0]=value`, `facets[respondent][]=ERCO`).
+ * Build the request URL with both keys and values percent-encoded.
+ * Brackets in EIA v2 param names (e.g. `data[0]`, `sort[0][column]`)
+ * must be encoded as %5B / %5D — Node fetch does not encode them automatically.
  */
 function buildEiaUrl(path: string, params: [string, string][]): string {
   const qs = [`api_key=${encodeURIComponent(getApiKey())}`];
   for (const [k, v] of params) {
-    qs.push(`${k}=${encodeURIComponent(v)}`);
+    qs.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
   }
   return `${EIA_BASE}${path}?${qs.join("&")}`;
 }
 
 async function fetchEia(path: string, params: [string, string][]): Promise<any> {
+  const hasKey = !!process.env.EIA_API_KEY;
+  console.log(`[EIA] EIA_API_KEY present: ${hasKey}`);
+
   const url = buildEiaUrl(path, params);
   const res = await fetch(url, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     headers: { Accept: "application/json" },
   });
+
+  console.log(`[EIA] ${path} → HTTP ${res.status}`);
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
