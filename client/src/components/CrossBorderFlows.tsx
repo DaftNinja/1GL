@@ -126,6 +126,7 @@ const CAPITALS: Record<string, [number, number]> = {
 // ── US BA centres ─────────────────────────────────────────────────────────────
 
 const BA_CENTRES: Record<string, [number, number]> = {
+  // US — major ISOs / RTOs
   PJM:  [39.95, -76.88],
   CISO: [37.77, -121.42],
   ERCO: [31.97, -99.90],
@@ -137,16 +138,38 @@ const BA_CENTRES: Record<string, [number, number]> = {
   TVA:  [35.96, -83.92],
   DUK:  [35.23, -80.84],
   FPL:  [27.66, -80.41],
+  // US — Western BAs
   BPAT: [45.52, -122.68],
-  PACW: [45.52, -122.68],
+  PACW: [45.52, -122.30],
   PACE: [40.76, -111.89],
   WACM: [39.74, -104.99],
   SRP:  [33.45, -111.94],
-  AECI: [38.63, -92.57],
   BANC: [38.58, -121.49],
   AVA:  [47.66, -117.43],
   NEVP: [36.17, -115.14],
   WALC: [35.19, -111.65],
+  AVRN: [45.52, -122.90],
+  AZPS: [33.45, -112.07],
+  CHPD: [47.50, -120.35],
+  DOPD: [47.40, -120.19],
+  EPE:  [31.76, -106.49],
+  GCPD: [47.21, -119.85],
+  GRID: [33.45, -112.07],
+  IID:  [32.79, -115.56],
+  IPCO: [43.62, -116.21],
+  LDWP: [34.05, -118.24],
+  NWMT: [46.87, -114.00],
+  PGE:  [45.52, -122.68],
+  PNM:  [35.08, -106.65],
+  PSCO: [39.74, -104.99],
+  PSEI: [47.61, -122.33],
+  SCL:  [47.61, -122.33],
+  TEPC: [32.22, -110.97],
+  TIDC: [37.49, -120.85],
+  TPWR: [47.25, -122.44],
+  DEAA: [33.31, -112.73],
+  // US — Southeast / Central BAs
+  AECI: [38.63, -92.57],
   AEC:  [32.38, -86.30],
   SC:   [34.00, -81.03],
   SCEG: [34.00, -81.03],
@@ -155,12 +178,15 @@ const BA_CENTRES: Record<string, [number, number]> = {
   TAL:  [30.44, -84.28],
   // Canada
   IESO: [44.00, -79.50],
-  BCHA: [49.28, -123.12],
+  BCHA: [49.26, -123.11],
   HQT:  [46.81, -71.21],
   NBSO: [45.95, -66.64],
   MHEB: [49.90, -97.14],
+  CAN:  [49.00, -97.00],
   // Mexico
   CFE:  [23.63, -102.55],
+  CEN:  [32.52, -117.02],
+  MEX:  [29.00, -110.00],
 };
 
 // ── Colour & weight (EU convention: positive = green export, negative = blue import) ──
@@ -568,12 +594,16 @@ export default function CrossBorderFlows() {
       }
     }
 
+    // Regional/aggregate BAs — excluded to avoid overlapping summary arcs
+    const AGGREGATE_BAS = new Set(["US48", "CAL", "NW", "SW", "CENT"]);
+
     // US arcs from EIA
     if (interchange) {
       for (const [pairKey, valueMW] of Object.entries(interchange.byPair)) {
         if (Math.abs(valueMW) < 50) continue;
         const [fromBA, toBA] = pairKey.split("->");
         if (!fromBA || !toBA) continue;
+        if (AGGREGATE_BAS.has(fromBA) || AGGREGATE_BAS.has(toBA)) continue;
         const fromCoord = BA_CENTRES[fromBA];
         const toCoord = BA_CENTRES[toBA];
         if (!fromCoord || !toCoord) continue;
