@@ -11,6 +11,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
 
+// ── EU types ──────────────────────────────────────────────────────────────────
+
 interface CrossBorderFlow {
   from: string;
   to: string;
@@ -20,19 +22,33 @@ interface CrossBorderFlow {
   updatedAt: string;
 }
 
+// ── US types ──────────────────────────────────────────────────────────────────
+
+interface InterchangeResult {
+  data: Array<{ fromBA: string; fromBAName: string; toBA: string; toBAName: string }>;
+  byPair: Record<string, number>;
+  latestPeriod: string | null;
+  fetchedAt: string;
+}
+
+// ── Unified arc type ──────────────────────────────────────────────────────────
+
 interface FlowArc {
   originLat: number;
   originLng: number;
   destLat: number;
   destLng: number;
   netMw: number;
-  fromName: string;
-  toName: string;
-  icFrom: string;
-  icTo: string;
-  outMw: number;
-  inMw: number;
+  fromLabel: string;
+  toLabel: string;
+  /** Key used for filter-selection matching (country name or BA code) */
+  fromKey: string;
+  toKey: string;
+  source: "eu" | "us";
+  extraLine?: string;
 }
+
+// ── EU constants ──────────────────────────────────────────────────────────────
 
 function getNetDirection(flow: CrossBorderFlow) {
   return flow.netMw > 0
@@ -49,10 +65,10 @@ function buildHourOptions() {
   for (let i = 0; i <= 36; i++) {
     const h = new Date(now.getTime() - i * 60 * 60 * 1000);
     const hh = h.getUTCHours().toString().padStart(2, "0");
-    const dd = h.getUTCDate();
-    const mon = MONTH_SHORT[h.getUTCMonth()];
-    const yyyy = h.getUTCFullYear();
-    options.push({ value: String(i), label: `${dd} ${mon} ${yyyy}, ${hh}:00 UTC` });
+    options.push({
+      value: String(i),
+      label: `${h.getUTCDate()} ${MONTH_SHORT[h.getUTCMonth()]} ${h.getUTCFullYear()}, ${hh}:00 UTC`,
+    });
   }
   return options;
 }
@@ -107,6 +123,48 @@ const CAPITALS: Record<string, [number, number]> = {
   "Turkey":          [39.9334,  32.8597],
 };
 
+// ── US BA centres ─────────────────────────────────────────────────────────────
+
+const BA_CENTRES: Record<string, [number, number]> = {
+  PJM:  [39.95, -76.88],
+  CISO: [37.77, -121.42],
+  ERCO: [31.97, -99.90],
+  MISO: [41.88, -93.10],
+  NYIS: [42.65, -73.75],
+  ISNE: [42.36, -71.06],
+  SWPP: [37.69, -97.34],
+  SOCO: [33.75, -84.39],
+  TVA:  [35.96, -83.92],
+  DUK:  [35.23, -80.84],
+  FPL:  [27.66, -80.41],
+  BPAT: [45.52, -122.68],
+  PACW: [45.52, -122.68],
+  PACE: [40.76, -111.89],
+  WACM: [39.74, -104.99],
+  SRP:  [33.45, -111.94],
+  AECI: [38.63, -92.57],
+  BANC: [38.58, -121.49],
+  AVA:  [47.66, -117.43],
+  NEVP: [36.17, -115.14],
+  WALC: [35.19, -111.65],
+  AEC:  [32.38, -86.30],
+  SC:   [34.00, -81.03],
+  SCEG: [34.00, -81.03],
+  LGEE: [38.25, -85.76],
+  SEC:  [30.33, -81.66],
+  TAL:  [30.44, -84.28],
+  // Canada
+  IESO: [44.00, -79.50],
+  BCHA: [49.28, -123.12],
+  HQT:  [46.81, -71.21],
+  NBSO: [45.95, -66.64],
+  MHEB: [49.90, -97.14],
+  // Mexico
+  CFE:  [23.63, -102.55],
+};
+
+// ── Colour & weight (EU convention: positive = green export, negative = blue import) ──
+
 function mwToColorHex(netMw: number): string {
   if (Math.abs(netMw) < 10) return "#94a3b8";
   const abs = Math.abs(netMw);
@@ -125,15 +183,15 @@ function mwToColorHex(netMw: number): string {
 
 function lineWeight(netMw: number): number {
   const abs = Math.abs(netMw);
-  if (abs < 100) return 2;
-  if (abs < 500) return 3;
+  if (abs < 100)  return 2;
+  if (abs < 500)  return 3;
   if (abs < 1500) return 4;
   if (abs < 3000) return 6;
   return 8;
 }
 
-// Approximate a geographic Bezier arc with N lat/lng points.
-// The control point is perpendicular to the midpoint of the chord.
+// ── Bézier arc points ─────────────────────────────────────────────────────────
+
 function bezierLatLngPoints(
   fromLat: number, fromLng: number,
   toLat: number, toLng: number,
@@ -161,10 +219,7 @@ function bezierLatLngPoints(
   return pts;
 }
 
-// ── SVG-based flow layer using Leaflet's native polyline renderer ──────────
-// L.Polyline handles ALL coordinate management during pan and zoom.
-// Animation is done via CSS stroke-dashoffset on the SVG <path> element.
-// ──────────────────────────────────────────────────────────────────────────
+// ── SVG flow layer ────────────────────────────────────────────────────────────
 
 interface ArcLayer {
   ghost: L.Polyline;
@@ -179,14 +234,12 @@ class FlowSVGLayer {
   private map: L.Map;
   private arcLayers: ArcLayer[] = [];
   private arcs: FlowArc[] = [];
-  private selectedCountry: string | null = null;
+  private selected: string | null = null;
   private animTimers: ReturnType<typeof setTimeout>[] = [];
   private onArcHover?: (arc: FlowArc | null, latlng?: L.LatLng) => void;
 
   constructor(map: L.Map) {
     this.map = map;
-    // Raise the existing overlayPane above the markerPane (600) so arcs
-    // render on top of country-label markers for this map instance only.
     const overlayPane = map.getPane("overlayPane");
     if (overlayPane) overlayPane.style.zIndex = "625";
   }
@@ -201,51 +254,39 @@ class FlowSVGLayer {
     this._draw();
   }
 
-  setSelectedCountry(country: string | null) {
-    this.selectedCountry = country;
+  setSelected(key: string | null) {
+    this.selected = key;
     this._updateStyles();
   }
 
   private _isRelevant(arc: FlowArc): boolean {
-    if (!this.selectedCountry) return true;
-    return arc.icFrom === this.selectedCountry || arc.icTo === this.selectedCountry;
+    if (!this.selected) return true;
+    return arc.fromKey === this.selected || arc.toKey === this.selected;
   }
 
   private _draw() {
     for (const arc of this.arcs) {
-      const active = Math.abs(arc.netMw) >= 10;
+      if (Math.abs(arc.netMw) < 10) continue;
       const relevant = this._isRelevant(arc);
       const color = mwToColorHex(arc.netMw);
       const weight = lineWeight(arc.netMw);
       const pts = bezierLatLngPoints(arc.originLat, arc.originLng, arc.destLat, arc.destLng);
 
-      if (!active) continue; // flow < 10 MW — skip rather than show a blank line
-
-      // 1. Ghost line — thin solid track so the path is always visible
       const ghost = L.polyline(pts, {
-        color,
-        weight: Math.max(1, weight - 1),
+        color, weight: Math.max(1, weight - 1),
         opacity: relevant ? 0.25 : 0.08,
-        interactive: false,
-        bubblingMouseEvents: false,
+        interactive: false, bubblingMouseEvents: false,
       }).addTo(this.map);
 
-      // 2. Animated dash line — purely visual, no interaction
       const anim = L.polyline(pts, {
-        color,
-        weight,
+        color, weight,
         opacity: relevant ? 0.85 : 0.15,
-        interactive: false,
-        bubblingMouseEvents: false,
+        interactive: false, bubblingMouseEvents: false,
       }).addTo(this.map);
 
-      // 3. Hit zone — wide transparent line on top; captures hover
       const hit = L.polyline(pts, {
-        color,
-        weight: Math.max(12, weight + 8),
-        opacity: 0,
-        interactive: true,
-        bubblingMouseEvents: false,
+        color, weight: Math.max(12, weight + 8),
+        opacity: 0, interactive: true, bubblingMouseEvents: false,
       }).addTo(this.map);
 
       hit.on("mouseover", (e: L.LeafletMouseEvent) => {
@@ -262,7 +303,6 @@ class FlowSVGLayer {
 
       this.arcLayers.push({ ghost, anim, hit, arc, weight, color });
 
-      // CSS dash animation on the anim polyline's SVG element
       const timer = setTimeout(() => {
         const el = anim.getElement() as SVGPathElement | null;
         if (!el) return;
@@ -298,20 +338,19 @@ class FlowSVGLayer {
     this.arcs = [];
   }
 
-  destroy() {
-    this.clear();
-  }
+  destroy() { this.clear(); }
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CrossBorderFlows() {
   const mapRef = useRef<L.Map | null>(null);
   const flowLayerRef = useRef<FlowSVGLayer | null>(null);
   const markerLayerRef = useRef<L.LayerGroup | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const [hoveredArc, setHoveredArc] = useState<FlowArc | null>(null);
   const [tooltipLatLng, setTooltipLatLng] = useState<L.LatLng | null>(null);
-  // Start from the current hour; smart fallback steps backward if data isn't published yet
   const [hourOffset, setHourOffset] = useState("0");
   const [searchStatus, setSearchStatus] = useState<"loading" | "refining" | "searching" | "done" | "exhausted">("loading");
   const refinedRef = useRef(false);
@@ -320,19 +359,30 @@ export default function CrossBorderFlows() {
 
   const hourOptions = buildHourOptions();
 
-  const { data: flows, isLoading, error, refetch, isFetching } = useQuery<CrossBorderFlow[]>({
+  // ── ENTSO-E query ────────────────────────────────────────────────────────────
+  const {
+    data: flows, isLoading: euLoading, error: euError,
+    refetch: refetchEu, isFetching: euFetching,
+  } = useQuery<CrossBorderFlow[]>({
     queryKey: ["/api/entsoe/cross-border-flows", hourOffset],
     queryFn: () =>
-      fetch(`/api/entsoe/cross-border-flows?hourOffset=${hourOffset}`, { credentials: "include" }).then(r => {
-        if (!r.ok) throw new Error(`${r.status}`);
-        return r.json();
-      }),
+      fetch(`/api/entsoe/cross-border-flows?hourOffset=${hourOffset}`, { credentials: "include" })
+        .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); }),
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
 
-  // Background refinement: once -12h data loads, search forward for the most recent
-  // available hour (-11, -10, -9 …); if -12h is empty, step backward (-13, -14 …)
+  // ── EIA interchange query ────────────────────────────────────────────────────
+  const {
+    data: interchange, isLoading: usLoading, isError: usError,
+    refetch: refetchUs, isFetching: usFetching,
+  } = useQuery<InterchangeResult>({
+    queryKey: ["/api/eia/interchange"],
+    staleTime: 60 * 60 * 1000,
+    retry: 1,
+  });
+
+  // ── ENTSO-E smart fallback (step forward to find most recent, or back if empty) ──
   useEffect(() => {
     if (flows === undefined) return;
     if (refinedRef.current) return;
@@ -347,23 +397,17 @@ export default function CrossBorderFlows() {
 
     async function run() {
       if (hasData) {
-        // Data found at -12h — scan forward (smaller offsets = more recent) to find the latest available hour
         setSearchStatus("refining");
         let bestOffset = currentOffset;
         for (let offset = currentOffset - 1; offset >= 0; offset--) {
           if (controller.signal.aborted) return;
           try {
             const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
-              credentials: "include",
-              signal: controller.signal,
+              credentials: "include", signal: controller.signal,
             });
             if (!r.ok) break;
             const data: CrossBorderFlow[] = await r.json();
-            if (data.some(f => Math.abs(f.netMw) >= 10)) {
-              bestOffset = offset;
-            } else {
-              break; // gap in data — stop here
-            }
+            if (data.some(f => Math.abs(f.netMw) >= 10)) { bestOffset = offset; } else { break; }
           } catch { break; }
         }
         if (!controller.signal.aborted) {
@@ -374,14 +418,12 @@ export default function CrossBorderFlows() {
           setSearchStatus("done");
         }
       } else {
-        // No data at -12h — step backward (-13, -14 …) until we find something
         setSearchStatus("searching");
         for (let offset = currentOffset + 1; offset <= 36; offset++) {
           if (controller.signal.aborted) return;
           try {
             const r = await fetch(`/api/entsoe/cross-border-flows?hourOffset=${offset}`, {
-              credentials: "include",
-              signal: controller.signal,
+              credentials: "include", signal: controller.signal,
             });
             if (!r.ok) continue;
             const data: CrossBorderFlow[] = await r.json();
@@ -403,20 +445,33 @@ export default function CrossBorderFlows() {
     return () => { controller.abort(); };
   }, [flows]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Human-readable period label, e.g. "Cross-border flows: 27 Mar 2026, 06:00 UTC"
-  const displayHourLabel = (() => {
+  // ── Timestamp labels ─────────────────────────────────────────────────────────
+
+  const euHourLabel = (() => {
     const now = new Date();
     now.setUTCMinutes(0, 0, 0);
     const h = new Date(now.getTime() - parseInt(hourOffset) * 60 * 60 * 1000);
     const hh = h.getUTCHours().toString().padStart(2, "0");
-    return `Cross-border flows: ${h.getUTCDate()} ${MONTH_SHORT[h.getUTCMonth()]} ${h.getUTCFullYear()}, ${hh}:00 UTC`;
+    return `${h.getUTCDate()} ${MONTH_SHORT[h.getUTCMonth()]} ${h.getUTCFullYear()}, ${hh}:00 UTC`;
   })();
+
+  const usHourLabel = (() => {
+    if (!interchange?.latestPeriod) return null;
+    const [datePart, hourPart] = interchange.latestPeriod.split("T");
+    if (!datePart) return interchange.latestPeriod;
+    const [yyyy, mm, dd] = datePart.split("-").map(Number);
+    const month = MONTH_SHORT[(mm ?? 1) - 1] ?? "";
+    const hh = (hourPart ?? "0").padStart(2, "0");
+    return `${dd} ${month} ${yyyy}, ${hh}:00 UTC`;
+  })();
+
+  // ── Map init ─────────────────────────────────────────────────────────────────
 
   const initMap = useCallback((node: HTMLDivElement | null) => {
     if (!node || mapRef.current) return;
     const map = L.map(node, {
-      center: [54, 10],
-      zoom: 4,
+      center: [45, -30],
+      zoom: 2,
       zoomControl: false,
       scrollWheelZoom: true,
       attributionControl: true,
@@ -437,67 +492,116 @@ export default function CrossBorderFlows() {
     setMapReady(true);
   }, []);
 
-  // Build and draw arcs whenever flow data changes
-  useEffect(() => {
-    if (!mapReady || !mapRef.current || !flows || !flowLayerRef.current) return;
+  // ── Build and draw combined arcs ─────────────────────────────────────────────
 
-    const flowMap = new Map<string, CrossBorderFlow>();
-    for (const flow of flows) {
-      flowMap.set(`${flow.from}-${flow.to}`, flow);
-    }
+  useEffect(() => {
+    if (!mapReady || !flowLayerRef.current) return;
 
     const arcs: FlowArc[] = [];
-    for (const ic of INTERCONNECTORS) {
-      const flow = flowMap.get(`${ic.from}-${ic.to}`) || flowMap.get(`${ic.to}-${ic.from}`);
-      const fromCoord = CAPITALS[ic.from] ?? CENTROIDS[ic.from];
-      const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
-      if (!fromCoord || !toCoord) continue;
 
-      if (!flow) continue; // no ENTSO-E data for this border — skip entirely
+    // EU arcs from ENTSO-E
+    if (flows) {
+      const flowMap = new Map<string, CrossBorderFlow>();
+      for (const flow of flows) flowMap.set(`${flow.from}-${flow.to}`, flow);
 
-      const { exporterName, importerName } = getNetDirection(flow);
-      const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
-      const importerCoord = CAPITALS[importerName] ?? CENTROIDS[importerName] ?? toCoord;
+      for (const ic of INTERCONNECTORS) {
+        const flow = flowMap.get(`${ic.from}-${ic.to}`) || flowMap.get(`${ic.to}-${ic.from}`);
+        const fromCoord = CAPITALS[ic.from] ?? CENTROIDS[ic.from];
+        const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
+        if (!fromCoord || !toCoord || !flow) continue;
 
-      arcs.push({
-        originLat: exporterCoord[0], originLng: exporterCoord[1],
-        destLat: importerCoord[0], destLng: importerCoord[1],
-        netMw: flow.netMw,
-        fromName: exporterName, toName: importerName,
-        icFrom: ic.from, icTo: ic.to,
-        outMw: flow.outMw, inMw: flow.inMw,
-      });
+        const { exporterName, importerName } = getNetDirection(flow);
+        const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
+        const importerCoord = CAPITALS[importerName] ?? CENTROIDS[importerName] ?? toCoord;
+
+        arcs.push({
+          originLat: exporterCoord[0], originLng: exporterCoord[1],
+          destLat: importerCoord[0], destLng: importerCoord[1],
+          netMw: flow.netMw,
+          fromLabel: exporterName, toLabel: importerName,
+          fromKey: ic.from, toKey: ic.to,
+          source: "eu",
+          extraLine: `${ic.from}→${ic.to}: ${flow.outMw.toLocaleString()} MW · ${ic.to}→${ic.from}: ${flow.inMw.toLocaleString()} MW`,
+        });
+      }
+    }
+
+    // US arcs from EIA
+    if (interchange) {
+      for (const [pairKey, valueMW] of Object.entries(interchange.byPair)) {
+        if (Math.abs(valueMW) < 50) continue;
+        const [fromBA, toBA] = pairKey.split("->");
+        if (!fromBA || !toBA) continue;
+        const fromCoord = BA_CENTRES[fromBA];
+        const toCoord = BA_CENTRES[toBA];
+        if (!fromCoord || !toCoord) continue;
+
+        const fromPoint = interchange.data.find(p => p.fromBA === fromBA);
+        const toPoint = interchange.data.find(p => p.toBA === toBA);
+
+        arcs.push({
+          originLat: fromCoord[0], originLng: fromCoord[1],
+          destLat: toCoord[0], destLng: toCoord[1],
+          netMw: valueMW,
+          fromLabel: fromPoint?.fromBAName ?? fromBA,
+          toLabel: toPoint?.toBAName ?? toBA,
+          fromKey: fromBA, toKey: toBA,
+          source: "us",
+        });
+      }
     }
 
     flowLayerRef.current.setArcs(arcs);
-    flowLayerRef.current.setSelectedCountry(selectedCountry);
-  }, [mapReady, flows]);
+    flowLayerRef.current.setSelected(selected);
+  }, [mapReady, flows, interchange]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rebuild country label markers whenever flows or selectedCountry changes
+  // ── Rebuild label markers ────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!mapReady || !markerLayerRef.current) return;
     const markerLayer = markerLayerRef.current;
     markerLayer.clearLayers();
 
+    // EU country labels
     for (const [country, coord] of Object.entries(CAPITALS)) {
-      const isSelected = country === selectedCountry;
+      const isSelected = selected === country;
       const label = COUNTRY_CODE[country] ?? country.slice(0, 2).toUpperCase();
       const icon = L.divIcon({
         html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:${isSelected ? "#1e40af" : "white"};border:1.5px solid ${isSelected ? "#1e40af" : "#475569"};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;color:${isSelected ? "white" : "#1e293b"};white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.15);cursor:pointer;line-height:1.4">${label}</div>`,
-        className: "",
-        iconSize: [0, 0],
-        iconAnchor: [0, 0],
+        className: "", iconSize: [0, 0], iconAnchor: [0, 0],
       });
       const marker = L.marker(coord, { icon });
-      marker.on("click", () => setSelectedCountry(prev => prev === country ? null : country));
+      marker.on("click", () => setSelected(prev => prev === country ? null : country));
       markerLayer.addLayer(marker);
     }
-  }, [mapReady, selectedCountry, flows]);
 
-  // Propagate selectedCountry to the flow layer
+    // US BA labels — only for BAs that appear in the current data
+    if (interchange) {
+      const activeBASet = new Set<string>();
+      for (const key of Object.keys(interchange.byPair)) {
+        const [f, t] = key.split("->");
+        if (f && BA_CENTRES[f]) activeBASet.add(f);
+        if (t && BA_CENTRES[t]) activeBASet.add(t);
+      }
+      for (const ba of activeBASet) {
+        const coord = BA_CENTRES[ba];
+        if (!coord) continue;
+        const isSelected = selected === ba;
+        const icon = L.divIcon({
+          html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:${isSelected ? "#1e40af" : "#f8fafc"};border:1.5px solid ${isSelected ? "#1e40af" : "#94a3b8"};border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:${isSelected ? "white" : "#334155"};white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.12);cursor:pointer;line-height:1.4">${ba}</div>`,
+          className: "", iconSize: [0, 0], iconAnchor: [0, 0],
+        });
+        const marker = L.marker(coord, { icon });
+        marker.on("click", () => setSelected(prev => prev === ba ? null : ba));
+        markerLayer.addLayer(marker);
+      }
+    }
+  }, [mapReady, selected, flows, interchange]);
+
+  // Propagate selection to layer
   useEffect(() => {
-    flowLayerRef.current?.setSelectedCountry(selectedCountry);
-  }, [selectedCountry]);
+    flowLayerRef.current?.setSelected(selected);
+  }, [selected]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -509,7 +613,7 @@ export default function CrossBorderFlows() {
     };
   }, []);
 
-  // Convert hovered arc tooltip position from LatLng to container pixels
+  // Tooltip pixel position
   const tooltipPx = (() => {
     if (!hoveredArc || !tooltipLatLng || !mapRef.current) return null;
     try {
@@ -518,13 +622,10 @@ export default function CrossBorderFlows() {
     } catch { return null; }
   })();
 
-  const hasError = !isLoading && error;
-  const noData = !isLoading && !error && (!flows || flows.length === 0);
-  const updatedAt = flows?.[0]?.updatedAt;
-
-  const largestFlow = flows && flows.length > 0
-    ? flows.reduce((max, f) => Math.abs(f.netMw) > Math.abs(max.netMw) ? f : max, flows[0])
-    : null;
+  // Show full loading overlay only when both sources have no data yet
+  const bothLoading = euLoading && !flows && usLoading && !interchange;
+  const eitherFetching = euFetching || usFetching;
+  const euUpdatedAt = flows?.[0]?.updatedAt;
 
   return (
     <Card className="border-none shadow-md mb-0 overflow-hidden mt-6">
@@ -534,32 +635,69 @@ export default function CrossBorderFlows() {
             <CardTitle className="text-lg flex items-center gap-2" data-testid="text-cross-border-title">
               <ArrowRightLeft className="w-4 h-4 text-blue-500" />
               Cross-border Physical Flows
-              {!isLoading && !hasError && flows && flows.length > 0 && (
+              {flows && flows.length > 0 && !euError && (
                 <Badge variant="outline" className="text-xs font-normal border-blue-200 text-blue-600 gap-1">
                   <Radio className="w-3 h-3 animate-pulse" />
                   ENTSO-E Live
                 </Badge>
               )}
+              {euLoading && !flows && (
+                <Badge variant="outline" className="text-xs font-normal border-slate-200 text-slate-400 gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  ENTSO-E
+                </Badge>
+              )}
+              {interchange && !usError && (
+                <Badge variant="outline" className="text-xs font-normal border-green-200 text-green-700 gap-1">
+                  <Radio className="w-3 h-3 animate-pulse" />
+                  EIA Live
+                </Badge>
+              )}
+              {usLoading && !interchange && (
+                <Badge variant="outline" className="text-xs font-normal border-slate-200 text-slate-400 gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  EIA
+                </Badge>
+              )}
             </CardTitle>
+
             <p className="text-sm text-slate-500 mt-0.5">
-              Net power flows between adjacent European countries
-              {selectedCountry && (
-                <span className="ml-1 text-blue-500 font-medium">· Viewing {selectedCountry}'s perspective</span>
+              Net power flows between European countries and US Balancing Authorities
+              {selected && (
+                <span className="ml-1 text-blue-500 font-medium">· Viewing {selected}'s perspective</span>
               )}
             </p>
+
+            {/* ENTSO-E timestamp / search status */}
             <p className="text-xs text-slate-400 mt-0.5">
+              <span className="font-semibold text-slate-500">ENTSO-E: </span>
               {searchStatus === "searching"
-                ? "Searching for latest available ENTSO-E data…"
-                : <span className="font-medium text-slate-500">{displayHourLabel}</span>
+                ? <span className="italic">Searching for latest available data…</span>
+                : searchStatus === "exhausted"
+                ? <span className="text-amber-500">No recent A11 data available</span>
+                : <span className="font-medium text-slate-500">{euHourLabel}</span>
               }
             </p>
+
+            {/* EIA timestamp */}
+            {(interchange || usError) && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                <span className="font-semibold text-slate-500">EIA: </span>
+                {usError
+                  ? <span className="text-amber-500">Unavailable (check EIA_API_KEY)</span>
+                  : usHourLabel
+                  ? <span className="font-medium text-slate-500">{usHourLabel}</span>
+                  : <span className="italic text-slate-400">Loading…</span>
+                }
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Select
               value={hourOffset}
               onValueChange={(v) => {
-                refinedRef.current = true; // don't auto-refine manual selections
+                refinedRef.current = true;
                 setHourOffset(v);
               }}
             >
@@ -574,9 +712,14 @@ export default function CrossBorderFlows() {
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}
-              className="gap-1.5 h-8" data-testid="button-refresh-flows">
-              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <Button
+              size="sm" variant="outline"
+              onClick={() => { refetchEu(); refetchUs(); }}
+              disabled={eitherFetching}
+              className="gap-1.5 h-8"
+              data-testid="button-refresh-flows"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${eitherFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
           </div>
@@ -585,70 +728,35 @@ export default function CrossBorderFlows() {
         <div className="flex items-center gap-4 mt-2 flex-wrap text-xs">
           <span className="flex items-center gap-1.5 text-slate-600">
             <span className="inline-block w-5 h-1.5 rounded-sm" style={{ background: "rgb(22,163,74)" }} />
-            Export (green)
+            Export / Outflow
           </span>
           <span className="flex items-center gap-1.5 text-slate-600">
             <span className="inline-block w-5 h-1.5 rounded-sm" style={{ background: "rgb(37,99,235)" }} />
-            Import (blue)
+            Import / Inflow
           </span>
-          <span className="text-slate-400">Animated arcs · flow direction · click label to filter</span>
-          {selectedCountry && (
-            <button onClick={() => setSelectedCountry(null)}
-              className="text-blue-500 hover:text-blue-700 underline" data-testid="button-clear-selection">
+          <span className="text-slate-400">Animated arcs · arc thickness = magnitude · click label to filter</span>
+          {selected && (
+            <button
+              onClick={() => setSelected(null)}
+              className="text-blue-500 hover:text-blue-700 underline"
+              data-testid="button-clear-selection"
+            >
               Clear selection
             </button>
           )}
         </div>
-
-        {largestFlow && Math.abs(largestFlow.netMw) > 0 && (
-          <div className="flex gap-3 mt-2">
-            <div className="text-center px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs" data-testid="text-largest-flow">
-              <div className="text-blue-700 font-semibold">Largest flow</div>
-              <div className="text-blue-600 font-bold">
-                {getNetDirection(largestFlow).exporterName} → {getNetDirection(largestFlow).importerName}
-              </div>
-              <div className="text-blue-500">{Math.abs(largestFlow.netMw).toLocaleString()} MW</div>
-            </div>
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="p-0 relative">
-        {isLoading && !flows && (
-          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="loading-cross-border">
+        {bothLoading && (
+          <div className="absolute inset-x-0 top-0 h-[560px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="loading-cross-border">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             <p className="text-sm text-slate-400">Loading cross-border flow data…</p>
           </div>
         )}
-        {isFetching && flows && (
+        {eitherFetching && (flows || interchange) && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-white/90 rounded-full p-2 shadow-md" data-testid="refetching-cross-border">
             <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-          </div>
-        )}
-        {hasError && (
-          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="error-cross-border">
-            <AlertTriangle className="w-8 h-8 text-amber-400" />
-            <p className="text-sm text-slate-500">Could not load cross-border flow data.</p>
-            <Button size="sm" variant="outline" onClick={() => refetch()} className="mt-2" data-testid="button-retry-flows">
-              Try Again
-            </Button>
-          </div>
-        )}
-        {!hasError && searchStatus === "searching" && (
-          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="searching-cross-border">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-            <p className="text-sm font-medium text-slate-600">Loading cross-border flow data…</p>
-            <p className="text-xs text-slate-400">Checking recently published days from ENTSO-E</p>
-          </div>
-        )}
-        {!hasError && searchStatus === "exhausted" && (
-          <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="exhausted-cross-border">
-            <ArrowRightLeft className="w-8 h-8 text-slate-300" />
-            <p className="text-sm text-slate-500">Cross-border flow data is temporarily unavailable from ENTSO-E.</p>
-            <p className="text-xs text-slate-400">No recent physical flow data (A11) is available from ENTSO-E right now.</p>
-            <Button size="sm" variant="outline" onClick={() => { refinedRef.current = false; refetch(); }} className="mt-1">
-              Try Again
-            </Button>
           </div>
         )}
 
@@ -668,33 +776,38 @@ export default function CrossBorderFlows() {
             <div
               className="absolute z-[2000] pointer-events-none"
               style={{
-                left: Math.min(tooltipPx.x + 14, (containerRef.current?.clientWidth ?? 600) - 210),
+                left: Math.min(tooltipPx.x + 14, (containerRef.current?.clientWidth ?? 600) - 220),
                 top: Math.max(tooltipPx.y - 70, 8),
               }}
             >
-              <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[160px]">
-                <div className="font-bold text-slate-800 mb-1">{hoveredArc.fromName} → {hoveredArc.toName}</div>
+              <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[170px]">
+                <div className="font-bold text-slate-800 mb-1">
+                  {hoveredArc.fromLabel} → {hoveredArc.toLabel}
+                </div>
                 <div className="text-lg font-black mb-1" style={{ color: mwToColorHex(hoveredArc.netMw) }}>
                   {Math.abs(hoveredArc.netMw).toLocaleString()} MW
                 </div>
-                <div className="text-slate-500 text-[10px]">
-                  {hoveredArc.icFrom}→{hoveredArc.icTo}: {hoveredArc.outMw.toLocaleString()} MW
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  {hoveredArc.icTo}→{hoveredArc.icFrom}: {hoveredArc.inMw.toLocaleString()} MW
+                {hoveredArc.extraLine && (
+                  <div className="text-slate-500 text-[10px]">{hoveredArc.extraLine}</div>
+                )}
+                <div className="text-slate-400 text-[10px] mt-0.5">
+                  {hoveredArc.source === "eu" ? "ENTSO-E" : "EIA Form 930"}
                 </div>
               </div>
             </div>
           )}
 
-          <div ref={initMap} style={{ height: "520px", width: "100%" }} data-testid="map-cross-border-flows" />
+          <div ref={initMap} style={{ height: "560px", width: "100%" }} data-testid="map-cross-border-flows" />
         </div>
 
         <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-400">
-          <span>Source: ENTSO-E Transparency Platform · Document A11</span>
-          {updatedAt && (
+          <span>
+            ENTSO-E Transparency Platform · Document A11
+            {interchange && <span className="ml-2 pl-2 border-l border-slate-200">EIA Form 930 · Hourly BA Interchange</span>}
+          </span>
+          {euUpdatedAt && (
             <span className="text-slate-500" data-testid="text-flows-timestamp">
-              Latest data point: {new Date(updatedAt).toLocaleString()}
+              ENTSO-E: {new Date(euUpdatedAt).toLocaleString()}
             </span>
           )}
         </div>

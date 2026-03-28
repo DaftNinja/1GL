@@ -56,7 +56,6 @@ import OEPBenchmarkChart from "@/components/OEPBenchmarkChart";
 import ENTSOETransmissionMap from "@/components/ENTSOETransmissionMap";
 import CrossBorderFlows from "@/components/CrossBorderFlows";
 import USGridChart from "@/components/USGridChart";
-import USInterchangeMap from "@/components/USInterchangeMap";
 import BrazilGridChart from "@/components/BrazilGridChart";
 
 const COLORS = [
@@ -86,7 +85,6 @@ export default function PowerTrends() {
   const queryClient = useQueryClient();
   const [selectedCountry, setSelectedCountry] = useState<string>("United Kingdom");
   const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
-  const [flowRegion, setFlowRegion] = useState<"europe" | "us">("europe");
   const { toast } = useToast();
 
   const { data: trendData, isLoading: isLoadingExisting } = useQuery<{ id: number; country: string; content: PowerTrendContent; createdAt: string } | null>({
@@ -563,26 +561,8 @@ export default function PowerTrends() {
         {/* European Transmission System Map — always visible */}
         <ENTSOETransmissionMap />
 
-        {/* Cross-border Physical Flows — always visible, region-switchable */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Button
-              size="sm"
-              variant={flowRegion === "europe" ? "default" : "outline"}
-              onClick={() => setFlowRegion("europe")}
-            >
-              Europe
-            </Button>
-            <Button
-              size="sm"
-              variant={flowRegion === "us" ? "default" : "outline"}
-              onClick={() => setFlowRegion("us")}
-            >
-              United States
-            </Button>
-          </div>
-          {flowRegion === "europe" ? <CrossBorderFlows /> : <USInterchangeMap />}
-        </div>
+        {/* Cross-border Physical Flows — always visible, shows EU + US simultaneously */}
+        <CrossBorderFlows />
 
         {/* Country-specific live data charts — visible as soon as a country is selected */}
         {selectedCountry && (
