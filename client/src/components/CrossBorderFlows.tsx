@@ -599,11 +599,35 @@ export default function CrossBorderFlows() {
 
     // US arcs from EIA
     if (interchange) {
-      for (const [pairKey, valueMW] of Object.entries(interchange.byPair)) {
+      const allPairs = Object.entries(interchange.byPair);
+      console.log("[EIA arcs] total pairs in byPair:", allPairs.length);
+
+      const nonAggregate = allPairs.filter(([pairKey]) => {
+        const [fromBA, toBA] = pairKey.split("->");
+        return fromBA && toBA && !AGGREGATE_BAS.has(fromBA) && !AGGREGATE_BAS.has(toBA);
+      });
+      console.log("[EIA arcs] after aggregate filter:", nonAggregate.length);
+
+      const missing: string[] = [];
+      let matchCount = 0;
+      for (const [pairKey, valueMW] of nonAggregate) {
+        const [fromBA, toBA] = pairKey.split("->");
+        if (!fromBA || !toBA) continue;
+        const hasFrom = fromBA in BA_CENTRES;
+        const hasTo   = toBA   in BA_CENTRES;
+        if (!hasFrom || !hasTo) {
+          missing.push(`${pairKey} (from:${hasFrom ? "✓" : "✗"} to:${hasTo ? "✓" : "✗"})`);
+        } else {
+          matchCount++;
+        }
+      }
+      console.log("[EIA arcs] pairs with both coords:", matchCount, "/ missing:", missing.length);
+      if (missing.length) console.log("[EIA arcs] missing coords:", missing);
+
+      for (const [pairKey, valueMW] of nonAggregate) {
         if (Math.abs(valueMW) < 50) continue;
         const [fromBA, toBA] = pairKey.split("->");
         if (!fromBA || !toBA) continue;
-        if (AGGREGATE_BAS.has(fromBA) || AGGREGATE_BAS.has(toBA)) continue;
         const fromCoord = BA_CENTRES[fromBA];
         const toCoord = BA_CENTRES[toBA];
         if (!fromCoord || !toCoord) continue;
@@ -621,6 +645,7 @@ export default function CrossBorderFlows() {
           source: "us",
         });
       }
+      console.log("[EIA arcs] arcs added (|MW| >= 50):", arcs.filter(a => a.source === "us").length);
     }
 
     flowLayerRef.current.setArcs(arcs);
