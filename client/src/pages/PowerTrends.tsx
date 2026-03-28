@@ -86,6 +86,7 @@ export default function PowerTrends() {
   const queryClient = useQueryClient();
   const [selectedCountry, setSelectedCountry] = useState<string>("United Kingdom");
   const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
+  const [showUSGridFlows, setShowUSGridFlows] = useState(false);
   const { toast } = useToast();
 
   const { data: trendData, isLoading: isLoadingExisting } = useQuery<{ id: number; country: string; content: PowerTrendContent; createdAt: string } | null>({
@@ -576,7 +577,18 @@ export default function PowerTrends() {
                   subtitle="Live data from the US Energy Information Administration (EIA) — real-time generation, demand, and retail prices"
                 />
                 <USGridChart />
-                <USInterchangeMap />
+                <div className="flex items-center gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    variant={showUSGridFlows ? "default" : "outline"}
+                    onClick={() => setShowUSGridFlows(v => !v)}
+                    className="gap-1.5"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    {showUSGridFlows ? "Hide US Grid Flows" : "US Grid Flows"}
+                  </Button>
+                </div>
+                {showUSGridFlows && <USInterchangeMap />}
               </>
             )}
 

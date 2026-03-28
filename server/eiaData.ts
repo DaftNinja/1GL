@@ -179,7 +179,7 @@ export async function getGenerationByFuelType(): Promise<EiaGenerationResult> {
     ...baList.map((ba): [string, string] => ["facets[respondent][]", ba]),
     ["sort[0][column]", "period"],
     ["sort[0][direction]", "desc"],
-    ["length", "700"],
+    ["length", "5000"],
     ["offset", "0"],
   ];
 
@@ -329,7 +329,7 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     ["data[0]", "value"],
     ["sort[0][column]", "period"],
     ["sort[0][direction]", "desc"],
-    ["length", "500"],
+    ["length", "5000"],
   ];
 
   const json = await fetchEia("/electricity/rto/interchange-data/data", params);
@@ -349,17 +349,19 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     });
   }
 
-  // Build byPair: most recent value per unique FROM->TO pair (data is desc-sorted)
+  // Find the most recent period present in the data
+  const latestPeriod = points.reduce<string | null>((best, p) => {
+    if (!best || p.period > best) return p.period;
+    return best;
+  }, null);
+
+  // Build byPair: only rows from the latest period (group by period, take max)
   const byPair: Record<string, number> = {};
-  const seenPair = new Set<string>();
   for (const p of points) {
+    if (p.period !== latestPeriod) continue;
     const key = `${p.fromBA}->${p.toBA}`;
-    if (seenPair.has(key)) continue;
-    seenPair.add(key);
     byPair[key] = p.valueMW;
   }
-
-  const latestPeriod = points[0]?.period ?? null;
 
   return toCache("eia:interchange", { data: points, byPair, latestPeriod, fetchedAt: new Date().toISOString() });
 }

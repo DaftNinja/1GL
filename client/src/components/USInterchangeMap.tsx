@@ -40,6 +40,7 @@ interface FlowArc {
 // ── BA geographic centres ─────────────────────────────────────────────────────
 
 const BA_CENTRES: Record<string, [number, number]> = {
+  // US major BAs
   PJM:  [39.95, -76.88],
   CISO: [37.77, -121.42],
   ERCO: [31.97, -99.90],
@@ -51,11 +52,22 @@ const BA_CENTRES: Record<string, [number, number]> = {
   TVA:  [35.96, -83.92],
   DUK:  [35.23, -80.84],
   FPL:  [27.66, -80.41],
-  PACE: [40.76, -111.89],
+  BPAT: [45.52, -122.68],
   PACW: [45.52, -122.68],
+  PACE: [40.76, -111.89],
   WACM: [39.74, -104.99],
   SRP:  [33.45, -111.94],
   AECI: [38.63, -92.57],
+  BANC: [38.58, -121.49],
+  AVA:  [47.66, -117.43],
+  NEVP: [36.17, -115.14],
+  WALC: [35.19, -111.65],
+  AEC:  [32.38, -86.30],
+  SC:   [34.00, -81.03],
+  SCEG: [34.00, -81.03],
+  LGEE: [38.25, -85.76],
+  SEC:  [30.33, -81.66],
+  TAL:  [30.44, -84.28],
   // Canada
   IESO: [44.00, -79.50],
   BCHA: [49.28, -123.12],
@@ -88,9 +100,9 @@ function mwToColorHex(valueMW: number): string {
 
 function lineWeight(valueMW: number): number {
   const abs = Math.abs(valueMW);
-  if (abs < 500)  return 2;
-  if (abs < 2000) return 4;
-  return 6;
+  if (abs < 500)  return 1;
+  if (abs < 2000) return 2;
+  return 3.5;
 }
 
 function bezierLatLngPoints(
