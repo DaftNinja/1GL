@@ -374,10 +374,25 @@ export default function CrossBorderFlows() {
 
   // ── EIA interchange query ────────────────────────────────────────────────────
   const {
-    data: interchange, isLoading: usLoading, isError: usError,
+    data: interchange, isLoading: usLoading, isError: usError, error: usErrorObj,
     refetch: refetchUs, isFetching: usFetching,
   } = useQuery<InterchangeResult>({
     queryKey: ["/api/eia/interchange"],
+    queryFn: async () => {
+      const res = await fetch("/api/eia/interchange", { credentials: "include" });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.error(`[EIA interchange] HTTP ${res.status}:`, text.slice(0, 200));
+        throw new Error(`${res.status}: ${text.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      console.log("[EIA interchange] received:", {
+        latestPeriod: data.latestPeriod,
+        pairs: Object.keys(data.byPair ?? {}).length,
+        rows: data.data?.length,
+      });
+      return data;
+    },
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
@@ -684,7 +699,7 @@ export default function CrossBorderFlows() {
               <p className="text-xs text-slate-400 mt-0.5">
                 <span className="font-semibold text-slate-500">EIA: </span>
                 {usError
-                  ? <span className="text-amber-500">Unavailable (check EIA_API_KEY)</span>
+                  ? <span className="text-amber-500">Unavailable — {usErrorObj instanceof Error ? usErrorObj.message.slice(0, 80) : "fetch failed"}</span>
                   : usHourLabel
                   ? <span className="font-medium text-slate-500">{usHourLabel}</span>
                   : <span className="italic text-slate-400">Loading…</span>

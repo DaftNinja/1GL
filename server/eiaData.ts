@@ -329,51 +329,44 @@ export async function getRegionDemand(): Promise<EiaRegionDemandResult> {
 
 // ── Interchange Data ──────────────────────────────────────────────────────────
 
+function eiaHourString(d: Date): string {
+  const yyyy = d.getUTCFullYear();
+  const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd   = String(d.getUTCDate()).padStart(2, "0");
+  const hh   = String(d.getUTCHours()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}`;
+}
+
 export async function getInterchangeData(): Promise<InterchangeResult> {
   const cached = fromCache<InterchangeResult>("eia:interchange", REALTIME_TTL_MS);
   if (cached) return cached;
 
-  // Step 1: probe for the single most-recent period value (1 row, fast)
-  const probeJson = await fetchEia("/electricity/rto/interchange-data/data", [
-    ["frequency", "hourly"],
-    ["data[0]", "value"],
-    ["sort[0][column]", "period"],
-    ["sort[0][direction]", "desc"],
-    ["length", "1"],
-  ]);
-  const latestPeriod: string | null = probeJson?.response?.data?.[0]?.period ?? null;
-  console.log(`[EIA] interchange latest period: ${latestPeriod}`);
+  // Different BA regions publish on different schedules — Western Interconnection
+  // may be 1–2 hours ahead of Eastern. Query the last 4 hours so every BA
+  // region is covered, then keep the most-recent row per BA pair.
+  const startPeriod = eiaHourString(new Date(Date.now() - 4 * 60 * 60 * 1000));
+  console.log(`[EIA] interchange fetching start=${startPeriod} (last 4 hours)`);
 
-  if (!latestPeriod) {
-    console.warn("[EIA] interchange probe returned no period — returning empty result");
-    return toCache("eia:interchange", { data: [], byPair: {}, latestPeriod: null, fetchedAt: new Date().toISOString() });
-  }
-
-  // Step 2: fetch ALL pairs for exactly that period using start/end params.
-  // Note: facets[period][] is a categorical filter and does NOT work for time
-  // period filtering in the EIA v2 API — use start= and end= instead.
-  // ~200–300 BA-to-BA pairs per hour; paginate in batches of 1000.
   let allRows: any[] = [];
   let offset = 0;
   const PAGE = 1000;
   let page = 0;
 
   while (true) {
-    console.log(`[EIA] interchange page ${page} (offset=${offset}) for period ${latestPeriod}`);
+    console.log(`[EIA] interchange page ${page} (offset=${offset})`);
     const pageJson = await fetchEia("/electricity/rto/interchange-data/data", [
       ["frequency", "hourly"],
       ["data[0]", "value"],
-      ["start", latestPeriod],
-      ["end", latestPeriod],
-      ["sort[0][column]", "fromba"],
-      ["sort[0][direction]", "asc"],
+      ["start", startPeriod],
+      ["sort[0][column]", "period"],
+      ["sort[0][direction]", "desc"],
       ["length", String(PAGE)],
       ["offset", String(offset)],
     ]);
 
     const pageRows: any[] = pageJson?.response?.data ?? [];
     const total: number = pageJson?.response?.total ?? 0;
-    console.log(`[EIA] interchange page ${page}: ${pageRows.length} rows (total reported: ${total})`);
+    console.log(`[EIA] interchange page ${page}: ${pageRows.length} rows (total: ${total})`);
     allRows = allRows.concat(pageRows);
 
     if (offset + PAGE >= total || pageRows.length < PAGE) break;
@@ -381,31 +374,39 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     page++;
   }
 
-  console.log(`[EIA] interchange total rows fetched for ${latestPeriod}: ${allRows.length}`);
+  console.log(`[EIA] interchange total rows: ${allRows.length}`);
 
+  // Parse rows. Data is sorted period desc, so the first occurrence of each
+  // BA pair is the most recent — use a seen-set to enforce most-recent-wins.
+  const seenPairs = new Set<string>();
+  const byPair: Record<string, number> = {};
   const points: InterchangePoint[] = [];
+  let latestPeriod: string | null = null;
+
   for (const row of allRows) {
     const raw = parseFloat(row.value ?? row["value"]);
     if (isNaN(raw)) continue;
-    points.push({
-      period:     row.period ?? "",
-      fromBA:     row.fromba ?? row["fromba"] ?? "",
-      fromBAName: row["fromba-name"] ?? row.fromba ?? "",
-      toBA:       row.toba ?? row["toba"] ?? "",
-      toBAName:   row["toba-name"] ?? row.toba ?? "",
-      valueMW:    raw,
-    });
+
+    const fromBA     = row.fromba ?? row["fromba"] ?? "";
+    const toBA       = row.toba   ?? row["toba"]   ?? "";
+    const period     = row.period ?? "";
+    const fromBAName = row["fromba-name"] ?? fromBA;
+    const toBAName   = row["toba-name"]   ?? toBA;
+
+    points.push({ period, fromBA, fromBAName, toBA, toBAName, valueMW: raw });
+
+    const pairKey = `${fromBA}->${toBA}`;
+    if (!seenPairs.has(pairKey)) {
+      seenPairs.add(pairKey);
+      byPair[pairKey] = raw;
+      // Track overall latest period (rows are desc-sorted so first non-null wins)
+      if (!latestPeriod && period) latestPeriod = period;
+    }
   }
 
-  // Log unique fromBA values to diagnose coverage
   const uniqueFromBAs = [...new Set(points.map(p => p.fromBA))].sort();
-  console.log(`[EIA] interchange unique fromBA (${uniqueFromBAs.length}):`, uniqueFromBAs.join(", "));
-
-  // Build byPair map for the single period
-  const byPair: Record<string, number> = {};
-  for (const p of points) {
-    byPair[`${p.fromBA}->${p.toBA}`] = p.valueMW;
-  }
+  console.log(`[EIA] interchange unique fromBA (${uniqueFromBAs.length}): ${uniqueFromBAs.join(", ")}`);
+  console.log(`[EIA] interchange byPair pairs: ${Object.keys(byPair).length}, latestPeriod: ${latestPeriod}`);
 
   return toCache("eia:interchange", { data: points, byPair, latestPeriod, fetchedAt: new Date().toISOString() });
 }
