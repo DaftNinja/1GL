@@ -55,6 +55,7 @@ import ElectricityPricesChart from "@/components/ElectricityPricesChart";
 import OEPBenchmarkChart from "@/components/OEPBenchmarkChart";
 import ENTSOETransmissionMap from "@/components/ENTSOETransmissionMap";
 import CrossBorderFlows from "@/components/CrossBorderFlows";
+import USGridChart from "@/components/USGridChart";
 
 const COLORS = [
   '#1565C0', '#1976D2', '#2196F3', '#42A5F5',
@@ -565,6 +566,17 @@ export default function PowerTrends() {
         {/* Country-specific live data charts — visible as soon as a country is selected */}
         {selectedCountry && (
           <>
+            {/* EIA Data - United States only */}
+            {selectedCountry === "United States" && (
+              <>
+                <SectionHeader
+                  title="US Grid Intelligence"
+                  subtitle="Live data from the US Energy Information Administration (EIA) — real-time generation, demand, and retail prices"
+                />
+                <USGridChart />
+              </>
+            )}
+
             {/* NESO Data - UK only */}
             {selectedCountry.toLowerCase().includes("united kingdom") && (
               <>

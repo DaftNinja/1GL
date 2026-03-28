@@ -160,6 +160,7 @@ export const tamAnalyses = pgTable("tam_analyses", {
 
 export const GIGLABS_COUNTRIES = [
   "United Kingdom",
+  "United States",
   "France",
   "Netherlands",
   "Sweden",

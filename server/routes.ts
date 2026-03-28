@@ -1442,6 +1442,46 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ─── EIA (US Energy Information Administration) Data ─────────────────────
+  function eiaErrorResponse(err: unknown): { status: number; body: { message: string } } {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("not configured")) return { status: 503, body: { message: msg } };
+    return { status: 500, body: { message: "Failed to fetch EIA data" } };
+  }
+
+  app.get("/api/eia/generation", isAuthenticated, async (_req, res) => {
+    try {
+      const { getGenerationByFuelType } = await import("./eiaData");
+      res.json(await getGenerationByFuelType());
+    } catch (err) {
+      console.error("EIA generation error:", err);
+      const r = eiaErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
+  app.get("/api/eia/prices", isAuthenticated, async (_req, res) => {
+    try {
+      const { getRetailPrices } = await import("./eiaData");
+      res.json(await getRetailPrices());
+    } catch (err) {
+      console.error("EIA prices error:", err);
+      const r = eiaErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
+  app.get("/api/eia/demand", isAuthenticated, async (_req, res) => {
+    try {
+      const { getRegionDemand } = await import("./eiaData");
+      res.json(await getRegionDemand());
+    } catch (err) {
+      console.error("EIA demand error:", err);
+      const r = eiaErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
   // ─── Data Centre Dataset (1GigLabs primary + supplementary fallback) ───────
   app.get("/api/1gl/datacentres", isAuthenticated, async (req, res) => {
     try {
