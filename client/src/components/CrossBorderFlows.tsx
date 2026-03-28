@@ -374,7 +374,7 @@ export default function CrossBorderFlows() {
 
   // ── EIA interchange query ────────────────────────────────────────────────────
   const {
-    data: interchange, isLoading: usLoading, isError: usError, error: usErrorObj,
+    data: interchange, isLoading: usLoading, isError: usError, isSuccess: usSuccess, error: usErrorObj,
     refetch: refetchUs, isFetching: usFetching,
   } = useQuery<InterchangeResult>({
     queryKey: ["/api/eia/interchange"],
@@ -396,6 +396,17 @@ export default function CrossBorderFlows() {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+
+  useEffect(() => {
+    console.log("[EIA interchange status]", {
+      isLoading: usLoading,
+      isError: usError,
+      isSuccess: usSuccess,
+      latestPeriod: interchange?.latestPeriod,
+      pairs: Object.keys(interchange?.byPair ?? {}).length,
+      rows: interchange?.data?.length,
+    });
+  }, [usLoading, usError, usSuccess, interchange]);
 
   // ── ENTSO-E smart fallback (step forward to find most recent, or back if empty) ──
   useEffect(() => {
@@ -702,6 +713,8 @@ export default function CrossBorderFlows() {
                   ? <span className="text-amber-500">Unavailable — {usErrorObj instanceof Error ? usErrorObj.message.slice(0, 80) : "fetch failed"}</span>
                   : usHourLabel
                   ? <span className="font-medium text-slate-500">{usHourLabel}</span>
+                  : interchange
+                  ? <span className="font-medium text-slate-500">Live ({Object.keys(interchange.byPair).length} pairs)</span>
                   : <span className="italic text-slate-400">Loading…</span>
                 }
               </p>
