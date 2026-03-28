@@ -86,7 +86,7 @@ export default function PowerTrends() {
   const queryClient = useQueryClient();
   const [selectedCountry, setSelectedCountry] = useState<string>("United Kingdom");
   const [expandedLocation, setExpandedLocation] = useState<string | null>(null);
-  const [showUSGridFlows, setShowUSGridFlows] = useState(false);
+  const [flowRegion, setFlowRegion] = useState<"europe" | "us">("europe");
   const { toast } = useToast();
 
   const { data: trendData, isLoading: isLoadingExisting } = useQuery<{ id: number; country: string; content: PowerTrendContent; createdAt: string } | null>({
@@ -563,8 +563,26 @@ export default function PowerTrends() {
         {/* European Transmission System Map — always visible */}
         <ENTSOETransmissionMap />
 
-        {/* Cross-border Physical Flows — always visible */}
-        <CrossBorderFlows />
+        {/* Cross-border Physical Flows — always visible, region-switchable */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Button
+              size="sm"
+              variant={flowRegion === "europe" ? "default" : "outline"}
+              onClick={() => setFlowRegion("europe")}
+            >
+              Europe
+            </Button>
+            <Button
+              size="sm"
+              variant={flowRegion === "us" ? "default" : "outline"}
+              onClick={() => setFlowRegion("us")}
+            >
+              United States
+            </Button>
+          </div>
+          {flowRegion === "europe" ? <CrossBorderFlows /> : <USInterchangeMap />}
+        </div>
 
         {/* Country-specific live data charts — visible as soon as a country is selected */}
         {selectedCountry && (
@@ -577,18 +595,6 @@ export default function PowerTrends() {
                   subtitle="Live data from the US Energy Information Administration (EIA) — real-time generation, demand, and retail prices"
                 />
                 <USGridChart />
-                <div className="flex items-center gap-2 mt-4">
-                  <Button
-                    size="sm"
-                    variant={showUSGridFlows ? "default" : "outline"}
-                    onClick={() => setShowUSGridFlows(v => !v)}
-                    className="gap-1.5"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    {showUSGridFlows ? "Hide US Grid Flows" : "US Grid Flows"}
-                  </Button>
-                </div>
-                {showUSGridFlows && <USInterchangeMap />}
               </>
             )}
 
