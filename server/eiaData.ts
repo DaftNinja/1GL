@@ -92,6 +92,22 @@ export interface EiaRegionDemandResult {
   fetchedAt: string;
 }
 
+export interface InterchangePoint {
+  period: string;
+  fromBA: string;
+  fromBAName: string;
+  toBA: string;
+  toBAName: string;
+  valueMW: number;
+}
+
+export interface InterchangeResult {
+  data: InterchangePoint[];
+  byPair: Record<string, number>;
+  latestPeriod: string | null;
+  fetchedAt: string;
+}
+
 // ── Cache ─────────────────────────────────────────────────────────────────────
 
 interface CacheEntry<T> {
@@ -300,4 +316,50 @@ export async function getRegionDemand(): Promise<EiaRegionDemandResult> {
   const latestPeriod = demandPoints[0]?.period ?? null;
 
   return toCache("eia:demand", { data: points, latestDemandMWh, latestPeriod, fetchedAt: new Date().toISOString() });
+}
+
+// ── Interchange Data ──────────────────────────────────────────────────────────
+
+export async function getInterchangeData(): Promise<InterchangeResult> {
+  const cached = fromCache<InterchangeResult>("eia:interchange", REALTIME_TTL_MS);
+  if (cached) return cached;
+
+  const params: [string, string][] = [
+    ["frequency", "hourly"],
+    ["data[0]", "value"],
+    ["sort[0][column]", "period"],
+    ["sort[0][direction]", "desc"],
+    ["length", "500"],
+  ];
+
+  const json = await fetchEia("/electricity/rto/interchange-data/data", params);
+  const rows: any[] = json?.response?.data ?? [];
+
+  const points: InterchangePoint[] = [];
+  for (const row of rows) {
+    const raw = parseFloat(row.value ?? row["value"]);
+    if (isNaN(raw)) continue;
+    points.push({
+      period:    row.period ?? "",
+      fromBA:    row.fromba ?? row["fromba"] ?? "",
+      fromBAName: row["fromba-name"] ?? row.fromba ?? "",
+      toBA:      row.toba ?? row["toba"] ?? "",
+      toBAName:  row["toba-name"] ?? row.toba ?? "",
+      valueMW:   raw,
+    });
+  }
+
+  // Build byPair: most recent value per unique FROM->TO pair (data is desc-sorted)
+  const byPair: Record<string, number> = {};
+  const seenPair = new Set<string>();
+  for (const p of points) {
+    const key = `${p.fromBA}->${p.toBA}`;
+    if (seenPair.has(key)) continue;
+    seenPair.add(key);
+    byPair[key] = p.valueMW;
+  }
+
+  const latestPeriod = points[0]?.period ?? null;
+
+  return toCache("eia:interchange", { data: points, byPair, latestPeriod, fetchedAt: new Date().toISOString() });
 }

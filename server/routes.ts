@@ -1581,6 +1581,17 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  app.get("/api/eia/interchange", isAuthenticated, async (_req, res) => {
+    try {
+      const { getInterchangeData } = await import("./eiaData");
+      res.json(await getInterchangeData());
+    } catch (err) {
+      console.error("EIA interchange error:", err);
+      const r = eiaErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
   // ─── World Bank Open Data ─────────────────────────────────────────────────
   app.get("/api/worldbank/indicators", isAuthenticated, async (req, res) => {
     try {

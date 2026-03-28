@@ -56,6 +56,7 @@ import OEPBenchmarkChart from "@/components/OEPBenchmarkChart";
 import ENTSOETransmissionMap from "@/components/ENTSOETransmissionMap";
 import CrossBorderFlows from "@/components/CrossBorderFlows";
 import USGridChart from "@/components/USGridChart";
+import USInterchangeMap from "@/components/USInterchangeMap";
 import BrazilGridChart from "@/components/BrazilGridChart";
 
 const COLORS = [
@@ -575,6 +576,7 @@ export default function PowerTrends() {
                   subtitle="Live data from the US Energy Information Administration (EIA) — real-time generation, demand, and retail prices"
                 />
                 <USGridChart />
+                <USInterchangeMap />
               </>
             )}
 
