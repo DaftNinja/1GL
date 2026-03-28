@@ -1582,6 +1582,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   });
 
   app.get("/api/eia/interchange", isAuthenticated, async (_req, res) => {
+    console.log(`[EIA route] /api/eia/interchange hit — EIA_API_KEY present: ${!!process.env.EIA_API_KEY}`);
     try {
       const { getInterchangeData } = await import("./eiaData");
       res.json(await getInterchangeData());

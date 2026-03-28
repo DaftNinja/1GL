@@ -154,6 +154,9 @@ async function fetchEia(path: string, params: [string, string][]): Promise<any> 
   console.log(`[EIA] EIA_API_KEY present: ${hasKey}`);
 
   const url = buildEiaUrl(path, params);
+  const redactedUrl = url.replace(/api_key=[^&]+/, "api_key=REDACTED");
+  console.log(`[EIA] GET ${redactedUrl}`);
+
   const res = await fetch(url, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     headers: { Accept: "application/json" },
