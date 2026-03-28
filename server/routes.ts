@@ -953,6 +953,30 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         return res.status(503).json({ message: "ENTSOE_API_KEY not configured", configured: false });
       }
       const data = await getAllCountriesPriceSummary();
+
+      // Enrich Turkey with EPİAŞ day-ahead price when ENTSO-E returns null.
+      // Turkey's TSO (TEİAŞ) doesn't publish via ENTSO-E — prices come from
+      // EPİAŞ (Energy Exchange Istanbul / EXIST) instead.
+      const turkeyEntry = data.find(s => s.country === "Turkey");
+      if (turkeyEntry && turkeyEntry.latestMonthAvg === null) {
+        try {
+          const { getTurkeyDayAheadPrices, isEpiasConfigured } = await import("./epiasData");
+          if (isEpiasConfigured()) {
+            const epias = await getTurkeyDayAheadPrices();
+            if (epias.dailyAvgEUR !== null) {
+              turkeyEntry.latestMonthAvg  = Math.round(epias.dailyAvgEUR * 100) / 100;
+              turkeyEntry.latestMonthLabel = epias.date.slice(0, 7); // "YYYY-MM"
+              turkeyEntry.estimated        = true;
+              turkeyEntry.estimatedNote    = `EPİAŞ MCP day-ahead avg ${epias.dailyAvgTRY?.toFixed(0)} TRY/MWh (${epias.date})`;
+              console.log(`[EPIAS] Injected Turkey price: ${turkeyEntry.latestMonthAvg} EUR/MWh`);
+            }
+          }
+        } catch (epiasErr) {
+          // EPİAŞ failure must never break the ENTSO-E response
+          console.warn("[EPIAS] Turkey price enrichment failed:", epiasErr instanceof Error ? epiasErr.message : epiasErr);
+        }
+      }
+
       res.json(data);
     } catch (err: any) {
       console.error("ENTSO-E all-prices route error:", err);
@@ -1589,6 +1613,50 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     } catch (err) {
       console.error("EIA interchange error:", err);
       const r = eiaErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
+  // ─── EPİAŞ (EXIST) Turkey Electricity Market ─────────────────────────────
+
+  function epiasErrorResponse(err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("not configured")) return { status: 503, body: { message: msg } };
+    return { status: 500, body: { message: `EPİAŞ data fetch failed: ${msg}` } };
+  }
+
+  app.get("/api/epias/prices", isAuthenticated, async (_req, res) => {
+    try {
+      const { getTurkeyDayAheadPrices, isEpiasConfigured } = await import("./epiasData");
+      if (!isEpiasConfigured()) return res.status(503).json({ message: "EPIAS_USERNAME / EPIAS_PASSWORD not configured" });
+      res.json(await getTurkeyDayAheadPrices());
+    } catch (err) {
+      console.error("[EPIAS] prices route error:", err);
+      const r = epiasErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
+  app.get("/api/epias/generation", isAuthenticated, async (_req, res) => {
+    try {
+      const { getTurkeyGeneration, isEpiasConfigured } = await import("./epiasData");
+      if (!isEpiasConfigured()) return res.status(503).json({ message: "EPIAS_USERNAME / EPIAS_PASSWORD not configured" });
+      res.json(await getTurkeyGeneration());
+    } catch (err) {
+      console.error("[EPIAS] generation route error:", err);
+      const r = epiasErrorResponse(err);
+      res.status(r.status).json(r.body);
+    }
+  });
+
+  app.get("/api/epias/consumption", isAuthenticated, async (_req, res) => {
+    try {
+      const { getTurkeyConsumption, isEpiasConfigured } = await import("./epiasData");
+      if (!isEpiasConfigured()) return res.status(503).json({ message: "EPIAS_USERNAME / EPIAS_PASSWORD not configured" });
+      res.json(await getTurkeyConsumption());
+    } catch (err) {
+      console.error("[EPIAS] consumption route error:", err);
+      const r = epiasErrorResponse(err);
       res.status(r.status).json(r.body);
     }
   });
