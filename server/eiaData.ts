@@ -10,7 +10,7 @@
  */
 
 const EIA_BASE = "https://api.eia.gov/v2";
-const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_TIMEOUT_MS = 60_000;
 const REALTIME_TTL_MS = 60 * 60 * 1_000;      // 1 hour
 const PRICES_TTL_MS   = 24 * 60 * 60 * 1_000;  // 24 hours
 
@@ -349,18 +349,22 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     return toCache("eia:interchange", { data: [], byPair: {}, latestPeriod: null, fetchedAt: new Date().toISOString() });
   }
 
-  // Step 2: fetch ALL pairs for exactly that period.
-  // ~200–300 BA-to-BA pairs per hour; 5000 is well above that.
-  // Paginate in batches of 1000 if the total exceeds what we get back.
+  // Step 2: fetch ALL pairs for exactly that period using start/end params.
+  // Note: facets[period][] is a categorical filter and does NOT work for time
+  // period filtering in the EIA v2 API — use start= and end= instead.
+  // ~200–300 BA-to-BA pairs per hour; paginate in batches of 1000.
   let allRows: any[] = [];
   let offset = 0;
   const PAGE = 1000;
+  let page = 0;
 
   while (true) {
+    console.log(`[EIA] interchange page ${page} (offset=${offset}) for period ${latestPeriod}`);
     const pageJson = await fetchEia("/electricity/rto/interchange-data/data", [
       ["frequency", "hourly"],
       ["data[0]", "value"],
-      ["facets[period][]", latestPeriod],
+      ["start", latestPeriod],
+      ["end", latestPeriod],
       ["sort[0][column]", "fromba"],
       ["sort[0][direction]", "asc"],
       ["length", String(PAGE)],
@@ -368,15 +372,16 @@ export async function getInterchangeData(): Promise<InterchangeResult> {
     ]);
 
     const pageRows: any[] = pageJson?.response?.data ?? [];
+    const total: number = pageJson?.response?.total ?? 0;
+    console.log(`[EIA] interchange page ${page}: ${pageRows.length} rows (total reported: ${total})`);
     allRows = allRows.concat(pageRows);
 
-    // EIA reports total available rows in response metadata
-    const total: number = pageJson?.response?.total ?? pageRows.length;
     if (offset + PAGE >= total || pageRows.length < PAGE) break;
     offset += PAGE;
+    page++;
   }
 
-  console.log(`[EIA] interchange rows for period ${latestPeriod}: ${allRows.length}`);
+  console.log(`[EIA] interchange total rows fetched for ${latestPeriod}: ${allRows.length}`);
 
   const points: InterchangePoint[] = [];
   for (const row of allRows) {

@@ -1545,7 +1545,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   function eiaErrorResponse(err: unknown): { status: number; body: { message: string } } {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("not configured")) return { status: 503, body: { message: msg } };
-    return { status: 500, body: { message: "Failed to fetch EIA data" } };
+    return { status: 500, body: { message: `EIA data fetch failed: ${msg}` } };
   }
 
   app.get("/api/eia/generation", isAuthenticated, async (_req, res) => {
