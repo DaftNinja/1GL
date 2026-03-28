@@ -901,7 +901,7 @@ export async function findLatestAvailableHourOffset(): Promise<number> {
   return found;
 }
 
-export async function getCrossBorderFlows(hourOffset: number = 12): Promise<CrossBorderFlow[]> {
+export async function getCrossBorderFlows(hourOffset: number = 0): Promise<CrossBorderFlow[]> {
   const cacheKey = `cross-border-flows:${hourOffset}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CROSS_BORDER_CACHE_TTL_MS) {

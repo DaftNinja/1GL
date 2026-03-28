@@ -983,7 +983,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       if (!isEntsoeConfigured()) {
         return res.status(503).json({ message: "ENTSOE_API_KEY not configured", configured: false });
       }
-      const hourOffset = Math.max(0, Math.min(36, parseInt(req.query.hourOffset as string || "12", 10) || 12));
+      const hourOffset = Math.max(0, Math.min(36, parseInt(req.query.hourOffset as string || "0", 10)));
       const data = await getCrossBorderFlows(hourOffset);
       const nonZero = data.filter(f => f.netMw !== 0).length;
       console.log(`[ENTSOE] cross-border-flows: ${data.length} pairs, ${nonZero} non-zero, hourOffset=${hourOffset}`);

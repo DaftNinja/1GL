@@ -311,8 +311,8 @@ export default function CrossBorderFlows() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredArc, setHoveredArc] = useState<FlowArc | null>(null);
   const [tooltipLatLng, setTooltipLatLng] = useState<L.LatLng | null>(null);
-  // Default to current hour minus 12 — safe starting point given ~11h A11 publication delay
-  const [hourOffset, setHourOffset] = useState("12");
+  // Start from the current hour; smart fallback steps backward if data isn't published yet
+  const [hourOffset, setHourOffset] = useState("0");
   const [searchStatus, setSearchStatus] = useState<"loading" | "refining" | "searching" | "done" | "exhausted">("loading");
   const refinedRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -645,7 +645,7 @@ export default function CrossBorderFlows() {
           <div className="absolute inset-x-0 top-0 h-[520px] z-[2000] flex flex-col items-center justify-center bg-slate-50 gap-3" data-testid="exhausted-cross-border">
             <ArrowRightLeft className="w-8 h-8 text-slate-300" />
             <p className="text-sm text-slate-500">Cross-border flow data is temporarily unavailable from ENTSO-E.</p>
-            <p className="text-xs text-slate-400">Physical flow data (A11) is typically published with an 11-hour delay.</p>
+            <p className="text-xs text-slate-400">No recent physical flow data (A11) is available from ENTSO-E right now.</p>
             <Button size="sm" variant="outline" onClick={() => { refinedRef.current = false; refetch(); }} className="mt-1">
               Try Again
             </Button>
@@ -691,7 +691,7 @@ export default function CrossBorderFlows() {
         </div>
 
         <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-400">
-          <span>Source: ENTSO-E Transparency Platform · Document A11 · ~11h publication delay</span>
+          <span>Source: ENTSO-E Transparency Platform · Document A11</span>
           {updatedAt && (
             <span className="text-slate-500" data-testid="text-flows-timestamp">
               Latest data point: {new Date(updatedAt).toLocaleString()}
