@@ -379,6 +379,7 @@ export default function CrossBorderFlows() {
   } = useQuery<InterchangeResult>({
     queryKey: ["/api/eia/interchange"],
     queryFn: async () => {
+      console.log("[EIA interchange] queryFn called — fetching /api/eia/interchange");
       const res = await fetch("/api/eia/interchange", { credentials: "include" });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -395,6 +396,10 @@ export default function CrossBorderFlows() {
     },
     staleTime: 60 * 60 * 1000,
     retry: 1,
+    // Force this query to fire immediately on mount regardless of browser
+    // network detection (navigator.onLine). Without this, TanStack Query v5
+    // can pause a static-key query indefinitely in "networkMode: online".
+    networkMode: "always",
   });
 
   useEffect(() => {
@@ -407,6 +412,17 @@ export default function CrossBorderFlows() {
       rows: interchange?.data?.length,
     });
   }, [usLoading, usError, usSuccess, interchange]);
+
+  // Ensure the EIA fetch fires even if React Query is paused on mount.
+  const hasTriggeredEIA = useRef(false);
+  useEffect(() => {
+    if (hasTriggeredEIA.current) return;
+    hasTriggeredEIA.current = true;
+    if (!interchange && !usError) {
+      console.log("[EIA interchange] mount trigger — calling refetch");
+      refetchUs();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── ENTSO-E smart fallback (step forward to find most recent, or back if empty) ──
   useEffect(() => {
