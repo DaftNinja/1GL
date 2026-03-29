@@ -111,7 +111,7 @@ const PUBLIC_API_PATHS = [
       const [{ value }] = await db.select({ value: count() }).from(oneGLDatacentres);
       if (Number(value) === 0) {
         log("1GL DC DB empty — fetching European data centres from Mapbox tiles...", "1gl");
-        const { scrapeOneGLDatacentres } = await import("./baxtelData");
+        const { scrapeOneGLDatacentres } = await import("./DCData");
         const { storage } = await import("./storage");
         const records = await scrapeOneGLDatacentres(true);
         const result = await storage.upsertOneGLDatacentres(records);

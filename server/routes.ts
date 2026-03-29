@@ -1701,7 +1701,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         return res.status(403).json({ message: "Admin access required. Set ADMIN_EMAILS in environment secrets." });
       }
 
-      const { isOneGLConfigured, scrapeOneGLDatacentres, clearOneGLCache } = await import("./baxtelData");
+      const { isOneGLConfigured, scrapeOneGLDatacentres, clearOneGLCache } = await import("./DCData");
       if (!isOneGLConfigured()) {
         return res.status(400).json({ message: "ONEGL_MAPBOX_TOKEN is not configured. 1GL tile API is unavailable." });
       }
