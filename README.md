@@ -1,6 +1,6 @@
-# ⚡ Power Trends by 1GigLabs
+# Power Trends by 1GigLabs
 
-&gt; AI-powered power infrastructure analyses for data centre site selection
+> AI-powered power infrastructure analyses for data centre site selection
 
 [![1GigLabs](https://img.shields.io/badge/1GigLabs-Powered%20by%20AI-blue)](https://1giglabs.com)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
@@ -8,7 +8,7 @@
 
 ---
 
-## 📋 Overview
+## Overview
 
 Power Trends is an AI-powered application branded for **1GigLabs** that generates comprehensive power infrastructure analyses for data centre site selection. Users select a country and the system uses OpenAI to generate reports covering:
 
@@ -18,7 +18,7 @@ Power Trends is an AI-powered application branded for **1GigLabs** that generate
 - Location suitability
 - Investor insights
 
-### 🏢 About 1GigLabs
+### About 1GigLabs
 
 A UK-based provider of managed colocation and connectivity services for IT providers, public institutions, and government organisations.
 
@@ -29,25 +29,20 @@ A UK-based provider of managed colocation and connectivity services for IT provi
 | **Flexibility** | Customisable solutions for diverse needs |
 | **Sustainability** | 100% green energy, CO₂ neutral by 2030 |
 
-**Brand Colors:** Blue professional palette (`hsl(207, 90%, 54%)`)
-
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 Monorepo structure with React frontend, Express backend, and PostgreSQL database using Drizzle ORM.
 
-React (Frontend)
-
-Express (Backend)
-
-PostgreSQL (Database)
-
-Drizzle ORM (Data Layer)
+```
+React (Frontend) → Express (Backend) → PostgreSQL (Database)
+                                     → Drizzle ORM (Data Layer)
+```
 
 ---
 
-## 🔐 Authentication & Security
+## Authentication & Security
 
 | Feature | Implementation |
 |---------|----------------|
@@ -69,7 +64,7 @@ Drizzle ORM (Data Layer)
 
 ---
 
-## 📝 Audit Logging
+## Audit Logging
 
 Tracks all critical user actions for compliance and security.
 
@@ -83,12 +78,12 @@ Tracks all critical user actions for compliance and security.
 - `GENERATE_ANALYSIS` / `VIEW_REPORT` / `DELETE_ANALYSIS`
 - `GENERATE_TAM` / `GENERATE_POWER_TRENDS`
 
-**API:** `GET /api/audit-logs` — returns recent audit log entries  
+**API:** `GET /api/audit-logs` — returns recent audit log entries
 **UI:** `/audit-logs` page with activity feed, accessible from `UserMenu`
 
 ---
 
-## 👥 Real-Time Collaboration
+## Real-Time Collaboration
 
 Enables team collaboration on reports with presence, comments, and assignments.
 
@@ -108,12 +103,12 @@ Enables team collaboration on reports with presence, comments, and assignments.
 - Assignment update validates `analysisId` scoping
 - All params validated with `isNaN` guards
 
-**Frontend:** `CollaborationPanel` component in Dashboard action bar  
+**Frontend:** `CollaborationPanel` component in Dashboard action bar
 **Files:** `server/collaboration.ts`, `client/src/components/CollaborationPanel.tsx`, `client/src/hooks/use-presence.ts`
 
 ---
 
-## 🤖 AI Content Labelling
+## AI Content Labelling
 
 Transparent disclosure of AI-generated content.
 
@@ -127,7 +122,7 @@ Transparent disclosure of AI-generated content.
 
 ---
 
-## 💻 Frontend Architecture
+## Frontend Architecture
 
 | Category | Technology |
 |----------|------------|
@@ -142,7 +137,7 @@ Transparent disclosure of AI-generated content.
 
 ---
 
-## 🔧 Backend Architecture
+## Backend Architecture
 
 | Category | Technology |
 |----------|------------|
@@ -153,7 +148,7 @@ Transparent disclosure of AI-generated content.
 
 ---
 
-## 🗄️ Database Layer
+## Database Layer
 
 | Aspect | Details |
 |--------|---------|
@@ -174,94 +169,193 @@ Transparent disclosure of AI-generated content.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 <details>
 <summary>Click to expand directory tree</summary>
+
+```
 client/                     # React frontend
 ├── src/
 │   ├── assets/             # Brand assets (1giglabs-logo.png)
 │   ├── components/         # UI components
-│   │   ├── Charts.tsx
-│   │   ├── MetricCard.tsx
-│   │   ├── SectionHeader.tsx
-│   │   ├── AIContentLabel.tsx
-│   │   └── UserMenu.tsx
 │   ├── pages/              # Route pages
-│   │   ├── Home.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── TAM.tsx
-│   │   ├── PowerTrends.tsx
-│   │   ├── Reports.tsx
-│   │   ├── AuthPage.tsx
-│   │   └── AuditLogs.tsx
 │   ├── hooks/              # Custom React hooks
-│   │   ├── use-auth.ts
-│   │   └── use-analysis.ts
 │   └── lib/                # Utilities
-│       ├── queryClient.ts
-│       ├── utils.ts
-│       └── auth-utils.ts
-│
+
 server/                     # Express backend
-├── 1GigLabs_integrations/  # Auth and AI integration modules
-│   └── auth/               # Auth routes, storage, session setup
-│
-shared/                     # Shared types, schemas, and routes
+├── auth/                   # Auth routes, storage, session setup
+├── entsoe.ts               # ENTSO-E European grid integration
+├── eiaData.ts              # EIA US grid integration
+├── epiasData.ts            # EPİAŞ Turkey electricity market
+├── worldBankData.ts        # World Bank indicators
+└── routes.ts               # All API route registrations
+
+shared/                     # Shared types and schemas
 ├── schema.ts               # Main app tables
-├── models/auth.ts          # Auth/users table
-└── routes.ts               # API route definitions
+└── models/auth.ts          # Auth/users table
+```
 
 </details>
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-> [!NOTE]
-> Work email required for registration. Personal email domains are automatically rejected.
+> **Note:** Work email required for registration. Personal email domains are automatically rejected.
 
 ### Prerequisites
 
 - Node.js 18+
 - PostgreSQL 14+
-- OpenAI API key
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/power-trends.git
-cd power-trends
+git clone https://github.com/DaftNinja/1GL.git
+cd 1GL
 
 # Install dependencies
 npm install
 
-# Set up environment variables
+# Set up environment variables (see Environment Setup below)
 cp .env.example .env
-# Edit .env with your database URL and OpenAI key
 
 # Run database migrations
 npm run db:push
 
 # Start development server
 npm run dev
+```
 
-📄 License
-Proprietary - © 2024 1GigLabs. All rights reserved.
+---
+
+## Environment Setup
+
+### 1. Copy the example file
+
+```bash
+cp .env.example .env
+```
+
+Then register for each service below and fill in the values.
+
+---
+
+### 2. API Key Registration
+
+#### OpenAI — AI Report Generation
+
+1. Sign up at [https://platform.openai.com/signup](https://platform.openai.com/signup)
+2. Add a payment method, then go to **API Keys → Create new secret key**
+3. Copy the key — it is shown only once
+
+```
+OPENAI_API_KEY=sk-proj-...
+```
+
+---
+
+#### ENTSO-E — European Grid (35 Countries)
+
+1. Register at [https://transparency.entsoe.eu](https://transparency.entsoe.eu)
+2. After email verification, go to **My Account Settings → Web API Security Token → Generate a new token**
+3. Copy the UUID-format token
+
+```
+ENTSOE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+> **Turkey note:** ENTSO-E returns `null` for Turkish electricity prices by design — TEİAŞ delegates price publication to EPİAŞ. Cross-border flow data for Turkey↔Greece and Turkey↔Bulgaria is available. The EPİAŞ integration below fills the pricing gap.
+
+---
+
+#### EPİAŞ / EXIST — Turkey Electricity Market
+
+1. Register for free at [https://kayit.epias.com.tr/epias-transparency-platform-registration-form](https://kayit.epias.com.tr/epias-transparency-platform-registration-form)
+2. Confirm your email — no separate API key is issued
+
+```
+EPIAS_USERNAME=you@example.com
+EPIAS_PASSWORD=yourpassword
+```
+
+> **Auth:** EPİAŞ uses a CAS ticket flow. At runtime the server POSTs your credentials to obtain a Ticket Granting Ticket (TGT), then exchanges it for a single-use Service Ticket (ST) per request. This is handled automatically — you do not need to manage tickets manually.
+>
+> **Timezone:** All EPİAŞ timestamps are Turkey Time (UTC+3). Turkey does not observe daylight saving time.
+
+---
+
+#### EIA — US Grid Interchange
+
+1. Go to [https://www.eia.gov/opendata/register.php](https://www.eia.gov/opendata/register.php)
+2. Enter your email — the key is emailed instantly, no account setup required
+
+```
+EIA_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+#### NGED — UK Distribution Network *(optional)*
+
+1. Register at [https://developer.nationalgrid.com](https://developer.nationalgrid.com)
+2. Create an application to receive a key
+
+```
+NGED_API_KEY=your_nged_key
+```
+
+---
+
+#### Other Optional Integrations
+
+| Variable | Service | Registration |
+|----------|---------|--------------|
+| `UKPN_API_KEY` | UK Power Networks | [ukpowernetworks.opendatasoft.com](https://ukpowernetworks.opendatasoft.com/) |
+| `SSEN_NERDA_API_KEY` | Scottish & Southern Electricity Networks | Contact SSEN directly |
+| `NPG_API_KEY` | Northern Power Grid | [northernpowergrid.com](https://www.northernpowergrid.com/) |
+| `ENW_API_KEY` | Electricity North West | [enwl.co.uk](https://www.enwl.co.uk/) |
+| `RTE_API_KEY` | RTE France | [data.rte-france.com](https://data.rte-france.com/) |
+| `FINGRID_API_KEY` | Fingrid (Finland) | [data.fingrid.fi](https://data.fingrid.fi/) |
+| `NED_API_KEY` | Nationaal Energie Dashboard (Netherlands) | [ned.nl](https://ned.nl/) |
+| `EMBER_API_KEY` | Ember Climate | [ember-climate.org/data](https://ember-climate.org/data/) |
+| `OEP_API_KEY` | Open Energy Platform | [openenergyplatform.org](https://openenergyplatform.org/) |
+| `HEIGIT_API_KEY` | HeiGIT OpenRouteService | [openrouteservice.org](https://openrouteservice.org/) |
+
+---
+
+### 3. Railway Deployment
+
+Set all variables in the Railway dashboard:
+
+1. Open your service in [https://railway.app](https://railway.app)
+2. Go to the **Variables** tab
+3. Add each key — Railway redeploys automatically after changes
+
+> **Never commit `.env` to git.** Only `.env.example` (with placeholder values) should be version-controlled.
+
+---
+
+### 4. Verify the Setup
+
+```bash
+npm run dev
+```
+
+Integrations with missing or invalid keys will report errors or return empty data rather than crashing the server. If an integration shows unavailable unexpectedly:
+
+- Confirm the variable name matches exactly (case-sensitive)
+- Check for leading/trailing whitespace in the value
+- On Railway, confirm the service has redeployed since the variable was added
+
+---
+
+## License
+
+Proprietary — © 2024 1GigLabs. All rights reserved.
+
 <p align="center">
-  <img src="client/src/assets/1giglabs-logo.png" alt="1GigLabs" width="200">
-  <br>
   <em>Powered by 1GigLabs — Open. Local. Flexible.</em>
 </p>
-```
-📄 License
-Proprietary - © 2024 1GigLabs. All rights reserved.
-This README includes:
-Badges for quick visual scanning
-Tables for structured data (better than lists for comparisons)
-Collapsible sections for the project structure (keeps it clean)
-Mermaid-style ASCII diagram for architecture (works on all GitHub renders)
-GitHub Alerts (> [!NOTE]) for important callouts
-Consistent heading hierarchy for the table of contents auto-generation
-Proper code blocks with language tags for syntax highlighting
