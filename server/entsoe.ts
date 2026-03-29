@@ -979,14 +979,14 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const skippedCount = INTERCONNECTOR_PAIRS.length - activePairs.length;
 
   const fetchStart = Date.now();
-  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=10 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
+  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=4 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const limit = pLimit(10);
+  const limit = pLimit(4);
 
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
