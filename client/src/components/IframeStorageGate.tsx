@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Unlock, ExternalLink } from "lucide-react";
 import logoUrl from "@/assets/1giglabs-logo.png";
+import { isEmbedMode } from "@/lib/queryClient";
 
 function isInCrossOriginIframe(): boolean {
   try {
@@ -14,6 +15,13 @@ export function IframeStorageGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"checking" | "ok" | "blocked" | "denied">("checking");
 
   useEffect(() => {
+    // Embed-token mode: authentication is URL-based, not cookie-based.
+    // Storage access is not required — skip the gate entirely.
+    if (isEmbedMode) {
+      setStatus("ok");
+      return;
+    }
+
     if (!isInCrossOriginIframe()) {
       setStatus("ok");
       return;

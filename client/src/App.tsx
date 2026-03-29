@@ -1,5 +1,5 @@
 import { Switch, Route, useRoute, useSearch } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, isEmbedMode } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,7 +49,7 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isEmbedMode) {
     return <AuthPage />;
   }
 
