@@ -646,7 +646,7 @@ export default function PowerInfrastructureMap() {
   const [showNDPLayer, setShowNDPLayer] = useState(false);
   const [showDFESLayer, setShowDFESLayer] = useState(false);
   const [showSSENDCLayer, setShowSSENDCLayer] = useState(false);
-  const [showOneGLLayer, setShowOneGLLayer] = useState(true);
+  const [showOneGLLayer, setShowOneGLLayer] = useState(false);
   const [showEuNetworksLayer, setShowEuNetworksLayer] = useState(false);
   const [showEmodnetWindLayer, setShowEmodnetWindLayer] = useState(false);
   const [showEmodnetCablesLayer, setShowEmodnetCablesLayer] = useState(true);
@@ -842,7 +842,7 @@ export default function PowerInfrastructureMap() {
     mapContainerRef.current = node;
     const map = L.map(node, {
       center: [52.5, 4],
-      zoom: 5,
+      zoom: 4,
       minZoom: 3,
       maxZoom: 19,
       zoomControl: false,
