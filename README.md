@@ -10,7 +10,7 @@
 
 ## Overview
 
-Power Trends is an AI-powered application branded for **1GigLabs** that generates comprehensive power infrastructure analyses for data centre site selection. Users select a country and the system uses OpenAI to generate reports covering:
+Power Trends is an AI-powered application created by **1GigLabs** that generates comprehensive power infrastructure analyses for data centre site selection. Users select a country and the system uses OpenAI to generate reports covering:
 
 - Grid capacity & stability
 - Energy mix & sustainability
@@ -20,7 +20,9 @@ Power Trends is an AI-powered application branded for **1GigLabs** that generate
 
 ### About 1GigLabs
 
-A UK-based provider of managed colocation and connectivity services for IT providers, public institutions, and government organisations.
+1GigLabs architect cloud-native data platforms, deploy production-grade AI, and automate complex workflows—transforming how enterprises operate at scale.
+This project focuses on the power and data centre market which is growing rapidly — driven by AI training workloads, cloud migration, and hyperscaler expansion — but the power infrastructure constraints that determine viable DC locations are complex, fragmented, and fast-changing. TSO grid APIs, national energy statistics, regulatory filings, and market research all speak different languages.
+
 
 | Core Value | Description |
 |------------|-------------|
