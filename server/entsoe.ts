@@ -1,6 +1,7 @@
 import { parseStringPromise } from "xml2js";
 import fs from "fs";
 import path from "path";
+import pLimit from "p-limit";
 
 const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 
@@ -901,6 +902,35 @@ export async function findLatestAvailableHourOffset(): Promise<number> {
   return found;
 }
 
+// Border pairs that consistently return ENTSO-E error 999 (no data published).
+// Skipped on normal fetch cycles; re-checked every 6th cycle to catch TSO re-activation.
+const KNOWN_EMPTY_BORDERS = new Set([
+  "Albania→North Macedonia",
+  "Albania→Montenegro",
+  "Albania→Greece",
+  "Bosnia→Croatia",
+  "Bosnia→Serbia",
+  "Bosnia→Montenegro",
+  "Kosovo→Serbia",
+  "Kosovo→North Macedonia",
+  "Kosovo→Albania",
+  "Kosovo→Montenegro",
+  "Moldova→Romania",
+  "Moldova→Ukraine",
+  "Montenegro→Serbia",
+  "Montenegro→North Macedonia",
+  "North Macedonia→Greece",
+  "North Macedonia→Bulgaria",
+  "North Macedonia→Serbia",
+  "Serbia→Bulgaria",
+  "Serbia→Romania",
+  "Serbia→Hungary",
+  "Ukraine→Slovakia",
+  "Ukraine→Hungary",
+]);
+
+let crossBorderFetchCycle = 0;
+
 export async function getCrossBorderFlows(hourOffset: number = 0): Promise<CrossBorderFlow[]> {
   const cacheKey = `cross-border-flows:${hourOffset}`;
   const cached = cache.get(cacheKey);
@@ -920,18 +950,28 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
   const periodEnd   = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
-  console.log(`[ENTSOE A11] querying ${INTERCONNECTOR_PAIRS.length} pairs | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
+  const isReCheckCycle = crossBorderFetchCycle % 6 === 0;
+  crossBorderFetchCycle++;
+
+  const activePairs = INTERCONNECTOR_PAIRS.filter((pair) => {
+    if (!isReCheckCycle && KNOWN_EMPTY_BORDERS.has(`${pair.from}→${pair.to}`)) return false;
+    return true;
+  });
+  const skippedCount = INTERCONNECTOR_PAIRS.length - activePairs.length;
+
+  const fetchStart = Date.now();
+  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=10 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const batchSize = 4;
-  for (let i = 0; i < INTERCONNECTOR_PAIRS.length; i += batchSize) {
-    const batch = INTERCONNECTOR_PAIRS.slice(i, i + batchSize);
-    const results = await Promise.allSettled(
-      batch.map(async (pair) => {
+  const limit = pLimit(10);
+
+  const results = await Promise.allSettled(
+    activePairs.map((pair) =>
+      limit(async () => {
         const fromEic = COUNTRY_EIC[pair.from]?.eic;
         const toEic = COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
@@ -967,14 +1007,17 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
           updatedAt: new Date().toISOString(), // filled in below once maxDataTs is known
         } as CrossBorderFlow;
       })
-    );
+    )
+  );
 
-    for (const r of results) {
-      if (r.status === "fulfilled" && r.value) {
-        flows.push(r.value);
-      }
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value) {
+      flows.push(r.value);
     }
   }
+
+  const elapsed = Date.now() - fetchStart;
+  console.log(`[ENTSOE A11] fetch complete in ${elapsed}ms`);
 
   // Replace the placeholder updatedAt with the actual most-recent ENTSO-E data timestamp.
   // Falls back to the request time if no data points were found.
@@ -996,3 +1039,21 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
 export function isEntsoeConfigured(): boolean {
   return !!getToken();
 }
+
+// Background pre-fetch: warm the cross-border flows cache on startup and every 15 minutes
+// so frontend requests are served from cache rather than waiting 30-60s for live fetches.
+async function backgroundPrefetch() {
+  if (!isEntsoeConfigured()) return;
+  try {
+    const offset = await findLatestAvailableHourOffset();
+    await getCrossBorderFlows(offset);
+  } catch (err: any) {
+    console.log(`[ENTSOE A11] background pre-fetch error: ${err.message}`);
+  }
+}
+
+// Fire once after startup (defer to avoid blocking server init), then every 15 minutes.
+setImmediate(() => {
+  backgroundPrefetch();
+  setInterval(backgroundPrefetch, 15 * 60 * 1000);
+});
