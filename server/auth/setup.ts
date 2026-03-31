@@ -4,36 +4,38 @@ import passport from "passport";
 import type { Express, Request, RequestHandler } from "express";
 import "./strategy";
 
-// ── Embed token auth ──────────────────────────────────────────────────────────
+// ── Embed token bypass ────────────────────────────────────────────────────────
 
-function parseEmbedTokens(): Map<string, string> {
-  const tokens = new Map<string, string>();
-  const raw = process.env.EMBED_TOKENS || "";
-  if (!raw) return tokens;
-  for (const entry of raw.split(",")) {
-    const idx = entry.trim().indexOf(":");
-    if (idx > 0) {
-      const token = entry.trim().slice(0, idx);
-      const name  = entry.trim().slice(idx + 1);
-      if (token && name) tokens.set(token, name);
+declare global {
+  namespace Express {
+    interface Request {
+      isEmbed?: boolean;
     }
   }
-  return tokens;
 }
 
-const embedTokens = parseEmbedTokens();
-
-/** Returns true and logs access if a valid embed token is present on a GET request. */
-export function isEmbedAuthenticated(req: Request): boolean {
-  if (req.method !== "GET") return false;
-  if (embedTokens.size === 0) return false;
-  const token =
-    (req.query.embed as string | undefined) ||
-    (req.headers["x-embed-token"] as string | undefined);
-  if (!token || !embedTokens.has(token)) return false;
-  console.log(`[AUTH] Embed access: ${embedTokens.get(token)} | ${req.method} ${req.path}`);
-  return true;
-}
+/**
+ * Middleware that must be registered BEFORE the session auth check.
+ * When a valid ?embed=<token> is present on a GET request, sets
+ * req.isEmbed = true and req.user to a synthetic viewer identity so
+ * that downstream middleware and route handlers treat the request as
+ * authenticated without requiring a session cookie.
+ */
+export const embedBypass: RequestHandler = (req, _res, next) => {
+  const secret = process.env.EMBED_TOKEN;
+  if (
+    secret &&
+    req.method === "GET" &&
+    (req.query.embed as string | undefined) === secret
+  ) {
+    req.isEmbed = true;
+    // Satisfy passport's req.user slot with a read-only viewer identity.
+    // Cast needed because the real User type has additional DB fields.
+    (req as any).user = { id: "embed-viewer", role: "viewer" };
+    console.log(`[AUTH] Embed viewer | ${req.method} ${req.path}`);
+  }
+  next();
+};
 
 declare module "express-session" {
   interface SessionData {
@@ -73,7 +75,7 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  if (req.isEmbed) return next();
   if (req.isAuthenticated()) return next();
-  if (isEmbedAuthenticated(req)) return next();
   return res.status(401).json({ message: "Unauthorized" });
 };

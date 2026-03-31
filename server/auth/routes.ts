@@ -144,6 +144,9 @@ export function registerAuthRoutes(app: Express): void {
   });
 
   app.get("/api/auth/user", isAuthenticated, (req, res) => {
+    if (req.isEmbed) {
+      return res.json({ id: "embed-viewer", username: "embed", role: "viewer", isEmbed: true });
+    }
     const user = req.user as User;
     if (!user) {
       return res.status(404).json({ message: "User not found" });

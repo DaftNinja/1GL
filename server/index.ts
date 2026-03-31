@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { setupAuth, isEmbedAuthenticated } from "./auth/setup";
+import { setupAuth, embedBypass } from "./auth/setup";
 import { registerAuthRoutes } from "./auth/routes";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db, pool } from "./db";
@@ -91,10 +91,12 @@ const PUBLIC_API_PATHS = [
 
   await setupAuth(app);
 
+  app.use("/api", embedBypass);
+
   app.use("/api", (req: Request, res: Response, next: NextFunction) => {
     if (PUBLIC_API_PATHS.includes(req.path)) return next();
     if (req.isAuthenticated()) return next();
-    if (isEmbedAuthenticated(req)) return next();
+    if (req.isEmbed) return next();
     return res.status(401).json({ message: "Unauthorized" });
   });
 

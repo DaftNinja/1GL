@@ -12,9 +12,13 @@ import { registerImageRoutes } from "./replit_integrations/image/routes";
 import { registerAudioRoutes } from "./replit_integrations/audio/routes";
 import { isAuthenticated } from "./auth/setup";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -99,7 +103,7 @@ export async function registerRoutes(
         })(),
       ]);
 
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: "gpt-5.1",
         messages: [
           {
