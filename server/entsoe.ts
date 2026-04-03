@@ -102,6 +102,35 @@ function isCacheValid<T>(entry: CacheEntry<T>): boolean {
   return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
 }
 
+/**
+ * Retries an async fetch up to `maxAttempts` times with exponential backoff.
+ * ENTSO-E application-level errors (e.g. error 999 "No matching data") are
+ * NOT retried — they are deterministic and retrying wastes rate-limit quota.
+ * Only transient failures (network timeouts, HTTP 5xx) trigger retries.
+ */
+async function retryFetch<T>(
+  fn: () => Promise<T>,
+  maxAttempts = 3,
+  baseDelayMs = 2000,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      // ENTSO-E application errors are deterministic — don't waste retries
+      if (typeof err?.message === "string" && err.message.startsWith("ENTSO-E error")) throw err;
+      if (attempt < maxAttempts - 1) {
+        const delay = baseDelayMs * 2 ** attempt;
+        console.warn(`[ENTSOE] retrying in ${delay}ms (attempt ${attempt + 1}/${maxAttempts}): ${err?.message}`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 function getToken(): string | null {
   return process.env.ENTSOE_API_KEY || null;
 }
@@ -237,6 +266,7 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
   const token = getToken();
   if (!token) return null;
 
+  const t0 = Date.now();
   try {
     // Fetch last 364 days — ENTSO-E max is P1Y (strict); 365d window exceeds it
     // by ~23h when periodEnd is set to 23:00 UTC, so we use 364 days to be safe.
@@ -245,16 +275,19 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
     const oneYearAgo = new Date(now.getTime() - 364 * 24 * 60 * 60 * 1000);
     oneYearAgo.setUTCHours(0, 0, 0, 0);
 
-    const doc = await fetchEntsoe({
+    const doc = await retryFetch(() => fetchEntsoe({
       documentType: "A44",
       in_Domain: eicInfo.eic,
       out_Domain: eicInfo.eic,
       periodStart: formatDate(oneYearAgo),
       periodEnd: formatDate(now),
-    });
+    }));
 
     const points = parsePriceDocument(doc);
-    if (points.length === 0) return null;
+    if (points.length === 0) {
+      console.log(`[prices] ${country} (${eicInfo.name}): no price points in response (${Date.now() - t0}ms)`);
+      return null;
+    }
 
     // Group by year-month
     const byYearMonth = new Map<string, number[]>();
@@ -318,10 +351,21 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
       fetchedAt: new Date().toISOString(),
     };
 
+    const latestMonth = monthly[monthly.length - 1];
+    console.log(`[prices] ${country} (${eicInfo.name}): ${monthly.length} months, latest ${latestMonth?.avgEurMwh ?? "null"} EUR/MWh (${Date.now() - t0}ms)`);
+
     cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
     return result;
   } catch (err: any) {
-    console.error(`ENTSO-E prices error for ${country}:`, err.message);
+    const elapsed = Date.now() - t0;
+    console.error(`[prices] ${country} (${eicInfo.name}): FAILED in ${elapsed}ms — ${err.message}`);
+    // Serve stale cache rather than returning null — keeps the map populated
+    // during ENTSO-E outages or transient maintenance windows.
+    if (cached) {
+      const staleAge = Math.round((Date.now() - cached.fetchedAt) / 3600000);
+      console.warn(`[prices] ${country}: serving stale cache (${staleAge}h old)`);
+      return cached.data;
+    }
     return null;
   }
 }
@@ -711,6 +755,10 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
       });
     }
   }
+
+  const withPrice = summaries.filter(s => s.latestMonthAvg !== null);
+  const nullPrice  = summaries.filter(s => s.latestMonthAvg === null);
+  console.log(`[prices] all-countries summary: ${withPrice.length}/${summaries.length} have prices | null: ${nullPrice.map(s => s.code).join(", ")}`);
 
   cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
   return summaries;
