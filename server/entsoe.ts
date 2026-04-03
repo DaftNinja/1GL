@@ -26,12 +26,12 @@ const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 
 // EIC bidding zone codes for all ENTSO-E European countries
 // Validated against ENTSO-E Transparency Platform March 2026
-const COUNTRY_EIC: Record<string, { eic: string; name: string; currency?: string; note?: string }> = {
+const COUNTRY_EIC: Record<string, { eic: string; flowEic?: string; name: string; currency?: string; note?: string }> = {
   // Western & Northern Europe
   "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit" },
   "Ireland":             { eic: "10Y1001A1001A59C", name: "IE", note: "SEM (Single Electricity Market)" },
   "Norway":              { eic: "10Y1001A1001A48H", name: "NO" },
-  "Sweden":              { eic: "10Y1001A1001A46L", name: "SE3", note: "SE3 bidding zone (Stockholm/central Sweden) — primary data centre hub" },
+  "Sweden":              { eic: "10Y1001A1001A46L", flowEic: "10Y1001A1001A44P", name: "SE3", note: "SE3 for day-ahead prices (Stockholm); SE1 flowEic for cross-border flows (NO/FI/PL borders)" },
   "Denmark":             { eic: "10YDK-1--------W", name: "DK", note: "DK1 (Western Denmark / Nord Pool)" },
   "Finland":             { eic: "10YFI-1--------U", name: "FI" },
   // Baltic States
@@ -893,12 +893,12 @@ async function probeHourHasData(offset: number): Promise<boolean> {
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
   const targetHour = new Date(now.getTime() - offset * 60 * 60 * 1000);
-  // Narrow ±1h window for precise per-hour detection
-  const periodStart = formatDate(new Date(targetHour.getTime() - 60 * 60 * 1000));
+  // 24h lookback window matches the main query so probe detects slow-publishing TSOs.
+  const periodStart = formatDate(new Date(targetHour.getTime() - 24 * 60 * 60 * 1000));
   const periodEnd   = formatDate(new Date(targetHour.getTime() + 60 * 60 * 1000));
   for (const pair of PROBE_PAIRS) {
-    const fromEic = COUNTRY_EIC[pair.from]?.eic;
-    const toEic   = COUNTRY_EIC[pair.to]?.eic;
+    const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
+    const toEic   = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
     if (!fromEic || !toEic) continue;
     const { ts } = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
     if (ts > 0) return true;
@@ -963,10 +963,11 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
   const targetHour = new Date(now.getTime() - hourOffset * 60 * 60 * 1000);
-  // ±6h window: Balkan/SE-European TSOs publish with up to 3–4h lag on ENTSO-E TP.
-  // parseFlowQuantity picks the latest available point, so the window just needs to
-  // contain the target hour slot; wider is more tolerant of late TSO submissions.
-  const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
+  // 24h lookback window: Western European TSOs (Germany, France, UK, NL, BE) publish
+  // A11 physical-flow data with ~24h lag; Eastern European / Iberian TSOs publish in 2–4h.
+  // parseFlowQuantity picks the LATEST available point per pair, so slow publishers show
+  // their most-recent confirmed value while fast publishers show near-real-time data.
+  const periodStart = formatDate(new Date(targetHour.getTime() - 24 * 60 * 60 * 1000));
   const periodEnd   = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
   const isReCheckCycle = crossBorderFetchCycle % 6 === 0;
@@ -991,8 +992,8 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
       limit(async () => {
-        const fromEic = COUNTRY_EIC[pair.from]?.eic;
-        const toEic = COUNTRY_EIC[pair.to]?.eic;
+        const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
+        const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
 
         const [outFlow, inFlow] = await Promise.allSettled([
