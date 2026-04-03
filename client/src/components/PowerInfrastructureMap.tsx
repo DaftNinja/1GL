@@ -14,6 +14,7 @@ import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
 import UKPNDistributionLayer from "./UKPNDistributionLayer";
 import NGEDNetworkLayer from "./NGEDNetworkLayer";
+import { DataSourceStatus } from "./DataSourceStatus";
 
 // ── euNetworks static reference data ────────────────────────────────────────
 // Source: eunetworks.com public network documentation (2024)
@@ -803,11 +804,12 @@ export default function PowerInfrastructureMap() {
     retry: 1,
   });
 
-  const { data: allPricesData } = useQuery<{ country: string; latestMonthAvg: number | null; code: string }[]>({
+  const { data: allPricesResponse } = useQuery<{ _meta: { source: string; dataAge: string | null; apiStatus: string; lastSuccessfulFetch: string | null; message: string | null }; data: { country: string; latestMonthAvg: number | null; code: string }[] }>({
     queryKey: ["/api/entsoe/all-prices"],
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const allPricesData = allPricesResponse?.data;
 
   const { data: euroGeoData } = useQuery<any>({
     queryKey: ["/api/geo/europe"],
@@ -3456,6 +3458,16 @@ export default function PowerInfrastructureMap() {
       )}
 
       <div className="flex-1 relative">
+        {allPricesResponse?._meta?.source === "stale_cache" && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] w-auto max-w-sm px-2">
+            <DataSourceStatus
+              meta={allPricesResponse._meta as any}
+              sourceName="ENTSO-E"
+              hasData={!!allPricesData?.length}
+            />
+          </div>
+        )}
+
         {!sidebarOpen && (
           <Button
             size="icon"

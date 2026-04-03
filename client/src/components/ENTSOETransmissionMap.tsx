@@ -12,6 +12,15 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
+import { DataSourceStatus } from "./DataSourceStatus";
+
+interface DataSourceMeta {
+  source: "live" | "stale_cache";
+  dataAge: string | null;
+  apiStatus: "ok" | "unavailable";
+  lastSuccessfulFetch: string | null;
+  message: string | null;
+}
 
 interface CountrySummary {
   country: string;
@@ -246,7 +255,7 @@ export default function ENTSOETransmissionMap() {
   const setHoveredRef = useRef(setHoveredCountry);
   setHoveredRef.current = setHoveredCountry;
 
-  const { data: prices, isLoading: isPricesLoading, error: pricesError } = useQuery<CountrySummary[]>({
+  const { data: pricesResponse, isLoading: isPricesLoading, error: pricesError } = useQuery<{ _meta: DataSourceMeta; data: CountrySummary[] }>({
     queryKey: ["/api/entsoe/all-prices"],
     queryFn: () => fetch("/api/entsoe/all-prices", { credentials: "include" }).then(r => {
       if (!r.ok) throw new Error(`${r.status}`);
@@ -255,6 +264,7 @@ export default function ENTSOETransmissionMap() {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const prices = pricesResponse?.data;
 
   const { data: geoData, isLoading: isGeoLoading, error: geoError } = useQuery<GeoJSON.FeatureCollection>({
     queryKey: ["/api/geo/europe"],
@@ -592,6 +602,12 @@ export default function ENTSOETransmissionMap() {
             ))}
             <span className="ml-2 text-xs text-slate-400 hidden sm:inline">— — Interconnector (width = NTC capacity)</span>
           </div>
+
+          <DataSourceStatus
+            meta={pricesResponse?._meta}
+            sourceName="ENTSO-E"
+            hasData={!!prices?.length}
+          />
         </CardHeader>
 
         <CardContent className="p-0 relative">

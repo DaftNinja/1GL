@@ -10,8 +10,17 @@ import { Loader2, Radio, AlertTriangle, ZoomIn, ZoomOut, RefreshCw, ArrowRightLe
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
+import { DataSourceStatus } from "./DataSourceStatus";
 
 // ── EU types ──────────────────────────────────────────────────────────────────
+
+interface DataSourceMeta {
+  source: "live" | "stale_cache";
+  dataAge: string | null;
+  apiStatus: "ok" | "unavailable";
+  lastSuccessfulFetch: string | null;
+  message: string | null;
+}
 
 interface CrossBorderFlow {
   from: string;
@@ -399,9 +408,9 @@ export default function CrossBorderFlows() {
 
   // ── ENTSO-E query ────────────────────────────────────────────────────────────
   const {
-    data: flows, isLoading: euLoading, error: euError,
+    data: flowsResponse, isLoading: euLoading, error: euError,
     refetch: refetchEu, isFetching: euFetching,
-  } = useQuery<CrossBorderFlow[]>({
+  } = useQuery<{ _meta: DataSourceMeta; data: CrossBorderFlow[] }>({
     queryKey: ["/api/entsoe/cross-border-flows", hourOffset],
     queryFn: () =>
       fetch(`/api/entsoe/cross-border-flows?hourOffset=${hourOffset}`, { credentials: "include" })
@@ -409,6 +418,7 @@ export default function CrossBorderFlows() {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const flows = flowsResponse?.data;
 
   // ── EIA interchange query ────────────────────────────────────────────────────
   const {
@@ -486,7 +496,8 @@ export default function CrossBorderFlows() {
               credentials: "include", signal: controller.signal,
             });
             if (!r.ok) break;
-            const data: CrossBorderFlow[] = await r.json();
+            const json: { _meta: DataSourceMeta; data: CrossBorderFlow[] } = await r.json();
+            const data = json.data ?? [];
             if (data.some(f => Math.abs(f.netMw) >= 10)) { bestOffset = offset; } else { break; }
           } catch { break; }
         }
@@ -506,7 +517,8 @@ export default function CrossBorderFlows() {
               credentials: "include", signal: controller.signal,
             });
             if (!r.ok) continue;
-            const data: CrossBorderFlow[] = await r.json();
+            const json: { _meta: DataSourceMeta; data: CrossBorderFlow[] } = await r.json();
+            const data = json.data ?? [];
             if (data.some(f => Math.abs(f.netMw) >= 10)) {
               if (!controller.signal.aborted) {
                 refinedRef.current = false;
@@ -830,10 +842,28 @@ export default function CrossBorderFlows() {
               {searchStatus === "searching"
                 ? <span className="italic">Searching for latest available data…</span>
                 : searchStatus === "exhausted"
-                ? <span className="text-amber-500">No recent A11 data available</span>
+                ? <DataSourceStatus
+                    meta={flowsResponse?._meta}
+                    sourceName="ENTSO-E A11"
+                    hasData={false}
+                    noDataMessage={
+                      flowsResponse?._meta?.apiStatus === "unavailable"
+                        ? "ENTSO-E API is temporarily unavailable. Cross-border flow data will appear when the source is restored."
+                        : "No recent A11 cross-border flow data available."
+                    }
+                  />
                 : <span className="font-medium text-slate-500">{euHourLabel}</span>
               }
             </p>
+
+            {/* Stale data banner when flows are present but from stale cache */}
+            {flows && flows.length > 0 && flowsResponse?._meta?.source === "stale_cache" && (
+              <DataSourceStatus
+                meta={flowsResponse._meta}
+                sourceName="ENTSO-E"
+                hasData={true}
+              />
+            )}
 
             {/* EIA timestamp */}
             {(interchange || usError) && (

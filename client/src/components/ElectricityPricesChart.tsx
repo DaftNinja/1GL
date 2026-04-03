@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { DataSourceStatus } from "./DataSourceStatus";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, ReferenceLine,
@@ -34,13 +35,30 @@ interface ElectricityPricesChartProps {
 export default function ElectricityPricesChart({ country }: ElectricityPricesChartProps) {
   const countryCode = COUNTRY_TO_CODE[country];
 
-  // Check if ENTSO-E is configured
-  const { data: entsoeStatus } = useQuery<{ configured: boolean }>({
+  // Check if ENTSO-E is configured + health status for banners
+  const { data: entsoeStatus } = useQuery<{
+    configured: boolean;
+    apiReachable: boolean;
+    consecutiveFailures: number;
+    lastSuccessfulFetch: string | null;
+    staleCacheAge: number | null;
+    lastError: string | null;
+  }>({
     queryKey: ["/api/entsoe/status"],
-    staleTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const isLive = entsoeStatus?.configured === true;
+  const entsoeUnavailable = isLive && (entsoeStatus?.consecutiveFailures ?? 0) > 0;
+  const entsoeMeta = entsoeUnavailable ? {
+    source: "stale_cache" as const,
+    dataAge: entsoeStatus?.staleCacheAge != null
+      ? `${Math.floor(entsoeStatus.staleCacheAge / 60)}h ${entsoeStatus.staleCacheAge % 60}m`
+      : null,
+    apiStatus: "unavailable" as const,
+    lastSuccessfulFetch: entsoeStatus?.lastSuccessfulFetch ?? null,
+    message: "ENTSO-E API is temporarily unavailable. Showing last available data.",
+  } : null;
 
   // ENTSO-E live data (when configured)
   const { data: liveData, isLoading: isLoadingLive } = useQuery<any>({
@@ -163,6 +181,12 @@ export default function ElectricityPricesChart({ country }: ElectricityPricesCha
 
   return (
     <div className="mt-8 space-y-6" data-testid="electricity-prices-section">
+
+      <DataSourceStatus
+        meta={entsoeMeta}
+        sourceName="ENTSO-E"
+        hasData={hasData}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between">

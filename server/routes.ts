@@ -897,9 +897,14 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   });
 
   // ─── ENTSO-E Transparency Platform — Live Electricity Prices ──────────────
-  app.get("/api/entsoe/status", isAuthenticated, async (req, res) => {
+  // Returns both configuration status (used by ElectricityPricesChart) and
+  // health tracking status (used by DataSourceStatus banners). No auth required
+  // so the health endpoint can be polled by unauthenticated status pages too.
+  app.get("/api/entsoe/status", async (req, res) => {
     const { isEntsoeConfigured } = await import("./entsoe");
-    res.json({ configured: isEntsoeConfigured() });
+    const { getEntsoeHealth } = await import("./entsoeHealth");
+    const health = getEntsoeHealth();
+    res.json({ configured: isEntsoeConfigured(), ...health });
   });
 
   app.get("/api/entsoe/prices", isAuthenticated, async (req, res) => {
@@ -1052,7 +1057,21 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         }
       }
 
-      res.json(data);
+      const { getEntsoeHealth } = await import("./entsoeHealth");
+      const health = getEntsoeHealth();
+      const isStale = health.consecutiveFailures > 0;
+      const meta = {
+        source: isStale ? "stale_cache" : "live",
+        dataAge: health.staleCacheAge != null
+          ? `${Math.floor(health.staleCacheAge / 60)}h ${health.staleCacheAge % 60}m`
+          : null,
+        apiStatus: isStale ? "unavailable" : "ok",
+        lastSuccessfulFetch: health.lastSuccessfulFetch,
+        message: isStale
+          ? "ENTSO-E API is temporarily unavailable. Showing last available data."
+          : null,
+      };
+      res.json({ _meta: meta, data });
     } catch (err: any) {
       console.error("ENTSO-E all-prices route error:", err);
       res.status(500).json({ message: "Failed to fetch ENTSO-E data", error: err.message });
@@ -1090,7 +1109,21 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         const top3 = [...data].sort((a, b) => Math.abs(b.netMw) - Math.abs(a.netMw)).slice(0, 3);
         console.log(`[ENTSOE] top flows: ${top3.map(f => `${f.from}→${f.to} ${f.netMw}MW`).join(", ")}`);
       }
-      res.json(data);
+      const { getEntsoeHealth } = await import("./entsoeHealth");
+      const health = getEntsoeHealth();
+      const isStale = health.consecutiveFailures > 0;
+      const meta = {
+        source: isStale ? "stale_cache" : "live",
+        dataAge: health.staleCacheAge != null
+          ? `${Math.floor(health.staleCacheAge / 60)}h ${health.staleCacheAge % 60}m`
+          : null,
+        apiStatus: isStale ? "unavailable" : "ok",
+        lastSuccessfulFetch: health.lastSuccessfulFetch,
+        message: isStale
+          ? "ENTSO-E API is temporarily unavailable. Showing last available data."
+          : null,
+      };
+      res.json({ _meta: meta, data });
     } catch (err: any) {
       console.error("ENTSO-E cross-border flows route error:", err);
       res.status(500).json({ message: "Failed to fetch cross-border flow data", error: err.message });

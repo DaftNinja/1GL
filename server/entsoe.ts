@@ -1,6 +1,7 @@
 import { parseStringPromise } from "xml2js";
 import fs from "fs";
 import path from "path";
+import { recordEntsoeSuccess, recordEntsoeFailure } from "./entsoeHealth";
 
 // Inline concurrency limiter — avoids depending on p-limit (ESM-only, incompatible
 // with the esbuild CJS production bundle).
@@ -100,6 +101,26 @@ const cache = new Map<string, CacheEntry<any>>();
 
 function isCacheValid<T>(entry: CacheEntry<T>): boolean {
   return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+}
+
+const TMP_PRICE_CACHE = "/tmp/entsoe-price-cache.json";
+const TMP_FLOWS_CACHE = "/tmp/entsoe-flows-cache.json";
+
+function readTmpCache<T>(filePath: string): CacheEntry<T> | null {
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw) as CacheEntry<T>;
+  } catch {
+    return null;
+  }
+}
+
+function writeTmpCache<T>(filePath: string, entry: CacheEntry<T>): void {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(entry), "utf8");
+  } catch (e: any) {
+    console.warn(`[entsoe] Failed to write tmp cache ${filePath}: ${e.message}`);
+  }
 }
 
 /**
@@ -703,6 +724,15 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const cached = cache.get(cacheKey);
   if (cached && isCacheValid(cached)) return cached.data;
 
+  // On first run (in-memory cache empty), try to warm from disk cache
+  if (!cached) {
+    const diskEntry = readTmpCache<CountrySummary[]>(TMP_PRICE_CACHE);
+    if (diskEntry) {
+      cache.set(cacheKey, diskEntry);
+      console.log(`[prices] Warmed in-memory cache from disk (age: ${Math.round((Date.now() - diskEntry.fetchedAt) / 60000)}m)`);
+    }
+  }
+
   // Fetch ENTSO-E prices in batches of 3 with a 400ms gap between batches.
   // ENTSO-E rate-limits aggressive callers; firing 35 requests back-to-back causes
   // batches 3+ to get throttled, making later countries (DE, NL, IT, …) return errors.
@@ -782,6 +812,19 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   }
   const ttl = isDegraded ? DEGRADED_TTL_MS : CACHE_TTL_MS;
   cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() - (CACHE_TTL_MS - ttl) });
+
+  // Persist to disk so the next server restart can warm the in-memory cache immediately.
+  // Only write on non-degraded (healthy) fetches to avoid persisting bad data.
+  if (!isDegraded) {
+    writeTmpCache(TMP_PRICE_CACHE, cache.get(cacheKey)!);
+    recordEntsoeSuccess();
+  } else {
+    // Degraded result — ENTSO-E was partially unavailable or rate-limited.
+    const staleCachedEntry = cache.get(cacheKey);
+    const staleMinutes = staleCachedEntry ? Math.round((Date.now() - staleCachedEntry.fetchedAt) / 60000) : null;
+    recordEntsoeFailure(`Degraded result: only ${withPrice.length}/${summaries.length} countries returned prices`, true, staleMinutes);
+  }
+
   return summaries;
 }
 
@@ -1026,6 +1069,15 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
     return cached.data;
   }
 
+  // On first run (in-memory cache empty), try to warm from disk cache (hourOffset=0 only)
+  if (!cached && hourOffset === 0) {
+    const diskEntry = readTmpCache<CrossBorderFlow[]>(TMP_FLOWS_CACHE);
+    if (diskEntry) {
+      cache.set(cacheKey, diskEntry);
+      console.log(`[flows] Warmed in-memory cache from disk (age: ${Math.round((Date.now() - diskEntry.fetchedAt) / 60000)}m)`);
+    }
+  }
+
   const token = getToken();
   if (!token) return [];
 
@@ -1122,6 +1174,13 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   }
 
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
+
+  // Persist hourOffset=0 to disk for cross-restart cache warm-up.
+  if (hourOffset === 0) {
+    writeTmpCache(TMP_FLOWS_CACHE, cache.get(cacheKey)!);
+  }
+  recordEntsoeSuccess();
+
   return flows;
 }
 
