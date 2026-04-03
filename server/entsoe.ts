@@ -22,7 +22,7 @@ function pLimit(concurrency: number) {
   };
 }
 
-const ENTSOE_BASE = "https://external-api.tp.entsoe.eu/api";
+const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 
 // EIC bidding zone codes for all ENTSO-E European countries
 // Validated against ENTSO-E Transparency Platform March 2026

@@ -969,7 +969,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   app.get("/api/entsoe/test", isAuthenticated, async (req, res) => {
     const token = process.env.ENTSOE_API_KEY;
     if (!token) return res.json({ ok: false, error: "ENTSOE_API_KEY not set" });
-    const hostname = "external-api.tp.entsoe.eu";
+    const hostname = "web-api.tp.entsoe.eu";
     // DNS resolution — tells us what IP Railway is actually hitting
     let resolvedIPs: string[] = [];
     try {
