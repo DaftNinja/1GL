@@ -975,7 +975,7 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       yesterday.setUTCHours(0, 0, 0, 0);
       const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
-      const url = `https://web-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const url = `https://external-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
       const t0 = Date.now();
       const resp = await fetch(url, {
         headers: { Accept: "application/xml" },
