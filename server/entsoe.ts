@@ -172,10 +172,17 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
     const textMatch = xml.match(/<text>([^<]+)<\/text>/);
     const code = codeMatch?.[1] || "unknown";
     const msg = textMatch?.[1] || "Unknown error";
+    // Log with key params so Railway logs pinpoint which query got which error
+    const domain = params.in_Domain ?? params.in_domain ?? "?";
+    const docType = params.documentType ?? "?";
+    console.warn(`[ENTSOE] HTTP ${response.status} | docType=${docType} domain=${domain} → error ${code}: ${msg}`);
     throw new Error(`ENTSO-E error ${code}: ${msg}`);
   }
 
   if (!response.ok) {
+    const domain = params.in_Domain ?? params.in_domain ?? "?";
+    const docType = params.documentType ?? "?";
+    console.warn(`[ENTSOE] HTTP ${response.status} ${response.statusText} | docType=${docType} domain=${domain}`);
     throw new Error(`ENTSO-E API ${response.status}: ${response.statusText}`);
   }
 
@@ -696,11 +703,15 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const cached = cache.get(cacheKey);
   if (cached && isCacheValid(cached)) return cached.data;
 
-  // Fetch ENTSO-E prices in batches of 5 to avoid rate-limiting, UK Elexon in parallel
+  // Fetch ENTSO-E prices in batches of 3 with a 400ms gap between batches.
+  // ENTSO-E rate-limits aggressive callers; firing 35 requests back-to-back causes
+  // batches 3+ to get throttled, making later countries (DE, NL, IT, …) return errors.
   const countries = Object.keys(COUNTRY_EIC);
-  const batchSize = 5;
+  const batchSize = 3;
+  const INTER_BATCH_DELAY_MS = 400;
   const allResults: PromiseSettledResult<any>[] = [];
   for (let i = 0; i < countries.length; i += batchSize) {
+    if (i > 0) await new Promise(r => setTimeout(r, INTER_BATCH_DELAY_MS));
     const batch = countries.slice(i, i + batchSize);
     const batchResults = await Promise.allSettled(
       batch.map((country) => getCountryDayAheadPrices(country))
@@ -760,7 +771,17 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const nullPrice  = summaries.filter(s => s.latestMonthAvg === null);
   console.log(`[prices] all-countries summary: ${withPrice.length}/${summaries.length} have prices | null: ${nullPrice.map(s => s.code).join(", ")}`);
 
-  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
+  // Only cache with the full 24h TTL when we have a healthy result (≥15 countries
+  // with prices). If fewer returned data the fetch was likely disrupted by rate
+  // limiting or a transient ENTSO-E outage — cache for only 5 minutes so we
+  // retry soon rather than locking in nulls for a full day.
+  const DEGRADED_TTL_MS = 5 * 60 * 1000;
+  const isDegraded = withPrice.length < 15;
+  if (isDegraded) {
+    console.warn(`[prices] degraded result (${withPrice.length} prices) — caching for 5 min only`);
+  }
+  const ttl = isDegraded ? DEGRADED_TTL_MS : CACHE_TTL_MS;
+  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() - (CACHE_TTL_MS - ttl) });
   return summaries;
 }
 
