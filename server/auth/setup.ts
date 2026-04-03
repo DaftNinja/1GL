@@ -25,7 +25,6 @@ export const embedBypass: RequestHandler = (req, _res, next) => {
   const secret = process.env.EMBED_TOKEN;
   if (
     secret &&
-    req.method === "GET" &&
     (req.query.embed as string | undefined) === secret
   ) {
     req.isEmbed = true;
