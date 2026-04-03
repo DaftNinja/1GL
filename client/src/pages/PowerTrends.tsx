@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, isEmbedMode } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/MetricCard";
@@ -533,7 +533,7 @@ export default function PowerTrends() {
                 ))}
               </SelectContent>
             </Select>
-            <Button
+            {!isEmbedMode && <Button
               size="lg"
               onClick={() => handleGenerate(false)}
               disabled={!selectedCountry || isGenerating}
@@ -551,7 +551,7 @@ export default function PowerTrends() {
                   Generate Analysis
                 </>
               )}
-            </Button>
+            </Button>}
           </div>
           {isGenerating && (
             <p className="text-sm text-slate-500 mt-3">This may take up to a minute...</p>
@@ -749,10 +749,10 @@ export default function PowerTrends() {
                   <FileCode className="w-4 h-4 mr-1" />
                   Export HTML
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleGenerate(true)} disabled={isGenerating} data-testid="button-refresh">
+                {!isEmbedMode && <Button variant="outline" size="sm" onClick={() => handleGenerate(true)} disabled={isGenerating} data-testid="button-refresh">
                   <RefreshCw className={`w-4 h-4 mr-1 ${isGenerating ? 'animate-spin' : ''}`} />
                   Refresh
-                </Button>
+                </Button>}
               </div>
             </div>
 
