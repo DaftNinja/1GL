@@ -103,6 +103,35 @@ const PUBLIC_API_PATHS = [
   registerAuthRoutes(app);
   await registerRoutes(httpServer, app);
 
+  // ── ENTSO-E connectivity diagnostic ──────────────────────────────────────
+  // Runs once at startup: makes one real A44 request for Germany and logs the
+  // HTTP status + first 300 chars of the response. Visible immediately in
+  // Railway logs — confirms whether the API key, URL, and auth method work.
+  setImmediate(async () => {
+    const token = process.env.ENTSOE_API_KEY;
+    if (!token) {
+      log("ENTSO-E diagnostic: ENTSOE_API_KEY not set — skipping", "entsoe-diag");
+      return;
+    }
+    try {
+      const now = new Date();
+      now.setUTCHours(22, 0, 0, 0);
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      yesterday.setUTCHours(0, 0, 0, 0);
+      const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
+      const url = `https://web-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const resp = await fetch(url, {
+        headers: { Accept: "application/xml", "SECURITY_TOKEN": token },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await resp.text();
+      const snippet = body.replace(/\s+/g, " ").slice(0, 300);
+      log(`ENTSO-E diagnostic: HTTP ${resp.status} | response: ${snippet}`, "entsoe-diag");
+    } catch (err: any) {
+      log(`ENTSO-E diagnostic: FAILED — ${err.message}`, "entsoe-diag");
+    }
+  });
+
   // Background: populate 1GL data centre DB on startup if empty
   setImmediate(async () => {
     try {
