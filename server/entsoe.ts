@@ -31,7 +31,7 @@ const COUNTRY_EIC: Record<string, { eic: string; name: string; currency?: string
   "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit" },
   "Ireland":             { eic: "10Y1001A1001A59C", name: "IE", note: "SEM (Single Electricity Market)" },
   "Norway":              { eic: "10Y1001A1001A48H", name: "NO" },
-  "Sweden":              { eic: "10Y1001A1001A44P", name: "SE" },
+  "Sweden":              { eic: "10Y1001A1001A46L", name: "SE3", note: "SE3 bidding zone (Stockholm/central Sweden) — primary data centre hub" },
   "Denmark":             { eic: "10YDK-1--------W", name: "DK", note: "DK1 (Western Denmark / Nord Pool)" },
   "Finland":             { eic: "10YFI-1--------U", name: "FI" },
   // Baltic States

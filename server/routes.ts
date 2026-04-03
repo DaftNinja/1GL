@@ -520,6 +520,19 @@ GRID CONNECTION PROCESS — Elia 2024/2025:
 - Elia grid investments: €6 billion investment plan 2024–2028 — major HV ring reinforcements (Horta-Ventilus offshore wind grid, Borealis project) will resolve Flanders offshore bottleneck by 2030
 - Nemo Link (IFA2 Belgium–UK HVDC) interconnector allows Belgium to import UK surplus renewables during high wind periods — bidirectional benefit
 
+NETHERLANDS-SPECIFIC DATA (use when country is Netherlands):
+- Grid operator: TenneT (HV transmission, 23,000 km network); Liander, Stedin, Enexis (regional distribution)
+- Amsterdam (AMS-IX) is Europe's largest internet exchange — latency imperative makes AMS a tier-1 DC hub; FLAP-D member alongside Frankfurt, London, Paris, Dublin
+- Total installed capacity ~35 GW; major interconnectors to Belgium (2,400 MW), Germany (4,000 MW), Norway (NorNed 700 MW HVDC), UK (BritNed 1,000 MW HVDC)
+- DC electricity demand is the single largest inbound FDI sector — 20% of all Netherlands FDI (Ember 2025); hyperscale campuses: Google Middenmeer (Groningen, 1 GW+ long-term), Microsoft Wieringermeer, Meta Zeewolde
+- Primary DC clusters: Amsterdam metro (Equinix AMS1-AMS9, Digital Realty AMSDC campus, Iron Mountain), Eemshaven port zone (Google, RWE green power), Middenmeer/Wieringerwerf (greenfield hyperscale)
+- TenneT grid connection backlog: 3–7 years for HV connections >20 MW in the Randstad (Amsterdam/Rotterdam/The Hague); TenneT has declared parts of the western Netherlands transmission grid "vol" (full) — no new large connections without offsetting load reductions
+- Renewable share ~45% (2024): offshore wind dominant; 3.6 GW offshore installed — Hollandse Kust Noord/Zuid/West Alpha/Beta; 21 GW in offshore pipeline to 2030 under national offshore wind programme
+- Planning restrictions: several provincial councils (Noord-Holland, Flevoland) have applied DC zoning freezes or moratoriums in certain areas citing grid congestion and land-use concerns; national DC policy framework under development (2025)
+- SDE++ subsidy scheme supports renewable generation procurement; reduced Energiebelasting (energy tax) rate for large consumers >10 GWh/yr; CO₂ pricing via EU ETS
+- District heating: Amsterdam (WarmtelinQ successor), Rotterdam (Warmtebedrijf) heat networks — DC operators face increasing municipal pressure to supply waste heat; AEB Amsterdam (waste-to-energy) adjacent to major DC campuses
+- NED (Netherlands Energy Dashboard): live grid data available via ned.nl API; TenneT open data platform provides 15-min generation and price data
+
 - Water stress risk: assess site-level water availability, especially for regions using evaporative/adiabatic cooling; SE England and many Mediterranean areas face escalating water scarcity constraints
 - Supply chain constraints for transformers, switchgear, and HV cables — lead times for turbine deliveries now several years
 - Workforce availability for electrical engineering and construction — major constraint identified by Soben/Accenture
