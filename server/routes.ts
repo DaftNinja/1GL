@@ -963,6 +963,38 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ── ENTSO-E live connectivity test — hit from browser while logged in ───────
+  // Returns raw HTTP status + first 500 chars of ENTSO-E response.
+  // Use to diagnose API key / auth issues without needing Railway log access.
+  app.get("/api/entsoe/test", isAuthenticated, async (req, res) => {
+    const token = process.env.ENTSOE_API_KEY;
+    if (!token) return res.json({ ok: false, error: "ENTSOE_API_KEY not set" });
+    try {
+      const now = new Date();
+      now.setUTCHours(22, 0, 0, 0);
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      yesterday.setUTCHours(0, 0, 0, 0);
+      const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
+      const url = `https://web-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const t0 = Date.now();
+      const resp = await fetch(url, {
+        headers: { Accept: "application/xml" },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await resp.text();
+      const elapsed = Date.now() - t0;
+      const snippet = body.replace(/\s+/g, " ").slice(0, 500);
+      const hasData = body.includes("TimeSeries");
+      const hasError = body.includes("Acknowledgement_MarketDocument");
+      const errorCode = hasError ? (body.match(/<code>(\d+)<\/code>/)?.[1] ?? "?") : null;
+      const errorMsg  = hasError ? (body.match(/<text>([^<]+)<\/text>/)?.[1] ?? "?") : null;
+      console.log(`[entsoe-test] HTTP ${resp.status} | hasData=${hasData} | hasError=${hasError} | ${elapsed}ms`);
+      return res.json({ ok: resp.ok && hasData, status: resp.status, hasData, hasError, errorCode, errorMsg, elapsed, snippet });
+    } catch (err: any) {
+      return res.json({ ok: false, error: err.message });
+    }
+  });
+
   app.get("/api/entsoe/all-prices", isAuthenticated, async (req, res) => {
     try {
       const { getAllCountriesPriceSummary, isEntsoeConfigured } = await import("./entsoe");
