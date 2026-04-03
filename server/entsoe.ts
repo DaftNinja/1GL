@@ -154,19 +154,13 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
   if (!token) throw new Error("ENTSOE_API_KEY not configured");
 
   const url = new URL(ENTSOE_BASE);
-  // Keep securityToken in query string for backward compat, but ALSO send it
-  // as the SECURITY_TOKEN header. ENTSO-E started requiring the header in 2025;
-  // sending both means the call works regardless of which method they enforce.
   url.searchParams.set("securityToken", token);
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
 
   const response = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/xml",
-      "SECURITY_TOKEN": token,
-    },
+    headers: { Accept: "application/xml" },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 

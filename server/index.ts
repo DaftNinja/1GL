@@ -121,7 +121,7 @@ const PUBLIC_API_PATHS = [
       const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
       const url = `https://web-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
       const resp = await fetch(url, {
-        headers: { Accept: "application/xml", "SECURITY_TOKEN": token },
+        headers: { Accept: "application/xml" },
         signal: AbortSignal.timeout(15000),
       });
       const body = await resp.text();
