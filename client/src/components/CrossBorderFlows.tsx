@@ -584,33 +584,43 @@ export default function CrossBorderFlows() {
       const flowMap = new Map<string, CrossBorderFlow>();
       for (const flow of flows) flowMap.set(`${flow.from}-${flow.to}`, flow);
 
-      console.log(`[EU arcs] flows received: ${flows.length} | flowMap keys: ${[...flowMap.keys()].join(", ")}`);
+      // ── Comprehensive arc audit (DevTools → Console, filter "[EU arcs]") ──────
+      const coordKeys = new Set([...Object.keys(CAPITALS), ...Object.keys(CENTROIDS)]);
+      console.log(`[EU arcs] coord map has ${coordKeys.size} entries: ${[...coordKeys].sort().join(", ")}`);
+      console.log(`[EU arcs] API returned ${flows.length} pairs: ${[...flowMap.keys()].join(", ")}`);
 
-      let euMatched = 0, euNoFlow = 0, euNoCoord = 0, euFiltered = 0;
+      const rendered: string[] = [];
+      const missingFlow: string[] = [];
+      const missingCoord: string[] = [];
+      const filtered: string[] = [];
+
       for (const ic of INTERCONNECTORS) {
         const flow = flowMap.get(`${ic.from}-${ic.to}`) || flowMap.get(`${ic.to}-${ic.from}`);
         const fromCoord = CAPITALS[ic.from] ?? CENTROIDS[ic.from];
         const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
-        if (!fromCoord || !toCoord || !flow) {
-          if (!flow) {
-            euNoFlow++;
-            console.log(`[EU arcs] NO FLOW: ${ic.from}→${ic.to}`);
-          } else {
-            euNoCoord++;
-            console.log(`[EU arcs] NO COORD: ${ic.from}(${fromCoord ? "ok" : "missing"}) ${ic.to}(${toCoord ? "ok" : "missing"})`);
-          }
+
+        if (!flow) {
+          missingFlow.push(`${ic.from}→${ic.to}`);
+          continue;
+        }
+        if (!fromCoord || !toCoord) {
+          const why = [
+            !fromCoord ? `${ic.from} not in coord map` : null,
+            !toCoord   ? `${ic.to} not in coord map`   : null,
+          ].filter(Boolean).join(", ");
+          missingCoord.push(`${ic.from}→${ic.to} (${why})`);
           continue;
         }
         if (Math.abs(flow.netMw) < 10) {
-          euFiltered++;
-          console.log(`[EU arcs] FILTERED (netMw<10): ${ic.from}→${ic.to} ${flow.netMw}MW`);
+          filtered.push(`${ic.from}→${ic.to} (${flow.outMw}out/${flow.inMw}in net=${flow.netMw}MW)`);
+          continue;
         }
 
         const { exporterName, importerName } = getNetDirection(flow);
         const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
         const importerCoord = CAPITALS[importerName] ?? CENTROIDS[importerName] ?? toCoord;
 
-        euMatched++;
+        rendered.push(`${ic.from}→${ic.to}(${flow.netMw}MW)`);
         arcs.push({
           originLat: exporterCoord[0], originLng: exporterCoord[1],
           destLat: importerCoord[0], destLng: importerCoord[1],
@@ -621,7 +631,11 @@ export default function CrossBorderFlows() {
           extraLine: `${ic.from}→${ic.to}: ${flow.outMw.toLocaleString()} MW · ${ic.to}→${ic.from}: ${flow.inMw.toLocaleString()} MW`,
         });
       }
-      console.log(`[EU arcs] summary: ${euMatched} matched | ${euNoFlow} no-flow | ${euNoCoord} no-coord | ${euFiltered} filtered(netMw<10)`);
+
+      console.log(`[EU arcs] Rendered (${rendered.length}): ${rendered.join(", ") || "none"}`);
+      if (filtered.length)     console.log(`[EU arcs] Filtered netMw<10 (${filtered.length}): ${filtered.join(", ")}`);
+      if (missingFlow.length)  console.log(`[EU arcs] No API data (${missingFlow.length}): ${missingFlow.join(", ")}`);
+      if (missingCoord.length) console.log(`[EU arcs] No coord match (${missingCoord.length}): ${missingCoord.join(", ")}`);
     }
 
     // Regional/aggregate BAs — excluded to avoid overlapping summary arcs
