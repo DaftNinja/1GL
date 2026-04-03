@@ -1043,23 +1043,30 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   let geoCache: { data: any; fetchedAt: number } | null = null;
   const GEO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+  // Maps GISCO CNTR_ID → full country name used throughout the app.
+  // GISCO (ec.europa.eu) uses ISO 3166-1 alpha-2 with two EU-specific exceptions:
+  //   EL → Greece  (EU/NUTS code; ISO uses GR)
+  //   UK → United Kingdom  (EU code; ISO uses GB)
+  // Both variants are included so the filter works regardless of dataset version.
   const ISO_TO_COUNTRY: Record<string, string> = {
     // Western & Northern Europe
-    "UK": "United Kingdom", "IE": "Ireland",  "NO": "Norway",
-    "SE": "Sweden",         "DK": "Denmark",  "FI": "Finland",
+    "GB": "United Kingdom", "UK": "United Kingdom",
+    "IE": "Ireland",
+    "NO": "Norway",         "SE": "Sweden",       "DK": "Denmark",   "FI": "Finland",
     // Baltic States
-    "EE": "Estonia",        "LV": "Latvia",   "LT": "Lithuania",
+    "EE": "Estonia",        "LV": "Latvia",       "LT": "Lithuania",
     // Central Western Europe
-    "DE": "Germany",        "NL": "Netherlands", "BE": "Belgium",
-    "LU": "Luxembourg",     "FR": "France",   "CH": "Switzerland", "AT": "Austria",
+    "DE": "Germany",        "NL": "Netherlands",  "BE": "Belgium",
+    "LU": "Luxembourg",     "FR": "France",       "CH": "Switzerland", "AT": "Austria",
     // Iberian
     "ES": "Spain",          "PT": "Portugal",
     // Central Eastern Europe
     "PL": "Poland",         "CZ": "Czech Republic", "SK": "Slovakia", "HU": "Hungary",
     // Southern Europe
-    "IT": "Italy",          "SI": "Slovenia", "HR": "Croatia",  "GR": "Greece",
+    "IT": "Italy",          "SI": "Slovenia",     "HR": "Croatia",
+    "GR": "Greece",         "EL": "Greece",       // EL = GISCO/EU code for Greece
     // South-Eastern Europe / Balkans
-    "RO": "Romania",        "BG": "Bulgaria", "RS": "Serbia",   "BA": "Bosnia",
+    "RO": "Romania",        "BG": "Bulgaria",     "RS": "Serbia",    "BA": "Bosnia",
     "ME": "Montenegro",     "MK": "North Macedonia", "AL": "Albania", "MD": "Moldova",
     "TR": "Turkey",
   };

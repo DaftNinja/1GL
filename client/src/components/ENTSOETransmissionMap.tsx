@@ -329,6 +329,28 @@ export default function ENTSOETransmissionMap() {
     dataLayersRef.current = [];
     selectedLayerRef.current = null;
 
+    // ── Price map audit (DevTools → Console, filter "[price map]") ─────────────
+    const priceApiCountries = prices ? [...priceMap.entries()].map(([k, v]) => `${k}=${v != null ? `€${v.toFixed(1)}` : "null"}`) : [];
+    console.log(`[price map] API countries (${priceApiCountries.length}): ${priceApiCountries.join(", ")}`);
+
+    const geoNames = ((geoData as GeoJSON.FeatureCollection).features || []).map(f => f.properties?.country as string);
+    console.log(`[price map] GeoJSON features (${geoNames.length}): ${geoNames.sort().join(", ")}`);
+
+    const priceMatched: string[] = [];
+    const priceNoGeo: string[] = [];
+    const geoNoPrice: string[] = [];
+    for (const [country] of priceMap) {
+      if (geoNames.includes(country)) priceMatched.push(country);
+      else priceNoGeo.push(country);
+    }
+    for (const name of geoNames) {
+      if (!priceMap.has(name)) geoNoPrice.push(name);
+    }
+    console.log(`[price map] Matched (${priceMatched.length}): ${priceMatched.sort().join(", ")}`);
+    if (priceNoGeo.length)  console.log(`[price map] API price but NO geo feature (${priceNoGeo.length}): ${priceNoGeo.join(", ")}`);
+    if (geoNoPrice.length)  console.log(`[price map] Geo feature but NO price entry (${geoNoPrice.length}): ${geoNoPrice.join(", ")}`);
+    // ────────────────────────────────────────────────────────────────────────────
+
     const geoLayer = L.geoJSON(geoData as GeoJSON.GeoJsonObject, {
       style: (feature) => {
         const name = feature?.properties?.country as string;
