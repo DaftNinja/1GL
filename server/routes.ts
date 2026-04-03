@@ -969,13 +969,23 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   app.get("/api/entsoe/test", isAuthenticated, async (req, res) => {
     const token = process.env.ENTSOE_API_KEY;
     if (!token) return res.json({ ok: false, error: "ENTSOE_API_KEY not set" });
+    const hostname = "external-api.tp.entsoe.eu";
+    // DNS resolution — tells us what IP Railway is actually hitting
+    let resolvedIPs: string[] = [];
+    try {
+      const { promises: dns } = await import("dns");
+      const addrs = await dns.lookup(hostname, { all: true });
+      resolvedIPs = addrs.map((a: { address: string }) => a.address);
+    } catch (dnsErr: any) {
+      resolvedIPs = [`DNS_ERROR: ${dnsErr.message}`];
+    }
     try {
       const now = new Date();
       now.setUTCHours(22, 0, 0, 0);
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       yesterday.setUTCHours(0, 0, 0, 0);
       const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
-      const url = `https://external-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const url = `https://${hostname}/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
       const t0 = Date.now();
       const resp = await fetch(url, {
         headers: { Accept: "application/xml" },
@@ -988,10 +998,11 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       const hasError = body.includes("Acknowledgement_MarketDocument");
       const errorCode = hasError ? (body.match(/<code>(\d+)<\/code>/)?.[1] ?? "?") : null;
       const errorMsg  = hasError ? (body.match(/<text>([^<]+)<\/text>/)?.[1] ?? "?") : null;
-      console.log(`[entsoe-test] HTTP ${resp.status} | hasData=${hasData} | hasError=${hasError} | ${elapsed}ms`);
-      return res.json({ ok: resp.ok && hasData, status: resp.status, hasData, hasError, errorCode, errorMsg, elapsed, snippet });
+      const responseHeaders = Object.fromEntries(resp.headers.entries());
+      console.log(`[entsoe-test] HTTP ${resp.status} | hasData=${hasData} | hasError=${hasError} | ${elapsed}ms | IPs=${resolvedIPs.join(",")}`);
+      return res.json({ ok: resp.ok && hasData, status: resp.status, hasData, hasError, errorCode, errorMsg, elapsed, resolvedIPs, responseHeaders, snippet });
     } catch (err: any) {
-      return res.json({ ok: false, error: err.message });
+      return res.json({ ok: false, error: err.message, resolvedIPs });
     }
   });
 
