@@ -1582,6 +1582,18 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ─── NASA EONET Natural Hazards ──────────────────────────────────────────
+  app.get("/api/eonet/events", isAuthenticated, async (req, res) => {
+    try {
+      const { getEONETEvents } = await import("./eonetData");
+      const data = await getEONETEvents();
+      res.json(data);
+    } catch (err: unknown) {
+      console.error("EONET events error:", err);
+      res.status(500).json({ message: "Failed to fetch NASA EONET events" });
+    }
+  });
+
   // ─── Electricity North West (ENW) Data ───────────────────────────────────
   app.get("/api/enw/headroom", isAuthenticated, async (req, res) => {
     try {
