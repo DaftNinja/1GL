@@ -1059,7 +1059,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
 
       const { getEntsoeHealth } = await import("./entsoeHealth");
       const health = getEntsoeHealth();
-      const isStale = health.consecutiveFailures > 0;
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
       const meta = {
         source: isStale ? "stale_cache" : "live",
         dataAge: health.staleCacheAge != null
@@ -1111,7 +1112,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       }
       const { getEntsoeHealth } = await import("./entsoeHealth");
       const health = getEntsoeHealth();
-      const isStale = health.consecutiveFailures > 0;
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
       const meta = {
         source: isStale ? "stale_cache" : "live",
         dataAge: health.staleCacheAge != null
