@@ -45,15 +45,27 @@ declare module "express-session" {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
+
+  // Validate SESSION_SECRET — hard fail in production, warn + fallback in dev
+  let sessionSecret: string;
+  if (process.env.SESSION_SECRET) {
+    sessionSecret = process.env.SESSION_SECRET;
+  } else if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET environment variable is required in production");
+  } else {
+    console.warn("[AUTH] SESSION_SECRET not set — using insecure dev fallback. Set this in production!");
+    sessionSecret = "dev-insecure-session-secret-change-me";
+  }
+
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,

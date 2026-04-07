@@ -806,7 +806,7 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   // limiting or a transient ENTSO-E outage — cache for only 5 minutes so we
   // retry soon rather than locking in nulls for a full day.
   const DEGRADED_TTL_MS = 5 * 60 * 1000;
-  const isDegraded = withPrice.length < 15;
+  const isDegraded = withPrice.length < 10;
   if (isDegraded) {
     console.warn(`[prices] degraded result (${withPrice.length} prices) — caching for 5 min only`);
   }

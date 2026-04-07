@@ -1059,7 +1059,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
 
       const { getEntsoeHealth } = await import("./entsoeHealth");
       const health = getEntsoeHealth();
-      const isStale = health.consecutiveFailures > 0;
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
       const meta = {
         source: isStale ? "stale_cache" : "live",
         dataAge: health.staleCacheAge != null
@@ -1111,7 +1112,8 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       }
       const { getEntsoeHealth } = await import("./entsoeHealth");
       const health = getEntsoeHealth();
-      const isStale = health.consecutiveFailures > 0;
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
       const meta = {
         source: isStale ? "stale_cache" : "live",
         dataAge: health.staleCacheAge != null
@@ -1579,6 +1581,18 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       console.error("NGED embedded capacity register error:", err);
       const resp = ngedErrorResponse(err, "Failed to fetch NGED embedded capacity register data");
       res.status(resp.status).json(resp.body);
+    }
+  });
+
+  // ─── NASA EONET Natural Hazards ──────────────────────────────────────────
+  app.get("/api/eonet/events", isAuthenticated, async (req, res) => {
+    try {
+      const { getEONETEvents } = await import("./eonetData");
+      const data = await getEONETEvents();
+      res.json(data);
+    } catch (err: unknown) {
+      console.error("EONET events error:", err);
+      res.status(500).json({ message: "Failed to fetch NASA EONET events" });
     }
   });
 
