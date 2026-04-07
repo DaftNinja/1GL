@@ -3,7 +3,7 @@
  *
  * Primary data source for the Power Infrastructure Map.
  * 2,764 validated records across Europe — sourced and geo-validated by 1GigLabs analysts.
- * Data stored as a static JSON bundle; Baxtel API serves as supplementary fallback.
+ * Data stored as a static JSON bundle.
  *
  * Fields: id, name, lat, lng, geo_region, operator, capacity_mw, tier,
  *         validation, validation_notes, geo_checked

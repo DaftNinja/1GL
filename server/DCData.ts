@@ -7,8 +7,8 @@ const FILE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_TTL_MS = 30 * 60 * 1000;
 
 // The Mapbox public token used to fetch 1GL tile data (set via ONEGL_MAPBOX_TOKEN env var)
-const ONEGL_MAPBOX_TOKEN = process.env.ONEGL_MAPBOX_TOKEN;
-const ONEGL_TILESET = "ericbell.baxtel_sites";
+// const ONEGL_MAPBOX_TOKEN = process.env.ONEGL_MAPBOX_TOKEN;
+// const ONEGL_TILESET = "ericbell.baxtel_sites";
 
 // Europe bounding box (covers all 15 target countries + Iceland)
 const EUROPE_BOUNDS = { minLat: 34, maxLat: 72, minLng: -25, maxLng: 42 };
