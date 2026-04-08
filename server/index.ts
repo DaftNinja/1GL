@@ -77,6 +77,30 @@ app.use((req, res, next) => {
 // Serve static assets from root public folder
 app.use(express.static('public'));
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+`);
+});
+
 const PUBLIC_API_PATHS = [
   "/auth/login",
   "/auth/register",
