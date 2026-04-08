@@ -77,6 +77,30 @@ app.use((req, res, next) => {
 // Serve static assets from root public folder
 app.use(express.static('public'));
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+`);
+});
+
 const PUBLIC_API_PATHS = [
   "/auth/login",
   "/auth/register",
@@ -132,25 +156,6 @@ const PUBLIC_API_PATHS = [
     }
   });
 
-  // Background: populate 1GL data centre DB on startup if empty
-  setImmediate(async () => {
-    try {
-      const { db } = await import("./db");
-      const { oneGLDatacentres } = await import("../shared/schema");
-      const { count } = await import("drizzle-orm");
-      const [{ value }] = await db.select({ value: count() }).from(oneGLDatacentres);
-      if (Number(value) === 0) {
-        log("1GL DC DB empty — fetching European data centres from Mapbox tiles...", "1gl");
-        const { scrapeOneGLDatacentres } = await import("./DCData");
-        const { storage } = await import("./storage");
-        const records = await scrapeOneGLDatacentres(true);
-        const result = await storage.upsertOneGLDatacentres(records);
-        log(`1GL: loaded ${records.length} records (inserted ${result.inserted}, updated ${result.updated})`, "1gl");
-      }
-    } catch (err: any) {
-      log(`1GL startup populate error: ${err.message}`, "1gl");
-    }
-  });
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

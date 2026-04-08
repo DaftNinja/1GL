@@ -305,16 +305,13 @@ This section lists every external data source the platform connects to, what it 
 | Data | Global submarine telecoms cable routes and landing point locations |
 | Cache TTL | 24 hours |
 
-### 5.18 Data Centre Dataset (1GigLabs Primary + Baxtel Fallback)
-
-| Item | Detail |
+### 5.18 Data Centre Dataset 
+| Item | Notes |
 |---|---|
-| Primary source | 1GigLabs internal dataset (`server/dcInsightsData.ts`) |
-| Fallback source | Baxtel (via Mapbox vector tiles) |
-| Mapbox credential | `BAXTEL_MAPBOX_TOKEN` (for fallback tile scraping) |
-| Data | Data centre name, location (lat/lng), country, operator, capacity (MW where available) |
-| Startup | On first launch, if the database is empty, Baxtel data is automatically scraped and loaded |
-| Admin refresh | `POST /api/baxtel/refresh` (admin email required) |
+| Webscrape public URL |  |
+| Unmaintained AI research from DC providers (scan metro/ site PDFs |  |
+| Collated AI notes from news articles regarding prospective sites and updates |   |
+
 
 ### 5.19 UK Power Networks (UKPN)
 
@@ -474,8 +471,6 @@ All endpoints (except auth routes) require a valid session. Responses are JSON u
 ### Infrastructure Map Data
 | Method | Path | Description |
 |---|---|---|
-| GET | `/api/baxtel/datacentres` | Data centre locations (primary + fallback) |
-| POST | `/api/baxtel/refresh` | Admin: refresh data centre database |
 | GET | `/api/emodnet/windfarms` | Offshore wind farms (EMODnet WFS) |
 | GET | `/api/emodnet/powercables` | Submarine power cables (EMODnet WFS) |
 | GET | `/api/submarine-cables/cables` | Telecoms submarine cables |
@@ -535,7 +530,6 @@ All endpoints (except auth routes) require a valid session. Responses are JSON u
 
 | Layer | Toggle Name | API Endpoint | Data |
 |---|---|---|---|
-| Data Centres | "Data Centres" | `/api/baxtel/datacentres` | Markers: name, location, operator, capacity |
 | Offshore Wind Farms | "Offshore Wind" | `/api/emodnet/windfarms` | Polygon/point markers: name, MW, turbine count, status, year |
 | Submarine Power Cables | "Power Cables" | `/api/emodnet/powercables` | Polylines from 4 EMODnet source layers |
 | Telecoms Submarine Cables | "Submarine Cables" | `/api/submarine-cables/cables` + `/landing-points` | Cable routes with click-to-detail |
@@ -566,7 +560,6 @@ All secrets are stored as Replit Secrets (never committed to code).
 | `NPG_API_KEY` | UK-specific | Northern Power Grid open data | northernpowergrid.opendatasoft.com |
 | `ENW_API_KEY` | UK-specific | Electricity North West open data | electricitynorthwest.opendatasoft.com |
 | `HEIGIT_API_KEY` | Optional | OpenRouteService (isochrones) | openrouteservice.org (free tier available) |
-| `BAXTEL_MAPBOX_TOKEN` | Fallback only | Mapbox token for Baxtel tile scraping | mapbox.com (if primary DC dataset is unavailable) |
 | `ADMIN_EMAILS` | Optional | Comma-separated admin email list | Set manually to restrict admin routes |
 | `SMTP_HOST` | Optional | Email server hostname | Your SMTP provider |
 | `SMTP_PORT` | Optional | Email server port (default 587) | Your SMTP provider |
@@ -589,7 +582,6 @@ PostgreSQL via Neon (serverless), accessed through Drizzle ORM.
 |---|---|
 | `users` | Registered user accounts (email, hashed password, session tokens) |
 | `power_trend_analyses` | Cached AI-generated country reports (country, JSON content, created timestamp) |
-| `baxtel_datacentres` | Fallback data centre records (name, lat, lng, country, operator) |
 | `audit_logs` | User action audit trail |
 
 ### Schema Location

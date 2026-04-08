@@ -34,7 +34,7 @@ A Leaflet-based geospatial analysis tool that layers multiple data sources onto 
 - **Power plants** — filterable by fuel type (Solar, Wind, Nuclear, Gas, Hydro, Biomass, and more) and generation capacity
 - **Grid infrastructure** — substations and distribution network data for major UK Distribution Network Operators (UK Power Networks, SSEN, National Grid Electricity Distribution, Northern Powergrid, Electricity North West)
 - **Fiber networks** — metro fiber and long-haul backbone Points of Presence, currently covering euNetworks
-- **Existing data centers** — live supply data via the Baxtel dataset, showing where capacity already exists across Europe
+
 
 Beyond simple data display, the map includes **analytical layers** derived from underlying data — for example, probability scoring for data center development suitability based on grid connection queues and substation headroom.
 
@@ -87,7 +87,7 @@ A system-level view of all significant actions taken within the platform — rep
 - **Backend**: Node.js with Express, Drizzle ORM, PostgreSQL
 - **AI**: OpenAI API for report generation
 - **Maps**: Leaflet with Mapbox tile layers and custom vector data
-- **External Data**: ENTSO-E (European electricity), Elexon BMRS (UK electricity), Baxtel (data center supply), DNO open datasets (UK grid detail)
+- **External Data**: ENTSO-E (European electricity), Elexon BMRS (UK electricity), DNO open datasets (UK grid detail)
 - **Deployment**: Replit cloud hosting
 
 ---

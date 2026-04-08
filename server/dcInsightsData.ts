@@ -3,9 +3,9 @@
  *
  * Primary data source for the Power Infrastructure Map.
  * 2,764 validated records across Europe — sourced and geo-validated by 1GigLabs analysts.
- * Data stored as a static JSON bundle; Baxtel API serves as supplementary fallback.
+ * Data stored as a static JSON bundle.
  *
- * Fields: id, name, lat, lng, geo_region, operator, capacity_mw, tier,
+ * Fields: name, lat, lng, geo_region, operator, capacity_mw, tier,
  *         validation, validation_notes, geo_checked
  */
 
@@ -13,7 +13,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 export interface DcInsightsRecord {
-  id: number;
   name: string;
   lat: number;
   lng: number;
@@ -27,7 +26,6 @@ export interface DcInsightsRecord {
   source: "1gl";
   websiteUrl: null;
   scrapedAt: null;
-  oneGLId: string;
 }
 
 let _cache: DcInsightsRecord[] | null = null;
@@ -52,7 +50,6 @@ export function getDcInsightsRecords(): DcInsightsRecord[] {
   const rows: any[] = JSON.parse(raw);
 
   _cache = rows.map((r) => ({
-    id: r.id,
     name: r.name ?? "Unknown",
     lat: r.lat,
     lng: r.lng,
@@ -66,7 +63,6 @@ export function getDcInsightsRecords(): DcInsightsRecord[] {
     source: "1gl" as const,
     websiteUrl: null,
     scrapedAt: null,
-    oneGLId: `1gl-${r.id}`,
   }));
 
   return _cache;

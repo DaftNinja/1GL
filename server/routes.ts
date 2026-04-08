@@ -1821,33 +1821,6 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
-  // Supplementary refresh — fetches 1GL API into the DB fallback store (admin only)
-  app.post("/api/1gl/refresh", isAuthenticated, async (req, res) => {
-    try {
-      const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      const userEmail = (req.session?.userEmail || "").toLowerCase();
-      if (adminEmails.length === 0 || !adminEmails.includes(userEmail)) {
-        return res.status(403).json({ message: "Admin access required. Set ADMIN_EMAILS in environment secrets." });
-      }
-
-      const { isOneGLConfigured, scrapeOneGLDatacentres, clearOneGLCache } = await import("./DCData");
-      if (!isOneGLConfigured()) {
-        return res.status(400).json({ message: "ONEGL_MAPBOX_TOKEN is not configured. 1GL tile API is unavailable." });
-      }
-      clearOneGLCache();
-      const records = await scrapeOneGLDatacentres(true);
-      const result = await storage.upsertOneGLDatacentres(records);
-      res.json({
-        message: `1GL supplementary refresh complete`,
-        scraped: records.length,
-        inserted: result.inserted,
-        updated: result.updated,
-      });
-    } catch (err: any) {
-      console.error("1GL refresh error:", err);
-      res.status(500).json({ message: err.message || "Failed to refresh 1GL data" });
-    }
-  });
 
   // ── EMODnet Human Activities – offshore wind farms ────────────────────────
   // Source: https://ows.emodnet-humanactivities.eu/wfs (open, no key)

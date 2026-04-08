@@ -265,12 +265,7 @@ shared/           # Shared types, schemas, and route definitions
 ### DC Insights Map Layer (1GigLabs Validated Dataset)
 - **Overview**: Pan-European data centre map layer using the 1GigLabs validated dataset. 2,764 geo-validated records across Europe: 1,796 Operational, 596 Planned, 299 Construction, 64 Land Bank, 9 Prospective Expansion. All records pass geo-validation (confirmed on land).
 - **Primary data source**: Static JSON file bundled with the server — `server/data/dc-insights.json`. Extracted from `dc-insights-1GL-validated_4.xlsx` (analyst-validated). Fields: id, name, lat, lng, geo_region, operator, capacity_mw, tier, validation, validation_notes, geo_checked.
-- **Server module**: `server/dcInsightsData.ts` — reads and memory-caches the JSON at startup; returns records mapped to the API shape (`baxtelId="1gl-{id}"`, `country=geo_region`).
-- **Fallback**: If the 1GL JSON is unavailable, `GET /api/baxtel/datacentres` falls back to the `baxtelDatacentres` DB table (populated by the Baxtel API). Baxtel API refresh requires `BAXTEL_MAPBOX_TOKEN` env var.
-- **APIs**: `GET /api/baxtel/datacentres` (auth-protected — serves 1GL data first), `POST /api/baxtel/refresh` (admin-only, re-fetches Baxtel tiles into DB as supplementary fallback).
-- **Schema**: `baxtelDatacentres` table in `shared/schema.ts` retained as fallback store; primary data bypasses DB entirely.
-- **Frontend**: `showBaxtelLayer` toggle in PowerInfrastructureMap; purple square markers; popups show name, operator, capacity MW, status, region; sidebar shows "1GigLabs validated dataset" attribution with record count; Retry button on error.
-- **Top regions (geo_region)**: UK/Ireland (699), Norway (353), Germany (351), France (287), Netherlands (275), Spain (214), Italy (135), Poland (75), Sweden (48), Greece (46).
+
 
 ### Third-Party APIs
 - **Clearbit**: Company logos based on domain (referenced in client requirements)
