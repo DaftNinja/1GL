@@ -435,8 +435,6 @@ interface UKPNDFESHeadroomResult {
 }
 
 interface OneGLDatacentre {
-  id: number;
-  oneGLId: string;
   name: string;
   lat: number;
   lng: number;
