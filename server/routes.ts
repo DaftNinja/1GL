@@ -520,6 +520,19 @@ GRID CONNECTION PROCESS — Elia 2024/2025:
 - Elia grid investments: €6 billion investment plan 2024–2028 — major HV ring reinforcements (Horta-Ventilus offshore wind grid, Borealis project) will resolve Flanders offshore bottleneck by 2030
 - Nemo Link (IFA2 Belgium–UK HVDC) interconnector allows Belgium to import UK surplus renewables during high wind periods — bidirectional benefit
 
+NETHERLANDS-SPECIFIC DATA (use when country is Netherlands):
+- Grid operator: TenneT (HV transmission, 23,000 km network); Liander, Stedin, Enexis (regional distribution)
+- Amsterdam (AMS-IX) is Europe's largest internet exchange — latency imperative makes AMS a tier-1 DC hub; FLAP-D member alongside Frankfurt, London, Paris, Dublin
+- Total installed capacity ~35 GW; major interconnectors to Belgium (2,400 MW), Germany (4,000 MW), Norway (NorNed 700 MW HVDC), UK (BritNed 1,000 MW HVDC)
+- DC electricity demand is the single largest inbound FDI sector — 20% of all Netherlands FDI (Ember 2025); hyperscale campuses: Google Middenmeer (Groningen, 1 GW+ long-term), Microsoft Wieringermeer, Meta Zeewolde
+- Primary DC clusters: Amsterdam metro (Equinix AMS1-AMS9, Digital Realty AMSDC campus, Iron Mountain), Eemshaven port zone (Google, RWE green power), Middenmeer/Wieringerwerf (greenfield hyperscale)
+- TenneT grid connection backlog: 3–7 years for HV connections >20 MW in the Randstad (Amsterdam/Rotterdam/The Hague); TenneT has declared parts of the western Netherlands transmission grid "vol" (full) — no new large connections without offsetting load reductions
+- Renewable share ~45% (2024): offshore wind dominant; 3.6 GW offshore installed — Hollandse Kust Noord/Zuid/West Alpha/Beta; 21 GW in offshore pipeline to 2030 under national offshore wind programme
+- Planning restrictions: several provincial councils (Noord-Holland, Flevoland) have applied DC zoning freezes or moratoriums in certain areas citing grid congestion and land-use concerns; national DC policy framework under development (2025)
+- SDE++ subsidy scheme supports renewable generation procurement; reduced Energiebelasting (energy tax) rate for large consumers >10 GWh/yr; CO₂ pricing via EU ETS
+- District heating: Amsterdam (WarmtelinQ successor), Rotterdam (Warmtebedrijf) heat networks — DC operators face increasing municipal pressure to supply waste heat; AEB Amsterdam (waste-to-energy) adjacent to major DC campuses
+- NED (Netherlands Energy Dashboard): live grid data available via ned.nl API; TenneT open data platform provides 15-min generation and price data
+
 - Water stress risk: assess site-level water availability, especially for regions using evaporative/adiabatic cooling; SE England and many Mediterranean areas face escalating water scarcity constraints
 - Supply chain constraints for transformers, switchgear, and HV cables — lead times for turbine deliveries now several years
 - Workforce availability for electrical engineering and construction — major constraint identified by Soben/Accenture
@@ -884,9 +897,14 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   });
 
   // ─── ENTSO-E Transparency Platform — Live Electricity Prices ──────────────
-  app.get("/api/entsoe/status", isAuthenticated, async (req, res) => {
+  // Returns both configuration status (used by ElectricityPricesChart) and
+  // health tracking status (used by DataSourceStatus banners). No auth required
+  // so the health endpoint can be polled by unauthenticated status pages too.
+  app.get("/api/entsoe/status", async (req, res) => {
     const { isEntsoeConfigured } = await import("./entsoe");
-    res.json({ configured: isEntsoeConfigured() });
+    const { getEntsoeHealth } = await import("./entsoeHealth");
+    const health = getEntsoeHealth();
+    res.json({ configured: isEntsoeConfigured(), ...health });
   });
 
   app.get("/api/entsoe/prices", isAuthenticated, async (req, res) => {
@@ -950,6 +968,64 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ── ENTSO-E live connectivity test — hit from browser while logged in ───────
+  // Returns raw HTTP status + first 500 chars of ENTSO-E response.
+  // Use to diagnose API key / auth issues without needing Railway log access.
+  app.get("/api/entsoe/test", isAuthenticated, async (req, res) => {
+    const token = process.env.ENTSOE_API_KEY;
+    if (!token) return res.json({ ok: false, error: "ENTSOE_API_KEY not set" });
+    const tokenTrimmed = token.trim();
+    const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tokenTrimmed);
+    const tokenInfo = {
+      length: tokenTrimmed.length,
+      isUuidFormat,
+      prefix: tokenTrimmed.slice(0, 8),
+      hadWhitespace: token !== tokenTrimmed,
+    };
+    const hostname = "web-api.tp.entsoe.eu";
+    // DNS resolution — tells us what IP Railway is actually hitting
+    let resolvedIPs: string[] = [];
+    try {
+      const { promises: dns } = await import("dns");
+      const addrs = await dns.lookup(hostname, { all: true });
+      resolvedIPs = addrs.map((a: { address: string }) => a.address);
+    } catch (dnsErr: any) {
+      resolvedIPs = [`DNS_ERROR: ${dnsErr.message}`];
+    }
+    // Also probe the bare hostname to see if it responds at all
+    let rootProbe: { status: number; elapsed: number } | null = null;
+    try {
+      const t0 = Date.now();
+      const r = await fetch(`https://${hostname}/`, { signal: AbortSignal.timeout(8000) });
+      rootProbe = { status: r.status, elapsed: Date.now() - t0 };
+    } catch (_) {}
+    try {
+      const now = new Date();
+      now.setUTCHours(22, 0, 0, 0);
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      yesterday.setUTCHours(0, 0, 0, 0);
+      const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
+      const url = `https://${hostname}/api?securityToken=${tokenTrimmed}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const t0 = Date.now();
+      const resp = await fetch(url, {
+        headers: { Accept: "application/xml", "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await resp.text();
+      const elapsed = Date.now() - t0;
+      const snippet = body.replace(/\s+/g, " ").slice(0, 500);
+      const hasData = body.includes("TimeSeries");
+      const hasError = body.includes("Acknowledgement_MarketDocument");
+      const errorCode = hasError ? (body.match(/<code>(\d+)<\/code>/)?.[1] ?? "?") : null;
+      const errorMsg  = hasError ? (body.match(/<text>([^<]+)<\/text>/)?.[1] ?? "?") : null;
+      const responseHeaders = Object.fromEntries(resp.headers.entries());
+      console.log(`[entsoe-test] HTTP ${resp.status} | hasData=${hasData} | hasError=${hasError} | ${elapsed}ms | IPs=${resolvedIPs.join(",")} | token=${JSON.stringify(tokenInfo)}`);
+      return res.json({ ok: resp.ok && hasData, status: resp.status, hasData, hasError, errorCode, errorMsg, elapsed, resolvedIPs, rootProbe, tokenInfo, responseHeaders, snippet });
+    } catch (err: any) {
+      return res.json({ ok: false, error: err.message, resolvedIPs, rootProbe, tokenInfo });
+    }
+  });
+
   app.get("/api/entsoe/all-prices", isAuthenticated, async (req, res) => {
     try {
       const { getAllCountriesPriceSummary, isEntsoeConfigured } = await import("./entsoe");
@@ -981,7 +1057,22 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         }
       }
 
-      res.json(data);
+      const { getEntsoeHealth } = await import("./entsoeHealth");
+      const health = getEntsoeHealth();
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
+      const meta = {
+        source: isStale ? "stale_cache" : "live",
+        dataAge: health.staleCacheAge != null
+          ? `${Math.floor(health.staleCacheAge / 60)}h ${health.staleCacheAge % 60}m`
+          : null,
+        apiStatus: isStale ? "unavailable" : "ok",
+        lastSuccessfulFetch: health.lastSuccessfulFetch,
+        message: isStale
+          ? "ENTSO-E API is temporarily unavailable. Showing last available data."
+          : null,
+      };
+      res.json({ _meta: meta, data });
     } catch (err: any) {
       console.error("ENTSO-E all-prices route error:", err);
       res.status(500).json({ message: "Failed to fetch ENTSO-E data", error: err.message });
@@ -1019,7 +1110,22 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
         const top3 = [...data].sort((a, b) => Math.abs(b.netMw) - Math.abs(a.netMw)).slice(0, 3);
         console.log(`[ENTSOE] top flows: ${top3.map(f => `${f.from}→${f.to} ${f.netMw}MW`).join(", ")}`);
       }
-      res.json(data);
+      const { getEntsoeHealth } = await import("./entsoeHealth");
+      const health = getEntsoeHealth();
+      // Only show the 'temporarily unavailable' banner after 3+ consecutive degraded fetches
+      const isStale = health.consecutiveFailures >= 3;
+      const meta = {
+        source: isStale ? "stale_cache" : "live",
+        dataAge: health.staleCacheAge != null
+          ? `${Math.floor(health.staleCacheAge / 60)}h ${health.staleCacheAge % 60}m`
+          : null,
+        apiStatus: isStale ? "unavailable" : "ok",
+        lastSuccessfulFetch: health.lastSuccessfulFetch,
+        message: isStale
+          ? "ENTSO-E API is temporarily unavailable. Showing last available data."
+          : null,
+      };
+      res.json({ _meta: meta, data });
     } catch (err: any) {
       console.error("ENTSO-E cross-border flows route error:", err);
       res.status(500).json({ message: "Failed to fetch cross-border flow data", error: err.message });
@@ -1030,23 +1136,30 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   let geoCache: { data: any; fetchedAt: number } | null = null;
   const GEO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+  // Maps GISCO CNTR_ID → full country name used throughout the app.
+  // GISCO (ec.europa.eu) uses ISO 3166-1 alpha-2 with two EU-specific exceptions:
+  //   EL → Greece  (EU/NUTS code; ISO uses GR)
+  //   UK → United Kingdom  (EU code; ISO uses GB)
+  // Both variants are included so the filter works regardless of dataset version.
   const ISO_TO_COUNTRY: Record<string, string> = {
     // Western & Northern Europe
-    "UK": "United Kingdom", "IE": "Ireland",  "NO": "Norway",
-    "SE": "Sweden",         "DK": "Denmark",  "FI": "Finland",
+    "GB": "United Kingdom", "UK": "United Kingdom",
+    "IE": "Ireland",
+    "NO": "Norway",         "SE": "Sweden",       "DK": "Denmark",   "FI": "Finland",
     // Baltic States
-    "EE": "Estonia",        "LV": "Latvia",   "LT": "Lithuania",
+    "EE": "Estonia",        "LV": "Latvia",       "LT": "Lithuania",
     // Central Western Europe
-    "DE": "Germany",        "NL": "Netherlands", "BE": "Belgium",
-    "LU": "Luxembourg",     "FR": "France",   "CH": "Switzerland", "AT": "Austria",
+    "DE": "Germany",        "NL": "Netherlands",  "BE": "Belgium",
+    "LU": "Luxembourg",     "FR": "France",       "CH": "Switzerland", "AT": "Austria",
     // Iberian
     "ES": "Spain",          "PT": "Portugal",
     // Central Eastern Europe
     "PL": "Poland",         "CZ": "Czech Republic", "SK": "Slovakia", "HU": "Hungary",
     // Southern Europe
-    "IT": "Italy",          "SI": "Slovenia", "HR": "Croatia",  "GR": "Greece",
+    "IT": "Italy",          "SI": "Slovenia",     "HR": "Croatia",
+    "GR": "Greece",         "EL": "Greece",       // EL = GISCO/EU code for Greece
     // South-Eastern Europe / Balkans
-    "RO": "Romania",        "BG": "Bulgaria", "RS": "Serbia",   "BA": "Bosnia",
+    "RO": "Romania",        "BG": "Bulgaria",     "RS": "Serbia",    "BA": "Bosnia",
     "ME": "Montenegro",     "MK": "North Macedonia", "AL": "Albania", "MD": "Moldova",
     "TR": "Turkey",
   };
@@ -1471,6 +1584,18 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
+  // ─── NASA EONET Natural Hazards ──────────────────────────────────────────
+  app.get("/api/eonet/events", isAuthenticated, async (req, res) => {
+    try {
+      const { getEONETEvents } = await import("./eonetData");
+      const data = await getEONETEvents();
+      res.json(data);
+    } catch (err: unknown) {
+      console.error("EONET events error:", err);
+      res.status(500).json({ message: "Failed to fetch NASA EONET events" });
+    }
+  });
+
   // ─── Electricity North West (ENW) Data ───────────────────────────────────
   app.get("/api/enw/headroom", isAuthenticated, async (req, res) => {
     try {
@@ -1696,33 +1821,6 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     }
   });
 
-  // Supplementary refresh — fetches 1GL API into the DB fallback store (admin only)
-  app.post("/api/1gl/refresh", isAuthenticated, async (req, res) => {
-    try {
-      const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-      const userEmail = (req.session?.userEmail || "").toLowerCase();
-      if (adminEmails.length === 0 || !adminEmails.includes(userEmail)) {
-        return res.status(403).json({ message: "Admin access required. Set ADMIN_EMAILS in environment secrets." });
-      }
-
-      const { isOneGLConfigured, scrapeOneGLDatacentres, clearOneGLCache } = await import("./DCData");
-      if (!isOneGLConfigured()) {
-        return res.status(400).json({ message: "ONEGL_MAPBOX_TOKEN is not configured. 1GL tile API is unavailable." });
-      }
-      clearOneGLCache();
-      const records = await scrapeOneGLDatacentres(true);
-      const result = await storage.upsertOneGLDatacentres(records);
-      res.json({
-        message: `1GL supplementary refresh complete`,
-        scraped: records.length,
-        inserted: result.inserted,
-        updated: result.updated,
-      });
-    } catch (err: any) {
-      console.error("1GL refresh error:", err);
-      res.status(500).json({ message: err.message || "Failed to refresh 1GL data" });
-    }
-  });
 
   // ── EMODnet Human Activities – offshore wind farms ────────────────────────
   // Source: https://ows.emodnet-humanactivities.eu/wfs (open, no key)

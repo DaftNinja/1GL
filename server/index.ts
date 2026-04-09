@@ -77,6 +77,30 @@ app.use((req, res, next) => {
 // Serve static assets from root public folder
 app.use(express.static('public'));
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+`);
+});
+
 const PUBLIC_API_PATHS = [
   "/auth/login",
   "/auth/register",
@@ -103,25 +127,35 @@ const PUBLIC_API_PATHS = [
   registerAuthRoutes(app);
   await registerRoutes(httpServer, app);
 
-  // Background: populate 1GL data centre DB on startup if empty
+  // ── ENTSO-E connectivity diagnostic ──────────────────────────────────────
+  // Runs once at startup: makes one real A44 request for Germany and logs the
+  // HTTP status + first 300 chars of the response. Visible immediately in
+  // Railway logs — confirms whether the API key, URL, and auth method work.
   setImmediate(async () => {
+    const token = process.env.ENTSOE_API_KEY;
+    if (!token) {
+      log("ENTSO-E diagnostic: ENTSOE_API_KEY not set — skipping", "entsoe-diag");
+      return;
+    }
     try {
-      const { db } = await import("./db");
-      const { oneGLDatacentres } = await import("../shared/schema");
-      const { count } = await import("drizzle-orm");
-      const [{ value }] = await db.select({ value: count() }).from(oneGLDatacentres);
-      if (Number(value) === 0) {
-        log("1GL DC DB empty — fetching European data centres from Mapbox tiles...", "1gl");
-        const { scrapeOneGLDatacentres } = await import("./DCData");
-        const { storage } = await import("./storage");
-        const records = await scrapeOneGLDatacentres(true);
-        const result = await storage.upsertOneGLDatacentres(records);
-        log(`1GL: loaded ${records.length} records (inserted ${result.inserted}, updated ${result.updated})`, "1gl");
-      }
+      const now = new Date();
+      now.setUTCHours(22, 0, 0, 0);
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      yesterday.setUTCHours(0, 0, 0, 0);
+      const fmt = (d: Date) => d.toISOString().replace(/[-T:]/g, "").slice(0, 12);
+      const url = `https://web-api.tp.entsoe.eu/api?securityToken=${token}&documentType=A44&in_Domain=10Y1001A1001A82H&out_Domain=10Y1001A1001A82H&periodStart=${fmt(yesterday)}&periodEnd=${fmt(now)}`;
+      const resp = await fetch(url, {
+        headers: { Accept: "application/xml" },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await resp.text();
+      const snippet = body.replace(/\s+/g, " ").slice(0, 300);
+      log(`ENTSO-E diagnostic: HTTP ${resp.status} | response: ${snippet}`, "entsoe-diag");
     } catch (err: any) {
-      log(`1GL startup populate error: ${err.message}`, "1gl");
+      log(`ENTSO-E diagnostic: FAILED — ${err.message}`, "entsoe-diag");
     }
   });
+
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -10,8 +10,17 @@ import { Loader2, Radio, AlertTriangle, ZoomIn, ZoomOut, RefreshCw, ArrowRightLe
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
+import { DataSourceStatus } from "./DataSourceStatus";
 
 // ── EU types ──────────────────────────────────────────────────────────────────
+
+interface DataSourceMeta {
+  source: "live" | "stale_cache";
+  dataAge: string | null;
+  apiStatus: "ok" | "unavailable";
+  lastSuccessfulFetch: string | null;
+  message: string | null;
+}
 
 interface CrossBorderFlow {
   from: string;
@@ -399,9 +408,9 @@ export default function CrossBorderFlows() {
 
   // ── ENTSO-E query ────────────────────────────────────────────────────────────
   const {
-    data: flows, isLoading: euLoading, error: euError,
+    data: flowsResponse, isLoading: euLoading, error: euError,
     refetch: refetchEu, isFetching: euFetching,
-  } = useQuery<CrossBorderFlow[]>({
+  } = useQuery<{ _meta: DataSourceMeta; data: CrossBorderFlow[] }>({
     queryKey: ["/api/entsoe/cross-border-flows", hourOffset],
     queryFn: () =>
       fetch(`/api/entsoe/cross-border-flows?hourOffset=${hourOffset}`, { credentials: "include" })
@@ -409,6 +418,7 @@ export default function CrossBorderFlows() {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const flows = flowsResponse?.data;
 
   // ── EIA interchange query ────────────────────────────────────────────────────
   const {
@@ -486,7 +496,8 @@ export default function CrossBorderFlows() {
               credentials: "include", signal: controller.signal,
             });
             if (!r.ok) break;
-            const data: CrossBorderFlow[] = await r.json();
+            const json: { _meta: DataSourceMeta; data: CrossBorderFlow[] } = await r.json();
+            const data = json.data ?? [];
             if (data.some(f => Math.abs(f.netMw) >= 10)) { bestOffset = offset; } else { break; }
           } catch { break; }
         }
@@ -506,7 +517,8 @@ export default function CrossBorderFlows() {
               credentials: "include", signal: controller.signal,
             });
             if (!r.ok) continue;
-            const data: CrossBorderFlow[] = await r.json();
+            const json: { _meta: DataSourceMeta; data: CrossBorderFlow[] } = await r.json();
+            const data = json.data ?? [];
             if (data.some(f => Math.abs(f.netMw) >= 10)) {
               if (!controller.signal.aborted) {
                 refinedRef.current = false;
@@ -584,16 +596,43 @@ export default function CrossBorderFlows() {
       const flowMap = new Map<string, CrossBorderFlow>();
       for (const flow of flows) flowMap.set(`${flow.from}-${flow.to}`, flow);
 
+      // ── Comprehensive arc audit (DevTools → Console, filter "[EU arcs]") ──────
+      const coordKeys = new Set([...Object.keys(CAPITALS), ...Object.keys(CENTROIDS)]);
+      console.log(`[EU arcs] coord map has ${coordKeys.size} entries: ${[...coordKeys].sort().join(", ")}`);
+      console.log(`[EU arcs] API returned ${flows.length} pairs: ${[...flowMap.keys()].join(", ")}`);
+
+      const rendered: string[] = [];
+      const missingFlow: string[] = [];
+      const missingCoord: string[] = [];
+      const filtered: string[] = [];
+
       for (const ic of INTERCONNECTORS) {
         const flow = flowMap.get(`${ic.from}-${ic.to}`) || flowMap.get(`${ic.to}-${ic.from}`);
         const fromCoord = CAPITALS[ic.from] ?? CENTROIDS[ic.from];
         const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
-        if (!fromCoord || !toCoord || !flow) continue;
+
+        if (!flow) {
+          missingFlow.push(`${ic.from}→${ic.to}`);
+          continue;
+        }
+        if (!fromCoord || !toCoord) {
+          const why = [
+            !fromCoord ? `${ic.from} not in coord map` : null,
+            !toCoord   ? `${ic.to} not in coord map`   : null,
+          ].filter(Boolean).join(", ");
+          missingCoord.push(`${ic.from}→${ic.to} (${why})`);
+          continue;
+        }
+        if (Math.abs(flow.netMw) < 10) {
+          filtered.push(`${ic.from}→${ic.to} (${flow.outMw}out/${flow.inMw}in net=${flow.netMw}MW)`);
+          continue;
+        }
 
         const { exporterName, importerName } = getNetDirection(flow);
         const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
         const importerCoord = CAPITALS[importerName] ?? CENTROIDS[importerName] ?? toCoord;
 
+        rendered.push(`${ic.from}→${ic.to}(${flow.netMw}MW)`);
         arcs.push({
           originLat: exporterCoord[0], originLng: exporterCoord[1],
           destLat: importerCoord[0], destLng: importerCoord[1],
@@ -604,6 +643,11 @@ export default function CrossBorderFlows() {
           extraLine: `${ic.from}→${ic.to}: ${flow.outMw.toLocaleString()} MW · ${ic.to}→${ic.from}: ${flow.inMw.toLocaleString()} MW`,
         });
       }
+
+      console.log(`[EU arcs] Rendered (${rendered.length}): ${rendered.join(", ") || "none"}`);
+      if (filtered.length)     console.log(`[EU arcs] Filtered netMw<10 (${filtered.length}): ${filtered.join(", ")}`);
+      if (missingFlow.length)  console.log(`[EU arcs] No API data (${missingFlow.length}): ${missingFlow.join(", ")}`);
+      if (missingCoord.length) console.log(`[EU arcs] No coord match (${missingCoord.length}): ${missingCoord.join(", ")}`);
     }
 
     // Regional/aggregate BAs — excluded to avoid overlapping summary arcs
@@ -798,10 +842,28 @@ export default function CrossBorderFlows() {
               {searchStatus === "searching"
                 ? <span className="italic">Searching for latest available data…</span>
                 : searchStatus === "exhausted"
-                ? <span className="text-amber-500">No recent A11 data available</span>
+                ? <DataSourceStatus
+                    meta={flowsResponse?._meta}
+                    sourceName="ENTSO-E A11"
+                    hasData={false}
+                    noDataMessage={
+                      flowsResponse?._meta?.apiStatus === "unavailable"
+                        ? "ENTSO-E API is temporarily unavailable. Cross-border flow data will appear when the source is restored."
+                        : "No recent A11 cross-border flow data available."
+                    }
+                  />
                 : <span className="font-medium text-slate-500">{euHourLabel}</span>
               }
             </p>
+
+            {/* Stale data banner when flows are present but from stale cache */}
+            {flows && flows.length > 0 && flowsResponse?._meta?.source === "stale_cache" && (
+              <DataSourceStatus
+                meta={flowsResponse._meta}
+                sourceName="ENTSO-E"
+                hasData={true}
+              />
+            )}
 
             {/* EIA timestamp */}
             {(interchange || usError) && (

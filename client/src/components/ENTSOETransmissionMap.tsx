@@ -12,6 +12,15 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
+import { DataSourceStatus } from "./DataSourceStatus";
+
+interface DataSourceMeta {
+  source: "live" | "stale_cache";
+  dataAge: string | null;
+  apiStatus: "ok" | "unavailable";
+  lastSuccessfulFetch: string | null;
+  message: string | null;
+}
 
 interface CountrySummary {
   country: string;
@@ -246,7 +255,7 @@ export default function ENTSOETransmissionMap() {
   const setHoveredRef = useRef(setHoveredCountry);
   setHoveredRef.current = setHoveredCountry;
 
-  const { data: prices, isLoading: isPricesLoading, error: pricesError } = useQuery<CountrySummary[]>({
+  const { data: pricesResponse, isLoading: isPricesLoading, error: pricesError } = useQuery<{ _meta: DataSourceMeta; data: CountrySummary[] }>({
     queryKey: ["/api/entsoe/all-prices"],
     queryFn: () => fetch("/api/entsoe/all-prices", { credentials: "include" }).then(r => {
       if (!r.ok) throw new Error(`${r.status}`);
@@ -255,6 +264,7 @@ export default function ENTSOETransmissionMap() {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const prices = pricesResponse?.data;
 
   const { data: geoData, isLoading: isGeoLoading, error: geoError } = useQuery<GeoJSON.FeatureCollection>({
     queryKey: ["/api/geo/europe"],
@@ -328,6 +338,28 @@ export default function ENTSOETransmissionMap() {
     dataLayersRef.current.forEach(l => map.removeLayer(l));
     dataLayersRef.current = [];
     selectedLayerRef.current = null;
+
+    // ── Price map audit (DevTools → Console, filter "[price map]") ─────────────
+    const priceApiCountries = prices ? [...priceMap.entries()].map(([k, v]) => `${k}=${v != null ? `€${v.toFixed(1)}` : "null"}`) : [];
+    console.log(`[price map] API countries (${priceApiCountries.length}): ${priceApiCountries.join(", ")}`);
+
+    const geoNames = ((geoData as GeoJSON.FeatureCollection).features || []).map(f => f.properties?.country as string);
+    console.log(`[price map] GeoJSON features (${geoNames.length}): ${geoNames.sort().join(", ")}`);
+
+    const priceMatched: string[] = [];
+    const priceNoGeo: string[] = [];
+    const geoNoPrice: string[] = [];
+    for (const [country] of priceMap) {
+      if (geoNames.includes(country)) priceMatched.push(country);
+      else priceNoGeo.push(country);
+    }
+    for (const name of geoNames) {
+      if (!priceMap.has(name)) geoNoPrice.push(name);
+    }
+    console.log(`[price map] Matched (${priceMatched.length}): ${priceMatched.sort().join(", ")}`);
+    if (priceNoGeo.length)  console.log(`[price map] API price but NO geo feature (${priceNoGeo.length}): ${priceNoGeo.join(", ")}`);
+    if (geoNoPrice.length)  console.log(`[price map] Geo feature but NO price entry (${geoNoPrice.length}): ${geoNoPrice.join(", ")}`);
+    // ────────────────────────────────────────────────────────────────────────────
 
     const geoLayer = L.geoJSON(geoData as GeoJSON.GeoJsonObject, {
       style: (feature) => {
@@ -570,6 +602,12 @@ export default function ENTSOETransmissionMap() {
             ))}
             <span className="ml-2 text-xs text-slate-400 hidden sm:inline">— — Interconnector (width = NTC capacity)</span>
           </div>
+
+          <DataSourceStatus
+            meta={pricesResponse?._meta}
+            sourceName="ENTSO-E"
+            hasData={!!prices?.length}
+          />
         </CardHeader>
 
         <CardContent className="p-0 relative">

@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 
 function createTransport() {
   const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || "587");
+  const port = parseInt(process.env.SMTP_PORT || "465");
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
@@ -13,15 +13,16 @@ function createTransport() {
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure: true,
     auth: { user, pass },
   });
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
   const transport = createTransport();
-  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const fromAddress = process.env.SMTP_USER;
 
+  try {
   await transport.sendMail({
     from: `"1GigLabs" <${fromAddress}>`,
     to: toEmail,
@@ -51,4 +52,14 @@ export async function sendPasswordResetEmail(toEmail: string, resetUrl: string):
     `,
     text: `Reset your 1GigLabs password\n\nClick this link to reset your password (expires in 1 hour):\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
   });
+  } catch (err: any) {
+    console.error("[email] SMTP send failed:", {
+      message: err.message,
+      code: err.code,
+      response: err.response,
+      responseCode: err.responseCode,
+      command: err.command,
+    });
+    throw err;
+  }
 }

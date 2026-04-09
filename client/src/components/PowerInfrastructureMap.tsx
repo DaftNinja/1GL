@@ -14,6 +14,8 @@ import "leaflet/dist/leaflet.css";
 import { CENTROIDS, INTERCONNECTORS } from "@/lib/gridConstants";
 import UKPNDistributionLayer from "./UKPNDistributionLayer";
 import NGEDNetworkLayer from "./NGEDNetworkLayer";
+import { DataSourceStatus } from "./DataSourceStatus";
+import EONETLayer, { CATEGORY_STYLE } from "./EONETLayer";
 
 // ── euNetworks static reference data ────────────────────────────────────────
 // Source: eunetworks.com public network documentation (2024)
@@ -433,8 +435,6 @@ interface UKPNDFESHeadroomResult {
 }
 
 interface OneGLDatacentre {
-  id: number;
-  oneGLId: string;
   name: string;
   lat: number;
   lng: number;
@@ -615,6 +615,44 @@ function normalizeFuel(fuel: string): string {
   return "Other";
 }
 
+const EONET_CATEGORY_META: Array<{ id: string; label: string; icon: string; color: string }> = [
+  { id: "wildfires",    label: "Wildfires",     icon: "🔥", color: "#f97316" },
+  { id: "severeStorms", label: "Severe Storms", icon: "⛈️", color: "#7c3aed" },
+  { id: "earthquakes",  label: "Earthquakes",   icon: "🌍", color: "#92400e" },
+  { id: "floods",       label: "Floods",        icon: "🌊", color: "#0ea5e9" },
+  { id: "volcanoes",    label: "Volcanoes",     icon: "🌋", color: "#be123c" },
+  { id: "tempExtremes", label: "Temp Extremes", icon: "🌡️", color: "#ef4444" },
+  { id: "drought",      label: "Drought",       icon: "☁️", color: "#d97706" },
+  { id: "landslides",   label: "Landslides",    icon: "🏔️", color: "#78350f" },
+];
+
+function NaturalHazardsPanel({
+  categories,
+  onToggle,
+}: {
+  categories: Set<string>;
+  onToggle: (cat: string) => void;
+}) {
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+        {EONET_CATEGORY_META.map(cat => (
+          <label key={cat.id} className="flex items-center gap-1 cursor-pointer">
+            <Checkbox
+              checked={categories.has(cat.id)}
+              onCheckedChange={() => onToggle(cat.id)}
+              className="h-3 w-3 shrink-0"
+            />
+            <span className="text-[10px]">{cat.icon}</span>
+            <span className="text-[10px] text-slate-400 truncate">{cat.label}</span>
+          </label>
+        ))}
+      </div>
+      <div className="text-[9px] text-slate-500 mt-1">NASA EONET · Last 30 days · Open events</div>
+    </div>
+  );
+}
+
 export default function PowerInfrastructureMap() {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -652,6 +690,10 @@ export default function PowerInfrastructureMap() {
   const [showEmodnetCablesLayer, setShowEmodnetCablesLayer] = useState(true);
   const [showSubmarineCablesLayer, setShowSubmarineCablesLayer] = useState(true);
   const [showCityLabelsLayer, setShowCityLabelsLayer] = useState(true);
+  const [showNaturalHazards, setShowNaturalHazards] = useState(false);
+  const [eonetCategories, setEonetCategories] = useState<Set<string>>(
+    new Set(Object.keys(CATEGORY_STYLE))
+  );
   const ukpnLayerRef = useRef<L.LayerGroup | null>(null);
   const gridPrimaryLayerRef = useRef<L.LayerGroup | null>(null);
   const ssenLayerRef = useRef<L.LayerGroup | null>(null);
@@ -803,11 +845,12 @@ export default function PowerInfrastructureMap() {
     retry: 1,
   });
 
-  const { data: allPricesData } = useQuery<{ country: string; latestMonthAvg: number | null; code: string }[]>({
+  const { data: allPricesResponse } = useQuery<{ _meta: { source: string; dataAge: string | null; apiStatus: string; lastSuccessfulFetch: string | null; message: string | null }; data: { country: string; latestMonthAvg: number | null; code: string }[] }>({
     queryKey: ["/api/entsoe/all-prices"],
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
+  const allPricesData = allPricesResponse?.data;
 
   const { data: euroGeoData } = useQuery<any>({
     queryKey: ["/api/geo/europe"],
@@ -2769,6 +2812,23 @@ export default function PowerInfrastructureMap() {
             </div>
 
             <div className="mt-3 pt-3 border-t border-slate-800">
+              <label className="flex items-center gap-1.5 cursor-pointer" data-testid="checkbox-natural-hazards">
+                <Checkbox
+                  checked={showNaturalHazards}
+                  onCheckedChange={() => setShowNaturalHazards(prev => !prev)}
+                  className="h-3.5 w-3.5"
+                />
+                <AlertTriangle className="w-3 h-3 text-orange-500" />
+                <span className="text-xs text-slate-300">Natural Hazards (NASA EONET)</span>
+              </label>
+              {showNaturalHazards && <NaturalHazardsPanel categories={eonetCategories} onToggle={cat => setEonetCategories(prev => {
+                const next = new Set(prev);
+                next.has(cat) ? next.delete(cat) : next.add(cat);
+                return next;
+              })} />}
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-slate-800">
               <label className="flex items-center gap-1.5 cursor-pointer" data-testid="checkbox-ssen-headroom">
                 <Checkbox
                   checked={showSSENLayer}
@@ -3456,6 +3516,16 @@ export default function PowerInfrastructureMap() {
       )}
 
       <div className="flex-1 relative">
+        {allPricesResponse?._meta?.source === "stale_cache" && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[1000] w-auto max-w-sm px-2">
+            <DataSourceStatus
+              meta={allPricesResponse._meta as any}
+              sourceName="ENTSO-E"
+              hasData={!!allPricesData?.length}
+            />
+          </div>
+        )}
+
         {!sidebarOpen && (
           <Button
             size="icon"
@@ -3526,6 +3596,13 @@ export default function PowerInfrastructureMap() {
           />
         )}
 
+        {mapReady && (
+          <EONETLayer
+            map={mapRef.current}
+            show={showNaturalHazards}
+            enabledCategories={eonetCategories}
+          />
+        )}
 
         {/* Legend — bottom right */}
         <div className="absolute bottom-14 right-4 z-[499] pointer-events-none" data-testid="panel-legend">
@@ -3558,7 +3635,7 @@ export default function PowerInfrastructureMap() {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 px-4 py-1 bg-[#0d1117]/90 backdrop-blur-sm border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 z-[500]">
-          <span>WRI · ENTSO-E · UKPN · SSEN · NPg · NGED · ENW · 1GL DC Insights · euNetworks · EMODnet</span>
+          <span>WRI · ENTSO-E · UKPN · SSEN · NPg · NGED · ENW · 1GL DC Insights · euNetworks · EMODnet · NASA EONET</span>
           <span className="font-medium text-slate-400" data-testid="text-visible-plants">
             {filteredPlants.length.toLocaleString()} plants visible
           </span>

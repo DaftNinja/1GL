@@ -1,6 +1,7 @@
 import { parseStringPromise } from "xml2js";
 import fs from "fs";
 import path from "path";
+import { recordEntsoeSuccess, recordEntsoeFailure } from "./entsoeHealth";
 
 // Inline concurrency limiter — avoids depending on p-limit (ESM-only, incompatible
 // with the esbuild CJS production bundle).
@@ -26,12 +27,12 @@ const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 
 // EIC bidding zone codes for all ENTSO-E European countries
 // Validated against ENTSO-E Transparency Platform March 2026
-const COUNTRY_EIC: Record<string, { eic: string; name: string; currency?: string; note?: string }> = {
+const COUNTRY_EIC: Record<string, { eic: string; flowEic?: string; name: string; currency?: string; note?: string }> = {
   // Western & Northern Europe
   "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit" },
   "Ireland":             { eic: "10Y1001A1001A59C", name: "IE", note: "SEM (Single Electricity Market)" },
   "Norway":              { eic: "10Y1001A1001A48H", name: "NO" },
-  "Sweden":              { eic: "10Y1001A1001A44P", name: "SE" },
+  "Sweden":              { eic: "10Y1001A1001A46L", flowEic: "10Y1001A1001A44P", name: "SE3", note: "SE3 for day-ahead prices (Stockholm); SE1 flowEic for cross-border flows (NO/FI/PL borders)" },
   "Denmark":             { eic: "10YDK-1--------W", name: "DK", note: "DK1 (Western Denmark / Nord Pool)" },
   "Finland":             { eic: "10YFI-1--------U", name: "FI" },
   // Baltic States
@@ -102,6 +103,55 @@ function isCacheValid<T>(entry: CacheEntry<T>): boolean {
   return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
 }
 
+const TMP_PRICE_CACHE = "/tmp/entsoe-price-cache.json";
+const TMP_FLOWS_CACHE = "/tmp/entsoe-flows-cache.json";
+
+function readTmpCache<T>(filePath: string): CacheEntry<T> | null {
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw) as CacheEntry<T>;
+  } catch {
+    return null;
+  }
+}
+
+function writeTmpCache<T>(filePath: string, entry: CacheEntry<T>): void {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(entry), "utf8");
+  } catch (e: any) {
+    console.warn(`[entsoe] Failed to write tmp cache ${filePath}: ${e.message}`);
+  }
+}
+
+/**
+ * Retries an async fetch up to `maxAttempts` times with exponential backoff.
+ * ENTSO-E application-level errors (e.g. error 999 "No matching data") are
+ * NOT retried — they are deterministic and retrying wastes rate-limit quota.
+ * Only transient failures (network timeouts, HTTP 5xx) trigger retries.
+ */
+async function retryFetch<T>(
+  fn: () => Promise<T>,
+  maxAttempts = 3,
+  baseDelayMs = 2000,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      // ENTSO-E application errors are deterministic — don't waste retries
+      if (typeof err?.message === "string" && err.message.startsWith("ENTSO-E error")) throw err;
+      if (attempt < maxAttempts - 1) {
+        const delay = baseDelayMs * 2 ** attempt;
+        console.warn(`[ENTSOE] retrying in ${delay}ms (attempt ${attempt + 1}/${maxAttempts}): ${err?.message}`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 function getToken(): string | null {
   return process.env.ENTSOE_API_KEY || null;
 }
@@ -143,10 +193,17 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
     const textMatch = xml.match(/<text>([^<]+)<\/text>/);
     const code = codeMatch?.[1] || "unknown";
     const msg = textMatch?.[1] || "Unknown error";
+    // Log with key params so Railway logs pinpoint which query got which error
+    const domain = params.in_Domain ?? params.in_domain ?? "?";
+    const docType = params.documentType ?? "?";
+    console.warn(`[ENTSOE] HTTP ${response.status} | docType=${docType} domain=${domain} → error ${code}: ${msg}`);
     throw new Error(`ENTSO-E error ${code}: ${msg}`);
   }
 
   if (!response.ok) {
+    const domain = params.in_Domain ?? params.in_domain ?? "?";
+    const docType = params.documentType ?? "?";
+    console.warn(`[ENTSOE] HTTP ${response.status} ${response.statusText} | docType=${docType} domain=${domain}`);
     throw new Error(`ENTSO-E API ${response.status}: ${response.statusText}`);
   }
 
@@ -237,6 +294,7 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
   const token = getToken();
   if (!token) return null;
 
+  const t0 = Date.now();
   try {
     // Fetch last 364 days — ENTSO-E max is P1Y (strict); 365d window exceeds it
     // by ~23h when periodEnd is set to 23:00 UTC, so we use 364 days to be safe.
@@ -245,16 +303,19 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
     const oneYearAgo = new Date(now.getTime() - 364 * 24 * 60 * 60 * 1000);
     oneYearAgo.setUTCHours(0, 0, 0, 0);
 
-    const doc = await fetchEntsoe({
+    const doc = await retryFetch(() => fetchEntsoe({
       documentType: "A44",
       in_Domain: eicInfo.eic,
       out_Domain: eicInfo.eic,
       periodStart: formatDate(oneYearAgo),
       periodEnd: formatDate(now),
-    });
+    }));
 
     const points = parsePriceDocument(doc);
-    if (points.length === 0) return null;
+    if (points.length === 0) {
+      console.log(`[prices] ${country} (${eicInfo.name}): no price points in response (${Date.now() - t0}ms)`);
+      return null;
+    }
 
     // Group by year-month
     const byYearMonth = new Map<string, number[]>();
@@ -318,10 +379,21 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
       fetchedAt: new Date().toISOString(),
     };
 
+    const latestMonth = monthly[monthly.length - 1];
+    console.log(`[prices] ${country} (${eicInfo.name}): ${monthly.length} months, latest ${latestMonth?.avgEurMwh ?? "null"} EUR/MWh (${Date.now() - t0}ms)`);
+
     cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
     return result;
   } catch (err: any) {
-    console.error(`ENTSO-E prices error for ${country}:`, err.message);
+    const elapsed = Date.now() - t0;
+    console.error(`[prices] ${country} (${eicInfo.name}): FAILED in ${elapsed}ms — ${err.message}`);
+    // Serve stale cache rather than returning null — keeps the map populated
+    // during ENTSO-E outages or transient maintenance windows.
+    if (cached) {
+      const staleAge = Math.round((Date.now() - cached.fetchedAt) / 3600000);
+      console.warn(`[prices] ${country}: serving stale cache (${staleAge}h old)`);
+      return cached.data;
+    }
     return null;
   }
 }
@@ -652,11 +724,24 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
   const cached = cache.get(cacheKey);
   if (cached && isCacheValid(cached)) return cached.data;
 
-  // Fetch ENTSO-E prices in batches of 5 to avoid rate-limiting, UK Elexon in parallel
+  // On first run (in-memory cache empty), try to warm from disk cache
+  if (!cached) {
+    const diskEntry = readTmpCache<CountrySummary[]>(TMP_PRICE_CACHE);
+    if (diskEntry) {
+      cache.set(cacheKey, diskEntry);
+      console.log(`[prices] Warmed in-memory cache from disk (age: ${Math.round((Date.now() - diskEntry.fetchedAt) / 60000)}m)`);
+    }
+  }
+
+  // Fetch ENTSO-E prices in batches of 3 with a 400ms gap between batches.
+  // ENTSO-E rate-limits aggressive callers; firing 35 requests back-to-back causes
+  // batches 3+ to get throttled, making later countries (DE, NL, IT, …) return errors.
   const countries = Object.keys(COUNTRY_EIC);
-  const batchSize = 5;
+  const batchSize = 3;
+  const INTER_BATCH_DELAY_MS = 400;
   const allResults: PromiseSettledResult<any>[] = [];
   for (let i = 0; i < countries.length; i += batchSize) {
+    if (i > 0) await new Promise(r => setTimeout(r, INTER_BATCH_DELAY_MS));
     const batch = countries.slice(i, i + batchSize);
     const batchResults = await Promise.allSettled(
       batch.map((country) => getCountryDayAheadPrices(country))
@@ -712,7 +797,34 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
     }
   }
 
-  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() });
+  const withPrice = summaries.filter(s => s.latestMonthAvg !== null);
+  const nullPrice  = summaries.filter(s => s.latestMonthAvg === null);
+  console.log(`[prices] all-countries summary: ${withPrice.length}/${summaries.length} have prices | null: ${nullPrice.map(s => s.code).join(", ")}`);
+
+  // Only cache with the full 24h TTL when we have a healthy result (≥15 countries
+  // with prices). If fewer returned data the fetch was likely disrupted by rate
+  // limiting or a transient ENTSO-E outage — cache for only 5 minutes so we
+  // retry soon rather than locking in nulls for a full day.
+  const DEGRADED_TTL_MS = 5 * 60 * 1000;
+  const isDegraded = withPrice.length < 10;
+  if (isDegraded) {
+    console.warn(`[prices] degraded result (${withPrice.length} prices) — caching for 5 min only`);
+  }
+  const ttl = isDegraded ? DEGRADED_TTL_MS : CACHE_TTL_MS;
+  cache.set(cacheKey, { data: summaries, fetchedAt: Date.now() - (CACHE_TTL_MS - ttl) });
+
+  // Persist to disk so the next server restart can warm the in-memory cache immediately.
+  // Only write on non-degraded (healthy) fetches to avoid persisting bad data.
+  if (!isDegraded) {
+    writeTmpCache(TMP_PRICE_CACHE, cache.get(cacheKey)!);
+    recordEntsoeSuccess();
+  } else {
+    // Degraded result — ENTSO-E was partially unavailable or rate-limited.
+    const staleCachedEntry = cache.get(cacheKey);
+    const staleMinutes = staleCachedEntry ? Math.round((Date.now() - staleCachedEntry.fetchedAt) / 60000) : null;
+    recordEntsoeFailure(`Degraded result: only ${withPrice.length}/${summaries.length} countries returned prices`, true, staleMinutes);
+  }
+
   return summaries;
 }
 
@@ -893,12 +1005,12 @@ async function probeHourHasData(offset: number): Promise<boolean> {
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
   const targetHour = new Date(now.getTime() - offset * 60 * 60 * 1000);
-  // Narrow ±1h window for precise per-hour detection
-  const periodStart = formatDate(new Date(targetHour.getTime() - 60 * 60 * 1000));
+  // 24h lookback window matches the main query so probe detects slow-publishing TSOs.
+  const periodStart = formatDate(new Date(targetHour.getTime() - 24 * 60 * 60 * 1000));
   const periodEnd   = formatDate(new Date(targetHour.getTime() + 60 * 60 * 1000));
   for (const pair of PROBE_PAIRS) {
-    const fromEic = COUNTRY_EIC[pair.from]?.eic;
-    const toEic   = COUNTRY_EIC[pair.to]?.eic;
+    const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
+    const toEic   = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
     if (!fromEic || !toEic) continue;
     const { ts } = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
     if (ts > 0) return true;
@@ -957,16 +1069,26 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
     return cached.data;
   }
 
+  // On first run (in-memory cache empty), try to warm from disk cache (hourOffset=0 only)
+  if (!cached && hourOffset === 0) {
+    const diskEntry = readTmpCache<CrossBorderFlow[]>(TMP_FLOWS_CACHE);
+    if (diskEntry) {
+      cache.set(cacheKey, diskEntry);
+      console.log(`[flows] Warmed in-memory cache from disk (age: ${Math.round((Date.now() - diskEntry.fetchedAt) / 60000)}m)`);
+    }
+  }
+
   const token = getToken();
   if (!token) return [];
 
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
   const targetHour = new Date(now.getTime() - hourOffset * 60 * 60 * 1000);
-  // ±6h window: Balkan/SE-European TSOs publish with up to 3–4h lag on ENTSO-E TP.
-  // parseFlowQuantity picks the latest available point, so the window just needs to
-  // contain the target hour slot; wider is more tolerant of late TSO submissions.
-  const periodStart = formatDate(new Date(targetHour.getTime() - 6 * 60 * 60 * 1000));
+  // 24h lookback window: Western European TSOs (Germany, France, UK, NL, BE) publish
+  // A11 physical-flow data with ~24h lag; Eastern European / Iberian TSOs publish in 2–4h.
+  // parseFlowQuantity picks the LATEST available point per pair, so slow publishers show
+  // their most-recent confirmed value while fast publishers show near-real-time data.
+  const periodStart = formatDate(new Date(targetHour.getTime() - 24 * 60 * 60 * 1000));
   const periodEnd   = formatDate(new Date(targetHour.getTime() + 1 * 60 * 60 * 1000));
 
   const isReCheckCycle = crossBorderFetchCycle % 6 === 0;
@@ -991,8 +1113,8 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
       limit(async () => {
-        const fromEic = COUNTRY_EIC[pair.from]?.eic;
-        const toEic = COUNTRY_EIC[pair.to]?.eic;
+        const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
+        const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
 
         const [outFlow, inFlow] = await Promise.allSettled([
@@ -1052,6 +1174,13 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   }
 
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
+
+  // Persist hourOffset=0 to disk for cross-restart cache warm-up.
+  if (hourOffset === 0) {
+    writeTmpCache(TMP_FLOWS_CACHE, cache.get(cacheKey)!);
+  }
+  recordEntsoeSuccess();
+
   return flows;
 }
 

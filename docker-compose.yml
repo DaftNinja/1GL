@@ -36,7 +36,6 @@ services:
       EMBER_API_KEY: ${EMBER_API_KEY:-}
       OEP_API_KEY: ${OEP_API_KEY:-}
       HEIGIT_API_KEY: ${HEIGIT_API_KEY:-}
-      BAXTEL_MAPBOX_TOKEN: ${BAXTEL_MAPBOX_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy
