@@ -181,7 +181,12 @@ export function registerAuthRoutes(app: Express): void {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Please enter a valid email address." });
       }
-      console.error("Forgot password error:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Email not configured") || msg.includes("SMTP")) {
+        console.error("Forgot password SMTP not configured:", msg);
+        return res.status(503).json({ message: "Password reset is not available — email delivery is not configured. Please contact support." });
+      }
+      console.error("[SMTP] Password reset email failed:", (err as any)?.code, msg, (err as any)?.response);
       res.status(500).json({ message: "Failed to send reset email. Please try again." });
     }
   });

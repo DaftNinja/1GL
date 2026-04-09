@@ -201,9 +201,13 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
   }
 
   if (!response.ok) {
+    // 429 rate-limit: throw without logging — the caller handles retry+backoff and logs once per pair
+    if (response.status === 429) {
+      throw new Error(`ENTSO-E API 429: rate limited`);
+    }
     const domain = params.in_Domain ?? params.in_domain ?? "?";
     const docType = params.documentType ?? "?";
-    console.warn(`[ENTSOE] HTTP ${response.status} ${response.statusText} | docType=${docType} domain=${domain}`);
+    console.warn(`[ENTSOE] HTTP ${response.status} | docType=${docType} domain=${domain}`);
     throw new Error(`ENTSO-E API ${response.status}: ${response.statusText}`);
   }
 
@@ -973,24 +977,40 @@ function parseFlowQuantity(doc: any): { qty: number; ts: number } {
 }
 
 async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart: string, periodEnd: string): Promise<{ value: number; ts: number }> {
-  try {
-    const doc = await fetchEntsoe({
-      documentType: "A11",
-      in_Domain: toEic,
-      out_Domain: fromEic,
-      periodStart,
-      periodEnd,
-    });
-    const { qty, ts } = parseFlowQuantity(doc);
-    return { value: qty, ts };
-  } catch (err: any) {
-    if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-      return { value: 0, ts: 0 }; // TSO hasn't submitted data for this border/window yet
+  const MAX_429_RETRIES = 3;
+  let lastErr: any;
+
+  for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
+    try {
+      const doc = await fetchEntsoe({
+        documentType: "A11",
+        in_Domain: toEic,
+        out_Domain: fromEic,
+        periodStart,
+        periodEnd,
+      });
+      const { qty, ts } = parseFlowQuantity(doc);
+      return { value: qty, ts };
+    } catch (err: any) {
+      if (err.message?.includes("999") || err.message?.includes("No matching data")) {
+        return { value: 0, ts: 0 }; // TSO hasn't submitted data — not an error
+      }
+      if (err.message?.includes("429") && attempt < MAX_429_RETRIES) {
+        const delay = 8000 * (attempt + 1); // 8s, 16s, 24s
+        await new Promise(r => setTimeout(r, delay));
+        lastErr = err;
+        continue;
+      }
+      // Log unexpected errors once per pair (not per request)
+      if (!err.message?.includes("429")) {
+        console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: ${err.message}`);
+      }
+      return { value: 0, ts: 0 };
     }
-    // Log unexpected errors (e.g. 401 auth, 400 bad params) so they show in Railway logs
-    console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: ${err.message}`);
-    return { value: 0, ts: 0 };
   }
+  // All 429 retries exhausted
+  console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: rate limited after ${MAX_429_RETRIES} retries`);
+  return { value: 0, ts: 0 };
 }
 
 // Two high-volume interconnectors used as lightweight data-availability probes.
@@ -1108,7 +1128,7 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const limit = pLimit(4);
+  const limit = pLimit(2); // 2 pairs at a time; each pair is sequential → max 2 concurrent ENTSO-E requests
 
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
@@ -1117,18 +1137,18 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
         const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
 
-        const [outFlow, inFlow] = await Promise.allSettled([
-          fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd),
-          fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
-        ]);
+        // Sequential directional fetches — halves peak request rate vs. concurrent
+        const outResult = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
+        await new Promise(r => setTimeout(r, 250));
+        const inResult  = await fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd);
 
-        const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
-        const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
+        const outMw = outResult.value;
+        const inMw  = inResult.value;
         const netMw = inMw - outMw;
 
         // Propagate the latest data timestamp from either direction
-        const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
-        const inTs = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
+        const outTs = outResult.ts;
+        const inTs  = inResult.ts;
         const pairTs = Math.max(outTs, inTs);
         if (pairTs > maxDataTs) maxDataTs = pairTs;
 
