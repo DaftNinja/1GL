@@ -478,11 +478,13 @@ export const siteSelectionReports = pgTable("site_selection_reports", {
 });
 
 export const siteSelectionRequestSchema = z.object({
+  targetCountries: z
+    .array(z.string().min(1))
+    .min(1, "Please select at least one country to research"),
   powerRequirementMW: z.number().min(1).max(2000),
   sustainabilityTarget: z.number().min(0).max(100),
   timelineMonths: z.number().min(6).max(60),
   budgetSensitivity: z.enum(["Low", "Medium", "High"]),
-  preferredRegions: z.array(z.string()).optional(),
   additionalRequirements: z.string().optional(),
 });
 

@@ -1,23 +1,26 @@
 /**
- * Research Agent — UK Data Centre Site Selection
+ * Research Agent — Dynamic Country Data Centre Site Selection
  *
  * Multi-step agentic pipeline:
- *   Step 1  Screening    — AI identifies best-fit UK power regions
- *   Step 2  Live data    — ENTSO-E + World Bank fetch for United Kingdom
- *   Step 3  Site analysis — Parallel AI deep-dives per UK region (UK-only enforced)
- *   Step 4  Synthesis    — AI ranks UK candidates, writes executive summary
+ *   Step 1  Screening    — AI identifies best-fit regions within user-specified countries
+ *   Step 2  Live data    — ENTSO-E + World Bank fetch for each target country
+ *   Step 3  Site analysis — Parallel AI deep-dives per region (constrained to target countries)
+ *   Step 4  Synthesis    — AI ranks candidates, writes executive summary
  *
- * Hard constraints enforced at every layer:
- *   - Only UK_REGIONS are passed to the AI
- *   - System prompts forbid non-UK suggestions explicitly
- *   - isUKSite() rejects any candidate mentioning non-UK places
- *   - country field is force-normalised to "United Kingdom" on every candidate
+ * Country constraint enforcement (four layers):
+ *   1. Only user-specified countries are ever passed to the AI
+ *   2. System messages explicitly name the target countries and forbid anything else
+ *   3. isSiteInScope() hard-filters any candidate whose location/region contains
+ *      known place-name tokens from non-target countries
+ *   4. candidate.country is force-set to the canonical target country name
+ *
+ * The targetCountries list is threaded through every function — nothing defaults
+ * to a hardcoded country. If the user specifies France, only France is researched.
  */
 
 import OpenAI from "openai";
 import type { Response } from "express";
 import {
-  siteSelectionRequestSchema,
   siteSelectionContentSchema,
   type SiteSelectionRequest,
   type SiteSelectionContent,
@@ -25,73 +28,102 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-// ── UK power regions eligible for site selection ──────────────────────────────
-// These map to real UK electricity network regions / DC cluster zones.
-const UK_REGIONS = [
-  "Scotland (North)",
-  "Scotland (Central)",
-  "North East England",
-  "North West England",
-  "Yorkshire",
-  "East Midlands",
-  "West Midlands",
-  "East of England",
-  "London & Thames Valley",
-  "South East England",
-  "South West England",
-  "Wales",
-  "Northern Ireland",
-] as const;
+// ── Country place-name tokens ─────────────────────────────────────────────────
+// Used to detect when the AI returns a site that belongs to a different country.
+// Each key is a canonical country name; the array contains distinctive place tokens.
+const COUNTRY_PLACE_TOKENS: Record<string, string[]> = {
+  "United Kingdom": [
+    "london", "manchester", "birmingham", "edinburgh", "glasgow", "cardiff",
+    "belfast", "bristol", "leeds", "sheffield", "liverpool", "newcastle",
+    "cambridge", "slough", "docklands", "swindon", "reading", "norwich",
+  ],
+  "Ireland": [
+    "dublin", "cork", "galway", "limerick", "waterford", "bray",
+    "drogheda", "dundalk", "kilkenny",
+  ],
+  "France": [
+    "paris", "lyon", "marseille", "bordeaux", "strasbourg", "toulouse",
+    "nantes", "lille", "montpellier", "rennes", "grenoble",
+  ],
+  "Germany": [
+    "berlin", "frankfurt", "munich", "hamburg", "düsseldorf", "duesseldorf",
+    "cologne", "köln", "koeln", "stuttgart", "hannover", "nuremberg",
+  ],
+  "Netherlands": [
+    "amsterdam", "rotterdam", "eindhoven", "utrecht", "hague", "the hague",
+    "den haag", "tilburg", "groningen",
+  ],
+  "Belgium": ["brussels", "antwerp", "ghent", "liège", "liege", "bruges", "leuven"],
+  "Denmark": ["copenhagen", "aarhus", "odense", "aalborg"],
+  "Sweden": ["stockholm", "gothenburg", "malmö", "malmoe", "göteborg"],
+  "Norway": ["oslo", "bergen", "trondheim", "stavanger", "tromsø"],
+  "Finland": ["helsinki", "espoo", "tampere", "oulu", "vantaa"],
+  "Spain": [
+    "madrid", "barcelona", "seville", "sevilla", "valencia", "bilbao",
+    "zaragoza", "málaga", "malaga", "murcia",
+  ],
+  "Portugal": ["lisbon", "lisboa", "porto", "braga", "setúbal", "setubal"],
+  "Italy": [
+    "milan", "rome", "turin", "torino", "florence", "firenze", "naples",
+    "napoli", "bologna", "genoa", "genova",
+  ],
+  "Poland": ["warsaw", "krakow", "gdansk", "wroclaw", "poznań", "poznan", "łódź"],
+  "Czechia": ["prague", "brno", "ostrava", "plzeň", "plzen"],
+  "Austria": ["vienna", "wien", "graz", "salzburg", "linz"],
+  "Switzerland": ["zurich", "zürich", "geneva", "genève", "bern", "basel"],
+  "Romania": ["bucharest", "cluj", "timisoara", "iași", "iasi"],
+  "Hungary": ["budapest", "debrecen", "miskolc"],
+  "Bulgaria": ["sofia", "plovdiv", "varna", "burgas"],
+  "Greece": ["athens", "thessaloniki", "patras"],
+  "United States": [
+    "virginia", "ashburn", "dallas", "chicago", "atlanta", "new york",
+    "seattle", "san jose", "phoenix", "las vegas", "denver",
+  ],
+  "Brazil": [
+    "são paulo", "sao paulo", "rio de janeiro", "brasilia", "campinas",
+  ],
+};
 
-type UKRegion = (typeof UK_REGIONS)[number];
-
-// ── Non-UK place tokens used in the hard filter ───────────────────────────────
-// Any candidate whose location or region contains one of these strings is
-// rejected regardless of what the AI returned.
-const NON_UK_PLACE_TOKENS = [
-  "ireland", "dublin", "cork", "limerick", "galway", "waterford",  // Republic of Ireland
-  "france", "paris", "lyon", "marseille", "bordeaux", "strasbourg",
-  "germany", "berlin", "frankfurt", "munich", "hamburg", "düsseldorf",
-  "netherlands", "amsterdam", "rotterdam", "eindhoven",
-  "belgium", "brussels", "antwerp",
-  "denmark", "copenhagen",
-  "norway", "oslo",
-  "sweden", "stockholm",
-  "spain", "madrid", "barcelona",
-  "portugal", "lisbon",
-  "italy", "milan", "rome",
-  "poland", "warsaw",
-  "switzerland", "zurich",
-  "austria", "vienna",
-];
-
-/** Returns true only if the candidate is unambiguously within the UK. */
-function isUKSite(candidate: { country: string; location: string; region: string }): boolean {
-  const countryNorm = candidate.country.toLowerCase().trim();
-  // Must claim United Kingdom (or UK / England / Scotland / Wales / N.Ireland)
-  const countryOk =
-    countryNorm === "united kingdom" ||
-    countryNorm === "uk" ||
-    countryNorm.includes("england") ||
-    countryNorm.includes("scotland") ||
-    countryNorm.includes("wales") ||
-    countryNorm.includes("northern ireland");
-
-  if (!countryOk) return false;
-
-  // Reject if location or region mentions a known non-UK place
-  const combined = `${candidate.location} ${candidate.region}`.toLowerCase();
-  for (const token of NON_UK_PLACE_TOKENS) {
-    if (combined.includes(token)) return false;
-  }
-
-  return true;
-}
-
-/** Normalise the country field to the canonical string "United Kingdom". */
-function normaliseCountry(_country: string): string {
-  return "United Kingdom";
-}
+// ── Country grid context ──────────────────────────────────────────────────────
+// Brief grid context injected into prompts to ground the AI per-country.
+const COUNTRY_GRID_CONTEXT: Record<string, string> = {
+  "United Kingdom":
+    "National Grid ESO operates the GB transmission system. Key metrics: ~700 GW connection queue, Ofgem connection reform active, CNI designation speeds planning in some cases. ENTSO-E bidding zone: GB.",
+  "Ireland":
+    "EirGrid operates the Irish transmission system. Dublin cluster has capacity constraints; Government moratorium on new large Dublin DCs. ENTSO-E bidding zone: IE.",
+  "France":
+    "RTE operates the French transmission system. Strong nuclear baseload (~70% of generation). Government AI investment plan €109bn (2025). ENTSO-E bidding zone: FR.",
+  "Germany":
+    "50Hertz, Amprion, TenneT DE, TransnetBW operate German TSOs. Energiewende driving renewable buildout. Frankfurt/Rhine-Main is primary DC hub. ENTSO-E bidding zones: DE-LU.",
+  "Netherlands":
+    "TenneT NL operates Dutch grid. Amsterdam (AMS-IX) is major internet exchange. Government scrutiny on DC power consumption. ENTSO-E bidding zone: NL.",
+  "Belgium":
+    "Elia operates the Belgian transmission system. Dense interconnection with France, Netherlands, Germany. ENTSO-E bidding zone: BE.",
+  "Denmark":
+    "Energinet operates Danish grid. ~80%+ renewable (wind). Copenhagen is primary DC hub. ENTSO-E bidding zones: DK1 (West), DK2 (East).",
+  "Sweden":
+    "Svenska kraftnät (SvK) operates Swedish grid. Large renewable surplus in north; Stockholm cluster in south. Brookfield €9.3bn, Microsoft €3.2bn committed. ENTSO-E bidding zones: SE1-SE4.",
+  "Norway":
+    "Statnett operates Norwegian grid. ~88% hydropower, cheap & clean. Price zones NO1-NO5. OpenAI €1bn committed. ENTSO-E bidding zones: NO1-NO5.",
+  "Finland":
+    "Fingrid operates Finnish grid. Strong hydro + nuclear + wind. Helsinki and Tampere are primary DC locations. ENTSO-E bidding zone: FI.",
+  "Spain":
+    "Red Eléctrica de España (REE/REE ESIOS) operates Spanish grid. 57% renewable (2023), targeting 81% by 2030. Madrid is primary DC hub. Cross-Pyrenees interconnection limited. ENTSO-E bidding zone: ES.",
+  "Portugal":
+    "REN operates Portuguese grid. High renewable share. Start Campus €8.5bn committed. Atlantic connectivity advantage. ENTSO-E bidding zone: PT.",
+  "Italy":
+    "Terna operates Italian grid. Milan (MXP) is primary DC hub. Average connection application 140 MW+ (hyperscale-class). ENTSO-E bidding zones: IT-North, IT-South, IT-CNOR, IT-CSUD, IT-Sardinia, IT-Sicily.",
+  "Poland":
+    "PSE operates Polish grid. Growing DC market; Warsaw is primary hub. High coal share but rapidly adding renewables. ENTSO-E bidding zone: PL.",
+  "Switzerland":
+    "Swissgrid operates Swiss grid. Hydro dominant, very clean grid. Strict data protection (FADP). ENTSO-E bidding zone: CH.",
+  "Austria":
+    "APG operates Austrian grid. High hydro share. Vienna is primary DC location. ENTSO-E bidding zone: AT.",
+  "United States":
+    "NERC oversees US grid reliability; regional ISOs include PJM, MISO, ERCOT, CAISO, NYISO. Northern Virginia (Ashburn) is world's largest DC market. Power constraints severe in some regions.",
+  "Brazil":
+    "ONS operates the National Interconnected System (SIN). São Paulo metro is primary DC cluster. High renewable share (hydro + wind + solar). ANEEL regulates electricity.",
+};
 
 // ── In-memory job store ───────────────────────────────────────────────────────
 export interface AgentJob {
@@ -136,7 +168,6 @@ function emit(job: AgentJob, type: string, payload: Record<string, unknown>) {
   }
 }
 
-// ── Step helpers ──────────────────────────────────────────────────────────────
 function stepStart(job: AgentJob, step: number, title: string, description: string) {
   emit(job, "step_start", { step, title, description });
 }
@@ -155,38 +186,130 @@ function stepError(job: AgentJob, step: number, message: string) {
   emit(job, "step_error", { step, message });
 }
 
-// ── Step 1: Screening ─────────────────────────────────────────────────────────
-async function screenUKRegions(
+// ── Scope validation ──────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the candidate's location/region is consistent with one of
+ * the target countries and does not contain tokens from a different country.
+ */
+function isSiteInScope(
+  candidate: { country: string; location: string; region: string },
+  targetCountries: string[],
+): boolean {
+  const countryNorm = candidate.country.toLowerCase().trim();
+  const targetNorms = targetCountries.map((c) => c.toLowerCase().trim());
+
+  // The country field must match one of the target countries
+  const countryMatches = targetNorms.some(
+    (tc) =>
+      countryNorm === tc ||
+      countryNorm.includes(tc) ||
+      tc.includes(countryNorm),
+  );
+  if (!countryMatches) return false;
+
+  // Build exclusion tokens from countries that are NOT in the target list
+  const combined = `${candidate.location} ${candidate.region}`.toLowerCase();
+  for (const [country, tokens] of Object.entries(COUNTRY_PLACE_TOKENS)) {
+    const cNorm = country.toLowerCase();
+    const isTarget = targetNorms.some((tc) => tc === cNorm || tc.includes(cNorm) || cNorm.includes(tc));
+    if (isTarget) continue; // Don't exclude tokens from countries we're targeting
+
+    for (const token of tokens) {
+      if (combined.includes(token)) {
+        return false; // Location mentions a place in a non-target country
+      }
+    }
+  }
+
+  return true;
+}
+
+/** Filters out any candidate not in scope; logs warnings for rejected sites. */
+function filterToScope(candidates: SiteCandidate[], targetCountries: string[]): SiteCandidate[] {
+  const passed: SiteCandidate[] = [];
+  const rejected: string[] = [];
+
+  for (const c of candidates) {
+    if (isSiteInScope(c, targetCountries)) {
+      passed.push(c);
+    } else {
+      rejected.push(`${c.location}, ${c.country}`);
+    }
+  }
+
+  if (rejected.length > 0) {
+    console.warn(
+      `[ResearchAgent] Scope filter rejected ${rejected.length} out-of-scope site(s): ${rejected.join(" | ")}`,
+    );
+  }
+  return passed;
+}
+
+/** Maps the AI-returned country string to the canonical name from targetCountries. */
+function resolveCanonicalCountry(
+  aiCountry: string,
+  targetCountries: string[],
+): string {
+  const norm = aiCountry.toLowerCase().trim();
+  const match = targetCountries.find((tc) => {
+    const tcNorm = tc.toLowerCase().trim();
+    return norm === tcNorm || norm.includes(tcNorm) || tcNorm.includes(norm);
+  });
+  return match ?? targetCountries[0]; // fall back to first target if unresolvable
+}
+
+// ── Region target ─────────────────────────────────────────────────────────────
+
+interface RegionTarget {
+  region: string;   // e.g. "London & Thames Valley", "Paris Region", "Rhine-Main"
+  country: string;  // canonical country name from targetCountries
+}
+
+// ── Step 1: Screen regions within target countries ────────────────────────────
+async function screenRegions(
   openai: OpenAI,
   request: SiteSelectionRequest,
-): Promise<string[]> {
+): Promise<RegionTarget[]> {
+  const { targetCountries } = request;
+  const scopeLabel = targetCountries.join(", ");
+  const gridContext = targetCountries
+    .map((c) => COUNTRY_GRID_CONTEXT[c])
+    .filter(Boolean)
+    .join("\n");
+
   const additionalHint = request.additionalRequirements
-    ? ` Additional context: ${request.additionalRequirements}`
+    ? `\nAdditional requirements: ${request.additionalRequirements}`
     : "";
 
-  const prompt = `You are an expert UK data centre site selection consultant with deep knowledge of British power infrastructure.
+  // Ask for 2-3 regions per country, capped at 8 total
+  const perCountryTarget = targetCountries.length === 1 ? 5 : 3;
 
-SCOPE: United Kingdom ONLY. Do not suggest, mention, or reference any sites in Ireland, France, or any other country outside the United Kingdom. 'UK' means England, Scotland, Wales, and Northern Ireland — nothing else.
+  const prompt = `You are an expert data centre site selection consultant.
 
-Identify the 5 best UK power regions for a new data centre deployment with these requirements:
-- Power requirement: ${request.powerRequirementMW} MW
-- Minimum renewable energy: ${request.sustainabilityTarget}%
+SCOPE CONSTRAINT: Research ONLY the following ${targetCountries.length > 1 ? "countries" : "country"}: ${scopeLabel}.
+Do NOT suggest, mention, or return any sites outside these countries. If the user specified "UK", research only the United Kingdom, not Ireland or any other country. If the user specified "France", research only France. Respect the exact scope — do not expand it.
+
+Grid context for the target ${targetCountries.length > 1 ? "countries" : "country"}:
+${gridContext || "Use your embedded knowledge of the power infrastructure in these countries."}
+
+Identify the best DC regions within ${scopeLabel} for a deployment with these requirements:
+- Power: ${request.powerRequirementMW} MW
+- Renewable target: ${request.sustainabilityTarget}%
 - Grid connection timeline: within ${request.timelineMonths} months
-- Budget sensitivity: ${request.budgetSensitivity} (Low = price matters most, High = willing to pay for premium locations)
+- Budget sensitivity: ${request.budgetSensitivity}
 ${additionalHint}
 
-Select from this list ONLY — all regions are within the United Kingdom:
-${UK_REGIONS.join(", ")}
+Return ${perCountryTarget} regions per country (maximum ${perCountryTarget * targetCountries.length} total).
+Consider: grid capacity, connection queue depth, renewable access, power pricing, planning speed, cooling climate.
 
-Consider:
-- National Grid ESO transmission capacity and connection queue depth per region
-- Scottish/Welsh renewable energy availability and PPA market maturity
-- Industrial electricity tariffs and balancing costs by region
-- Ofgem connection reform impact on timeline by region
-- Natural cooling climate advantage (Scotland, North England vs South)
-- Planning authority speed (permitted development rights, CNI designation impact)
-
-Return JSON only: { "shortlistedRegions": ["Region1", "Region2", ...], "rationale": { "Region1": "brief reason", ... } }`;
+Return JSON only:
+{
+  "regions": [
+    { "region": "name of DC cluster or power zone", "country": "exact country name from scope", "rationale": "brief reason" },
+    ...
+  ]
+}`;
 
   const resp = await openai.chat.completions.create({
     model: "gpt-5.1",
@@ -194,26 +317,46 @@ Return JSON only: { "shortlistedRegions": ["Region1", "Region2", ...], "rational
     messages: [
       {
         role: "system",
-        content: "You are a UK-only data centre site selection specialist. ONLY research and return sites within the United Kingdom. Do not suggest or mention sites in Ireland, France, or any other country. 'UK' means England, Scotland, Wales, and Northern Ireland only.",
+        content: `You are a data centre site selection specialist. Your current research scope is STRICTLY LIMITED to: ${scopeLabel}. Do not suggest or return any sites outside these countries under any circumstances.`,
       },
       { role: "user", content: prompt },
     ],
   });
 
   const raw = JSON.parse(resp.choices[0].message.content ?? "{}");
-  const regions: string[] = (raw.shortlistedRegions ?? [])
-    .filter((r: string) => (UK_REGIONS as readonly string[]).includes(r))
-    .slice(0, 5);
+  const rawRegions: Array<{ region: string; country: string }> = raw.regions ?? [];
 
-  // If the AI hallucinated region names not in our list, fall back to top 5 UK_REGIONS
-  if (regions.length < 2) {
-    console.warn("Screening returned too few valid UK regions — using default top 5");
-    return ["London & Thames Valley", "East of England", "North West England", "Scotland (Central)", "East Midlands"];
+  // Hard filter: only keep regions whose country resolves to one of the targets
+  const filtered: RegionTarget[] = rawRegions
+    .filter((r) => {
+      const cNorm = (r.country ?? "").toLowerCase().trim();
+      return targetCountries.some((tc) => {
+        const tcNorm = tc.toLowerCase().trim();
+        return cNorm === tcNorm || cNorm.includes(tcNorm) || tcNorm.includes(cNorm);
+      });
+    })
+    .map((r) => ({
+      region: r.region,
+      country: resolveCanonicalCountry(r.country, targetCountries),
+    }))
+    .slice(0, perCountryTarget * targetCountries.length);
+
+  // Fallback: if AI returned nothing valid, create generic per-country entries
+  if (filtered.length < targetCountries.length) {
+    console.warn("[ResearchAgent] screenRegions returned insufficient results — using fallback regions");
+    const fallback: RegionTarget[] = [];
+    for (const country of targetCountries) {
+      if (!filtered.some((r) => r.country === country)) {
+        fallback.push({ region: `${country} primary DC cluster`, country });
+      }
+    }
+    return [...filtered, ...fallback];
   }
-  return regions;
+
+  return filtered;
 }
 
-// ── Step 2: Fetch live data per country ───────────────────────────────────────
+// ── Step 2: Fetch live data ───────────────────────────────────────────────────
 interface LiveDataContext {
   entsoe: string;
   worldBank: string;
@@ -290,7 +433,7 @@ async function fetchLiveData(
   return results;
 }
 
-// ── Step 3: Deep-dive per country ─────────────────────────────────────────────
+// ── Step 3: Deep-dive per region ──────────────────────────────────────────────
 const siteAnalysisOutputSchema = z.object({
   sites: z.array(
     z.object({
@@ -321,50 +464,53 @@ type SiteCandidate = z.infer<typeof siteAnalysisOutputSchema>["sites"][number] &
   liveDataSnapshot?: SiteRecommendation["liveDataSnapshot"];
 };
 
-async function analyseUKRegion(
+async function analyseRegion(
   openai: OpenAI,
-  region: string,
+  target: RegionTarget,
   liveData: LiveDataContext,
   request: SiteSelectionRequest,
 ): Promise<SiteCandidate[]> {
+  const gridCtx = COUNTRY_GRID_CONTEXT[target.country] ?? "";
   const liveSection =
     liveData.entsoe || liveData.worldBank
-      ? `\nLIVE UK GRID DATA:\n${liveData.entsoe}\n${liveData.worldBank}`
-      : "\nNo live grid data available — use embedded knowledge.";
+      ? `\nLIVE GRID DATA FOR ${target.country.toUpperCase()}:\n${liveData.entsoe}\n${liveData.worldBank}`
+      : `\nNo live grid data available — use embedded knowledge of ${target.country}.`;
 
-  const prompt = `You are an expert on UK power infrastructure and data centre site selection in ${region}, United Kingdom.
+  const prompt = `You are an expert on power infrastructure and data centre site selection in ${target.country}.
 
-SCOPE: United Kingdom ONLY. Do not suggest, mention, or reference any sites in the Republic of Ireland, France, or any other country. Every site you return must be physically located within the United Kingdom (England, Scotland, Wales, or Northern Ireland).
+SCOPE CONSTRAINT: You must ONLY identify sites physically located within ${target.country}, specifically within the "${target.region}" area. Do not suggest sites in any other country.
 
-Identify the 2 best specific sites within the UK region of "${region}" for a data centre deployment:
+Grid context: ${gridCtx}
+
+Identify the 2 best specific sites within "${target.region}", ${target.country} for a data centre deployment:
 - Power requirement: ${request.powerRequirementMW} MW
 - Minimum renewable energy: ${request.sustainabilityTarget}%
 - Connection timeline target: within ${request.timelineMonths} months
 - Budget sensitivity: ${request.budgetSensitivity}
 ${liveSection}
 
-For each site, score ALL scoreBreakdown fields 0-100 where 100 = perfectly meets requirements:
-- power: can the National Grid / DNO deliver the required MW capacity in this UK region?
-- renewable: does renewable access (Scottish wind, offshore wind PPAs) meet or exceed the sustainability target?
-- cost: how competitive are UK industrial electricity tariffs and BSUoS charges relative to the UK average?
-- regulatory: how fast/predictable is UK planning permission and Ofgem grid connection in this region?
-- risk: how low is the overall risk profile (grid stress, planning refusal history, flood zone, political)?
+Score ALL scoreBreakdown fields 0-100 (100 = perfectly meets requirements):
+- power: can the local grid deliver the required MW capacity?
+- renewable: does renewable access meet or exceed the sustainability target?
+- cost: how competitive are power prices vs the national average for ${target.country}?
+- regulatory: how fast/predictable is the permitting and grid connection process here?
+- risk: how low is the overall risk profile (grid stress, planning refusal history, hazards)?
 
-Return JSON only — the "location" and "region" fields MUST be within the United Kingdom:
+Return JSON only — location and region MUST be within ${target.country}:
 {
   "sites": [
     {
-      "location": "UK city or specific area (must be in United Kingdom)",
-      "region": "UK sub-national region (must be in United Kingdom)",
+      "location": "specific city or area within ${target.country}",
+      "region": "sub-national area within ${target.country}",
       "gridCapacityMW": number,
       "renewableAccessPercent": number,
       "estimatedPriceMWh": number,
       "connectionTimelineMonths": number,
-      "averagePUE": number (1.1-1.8),
+      "averagePUE": number,
       "coolingAdvantage": "Significant|Moderate|Limited",
       "scoreBreakdown": { "power": 0-100, "renewable": 0-100, "cost": 0-100, "regulatory": 0-100, "risk": 0-100 },
-      "keyStrengths": ["string", ...],
-      "keyRisks": ["string", ...],
+      "keyStrengths": ["..."],
+      "keyRisks": ["..."],
       "recommendation": "2-3 sentence assessment"
     }
   ]
@@ -376,7 +522,7 @@ Return JSON only — the "location" and "region" fields MUST be within the Unite
     messages: [
       {
         role: "system",
-        content: "You are a UK-only data centre site selection specialist. ONLY research and return sites within the United Kingdom. Do not suggest or mention sites in Ireland, France, or any other country. Every site in your response must be physically located in England, Scotland, Wales, or Northern Ireland.",
+        content: `You are a data centre site selection specialist. Your scope is STRICTLY LIMITED to ${target.country}. Do not suggest or return any sites outside ${target.country} under any circumstances.`,
       },
       { role: "user", content: prompt },
     ],
@@ -386,43 +532,16 @@ Return JSON only — the "location" and "region" fields MUST be within the Unite
   const parsed = siteAnalysisOutputSchema.safeParse(raw);
   if (!parsed.success) return [];
 
-  const snapshot: SiteRecommendation["liveDataSnapshot"] =
-    liveData.entsoe
-      ? { dataFetchedAt: new Date().toISOString() }
-      : undefined;
+  const snapshot: SiteRecommendation["liveDataSnapshot"] = liveData.entsoe
+    ? { dataFetchedAt: new Date().toISOString() }
+    : undefined;
 
   return parsed.data.sites.slice(0, 2).map((site) => ({
     ...site,
-    // Hard-override: country is always United Kingdom regardless of what AI returned
-    country: normaliseCountry(site.location),
+    // Force-set country to the canonical target country — never trust AI-returned country
+    country: target.country,
     liveDataSnapshot: snapshot,
   }));
-}
-
-// ── Post-processing hard filter ───────────────────────────────────────────────
-/**
- * Rejects any candidate that fails the isUKSite check.
- * Runs after all AI analysis steps as a final gate before synthesis.
- */
-function filterNonUKSites(candidates: SiteCandidate[]): SiteCandidate[] {
-  const passed: SiteCandidate[] = [];
-  const rejected: string[] = [];
-
-  for (const c of candidates) {
-    if (isUKSite(c)) {
-      passed.push(c);
-    } else {
-      rejected.push(`${c.location}, ${c.country}`);
-    }
-  }
-
-  if (rejected.length > 0) {
-    console.warn(
-      `[ResearchAgent] Hard filter rejected ${rejected.length} non-UK site(s): ${rejected.join(" | ")}`,
-    );
-  }
-
-  return passed;
 }
 
 // ── Step 4: Synthesis ─────────────────────────────────────────────────────────
@@ -443,17 +562,23 @@ async function synthesiseResults(
   openai: OpenAI,
   candidates: SiteCandidate[],
   request: SiteSelectionRequest,
-): Promise<{ rankings: Array<{ location: string; country: string; rank: number; overallScore: number }>; executiveSummary: string; methodology: string }> {
+): Promise<{
+  rankings: Array<{ location: string; country: string; rank: number; overallScore: number }>;
+  executiveSummary: string;
+  methodology: string;
+}> {
+  const scopeLabel = request.targetCountries.join(" and ");
+
   const candidateSummary = candidates
     .map(
       (c, i) =>
-        `${i + 1}. ${c.location}, ${c.country}: power=${c.scoreBreakdown.power}, renewable=${c.scoreBreakdown.renewable}, cost=${c.scoreBreakdown.cost}, regulatory=${c.scoreBreakdown.regulatory}, risk=${c.scoreBreakdown.risk}. Grid: ${c.gridCapacityMW} MW. Renewable: ${c.renewableAccessPercent}%. Price: €${c.estimatedPriceMWh}/MWh. Timeline: ${c.connectionTimelineMonths} months.`,
+        `${i + 1}. ${c.location}, ${c.country}: power=${c.scoreBreakdown.power}, renewable=${c.scoreBreakdown.renewable}, cost=${c.scoreBreakdown.cost}, regulatory=${c.scoreBreakdown.regulatory}, risk=${c.scoreBreakdown.risk}. Grid: ${c.gridCapacityMW} MW. Renewable: ${c.renewableAccessPercent}%. Price: €${c.estimatedPriceMWh}/MWh. Timeline: ${c.connectionTimelineMonths}mo.`,
     )
     .join("\n");
 
-  const prompt = `You are a senior UK data centre investment advisor synthesising a United Kingdom site selection analysis.
+  const prompt = `You are a senior data centre investment advisor synthesising a site selection analysis for: ${scopeLabel}.
 
-SCOPE: United Kingdom ONLY. All candidate sites are within England, Scotland, Wales, or Northern Ireland. Do not introduce or reference any sites outside the United Kingdom in your response.
+SCOPE CONSTRAINT: All candidate sites are within ${scopeLabel}. Do not introduce or reference any sites outside this scope.
 
 Client requirements:
 - Power: ${request.powerRequirementMW} MW
@@ -461,21 +586,21 @@ Client requirements:
 - Timeline: ${request.timelineMonths} months
 - Budget sensitivity: ${request.budgetSensitivity}
 
-UK candidate sites assessed:
+Candidate sites assessed (all within ${scopeLabel}):
 ${candidateSummary}
 
 Tasks:
-1. Rank all ${candidates.length} UK sites from best to worst fit for the requirements. Calculate a weighted overallScore (0-100) where:
-   - power and renewable are weighted most heavily if sustainability is a high target
-   - cost is weighted heavily if budget sensitivity is High
+1. Rank all ${candidates.length} sites from best to worst. Calculate a weighted overallScore (0-100):
+   - power and renewable weighted most heavily if sustainability target is high
+   - cost weighted heavily if budget sensitivity is High
    - regulatory and risk are always material
-2. Write a 3-4 sentence executive summary for the top recommendation, referencing specific UK grid and planning context.
-3. Write a 2-sentence methodology note explaining the UK-specific scoring approach.
+2. Write a 3-4 sentence executive summary for the top recommendation with country-specific grid context.
+3. Write a 2-sentence methodology note.
 
-Return JSON only — all locations must be within the United Kingdom:
+Return JSON only:
 {
   "rankedSites": [
-    { "rank": 1, "location": "...", "country": "United Kingdom", "overallScore": 0-100 },
+    { "rank": 1, "location": "...", "country": "exact country from scope", "overallScore": 0-100 },
     ...
   ],
   "executiveSummary": "...",
@@ -488,7 +613,7 @@ Return JSON only — all locations must be within the United Kingdom:
     messages: [
       {
         role: "system",
-        content: "You are a UK-only data centre site selection specialist. ONLY research and return sites within the United Kingdom. Do not suggest or mention sites in Ireland, France, or any other country.",
+        content: `You are a data centre site selection specialist. Your research scope is STRICTLY LIMITED to: ${scopeLabel}. Do not suggest or mention sites outside this scope.`,
       },
       { role: "user", content: prompt },
     ],
@@ -496,10 +621,11 @@ Return JSON only — all locations must be within the United Kingdom:
 
   const raw = JSON.parse(resp.choices[0].message.content ?? "{}");
   const parsed = synthesisOutputSchema.safeParse(raw);
+
   if (!parsed.success) {
     // Fallback: rank by average score
     const fallback = candidates
-      .map((c, i) => {
+      .map((c) => {
         const avg =
           (c.scoreBreakdown.power +
             c.scoreBreakdown.renewable +
@@ -507,15 +633,20 @@ Return JSON only — all locations must be within the United Kingdom:
             c.scoreBreakdown.regulatory +
             c.scoreBreakdown.risk) /
           5;
-        return { rank: i + 1, location: c.location, country: c.country, overallScore: Math.round(avg) };
+        return {
+          rank: 0,
+          location: c.location,
+          country: c.country,
+          overallScore: Math.round(avg),
+        };
       })
       .sort((a, b) => b.overallScore - a.overallScore)
       .map((s, idx) => ({ ...s, rank: idx + 1 }));
 
     return {
       rankings: fallback,
-      executiveSummary: `Analysis identified ${candidates.length} UK candidate sites. Top recommendation is ${fallback[0]?.location}, United Kingdom, based on overall scoring against the stated requirements.`,
-      methodology: "UK sites scored across five dimensions (power, renewable, cost, regulatory, risk) then ranked by weighted average.",
+      executiveSummary: `Analysis identified ${candidates.length} candidate sites across ${scopeLabel}. Top recommendation is ${fallback[0]?.location}, ${fallback[0]?.country} based on overall scoring.`,
+      methodology: "Sites scored across five dimensions (power, renewable, cost, regulatory, risk) then ranked by weighted average.",
     };
   }
 
@@ -534,65 +665,83 @@ export async function runResearchAgent(
   persist: (content: SiteSelectionContent) => Promise<number>,
 ): Promise<void> {
   const completedSteps: SiteSelectionContent["agentSteps"] = [];
+  const scopeLabel = request.targetCountries.join(", ");
+
+  // Emit scope info so the client can display it immediately
+  emit(job, "scope", { countries: request.targetCountries, scopeLabel });
+  console.log(`[ResearchAgent] Active country constraint: ${scopeLabel}`);
 
   try {
-    // ── Step 1: Screening ──────────────────────────────────────────────────
+    // ── Step 1: Screen regions ─────────────────────────────────────────────
     const s1Start = Date.now();
-    stepStart(job, 1, "Screening UK power regions", "Identifying best-fit regions across England, Scotland, Wales & Northern Ireland");
+    stepStart(
+      job,
+      1,
+      `Screening regions in ${scopeLabel}`,
+      `Identifying best-fit power regions within ${scopeLabel}`,
+    );
 
-    let shortlistedRegions: string[];
+    let regionTargets: RegionTarget[];
     try {
-      shortlistedRegions = await screenUKRegions(openai, request);
+      regionTargets = await screenRegions(openai, request);
     } catch (err: any) {
       stepError(job, 1, err.message ?? "Screening failed");
       throw err;
     }
 
     const s1Duration = Date.now() - s1Start;
+    const regionSummary = regionTargets.map((r) => `${r.region} (${r.country})`).join(", ");
     completedSteps.push({
       step: 1,
-      title: "Screening UK power regions",
-      description: "Identified best-fit UK regions for your requirements",
+      title: `Screening regions in ${scopeLabel}`,
+      description: `Identified best-fit power regions within ${scopeLabel}`,
       durationMs: s1Duration,
-      outputSummary: `Shortlisted ${shortlistedRegions.length} UK regions: ${shortlistedRegions.join(", ")}`,
+      outputSummary: `Shortlisted ${regionTargets.length} regions: ${regionSummary}`,
     });
-    stepComplete(job, 1, "Screening UK power regions", s1Duration, completedSteps[completedSteps.length - 1].outputSummary);
+    stepComplete(job, 1, `Screening regions in ${scopeLabel}`, s1Duration, completedSteps[completedSteps.length - 1].outputSummary);
 
     // ── Step 2: Fetch live data ────────────────────────────────────────────
     const s2Start = Date.now();
-    stepStart(job, 2, "Fetching live UK grid data", "Pulling ENTSO-E and World Bank data for United Kingdom");
+    stepStart(
+      job,
+      2,
+      "Fetching live grid data",
+      `Pulling ENTSO-E and World Bank data for ${scopeLabel}`,
+    );
 
-    // All regions are UK — fetch live data keyed to "United Kingdom" then share across regions
-    const liveData = await fetchLiveData(["United Kingdom"]);
-    const ukLive = liveData["United Kingdom"] ?? { entsoe: "", worldBank: "" };
-    // Expose under each region key so analyseUKRegion can look it up
-    const regionLiveData: Record<string, LiveDataContext> = {};
-    for (const region of shortlistedRegions) regionLiveData[region] = ukLive;
+    const liveData = await fetchLiveData(request.targetCountries);
 
     const s2Duration = Date.now() - s2Start;
+    const liveCount = Object.values(liveData).filter((d) => d.entsoe || d.worldBank).length;
     completedSteps.push({
       step: 2,
-      title: "Fetching live UK grid data",
-      description: "Pulled real-time UK grid data from ENTSO-E and World Bank",
+      title: "Fetching live grid data",
+      description: "Pulled real-time grid data",
       durationMs: s2Duration,
-      outputSummary: ukLive.entsoe
-        ? "Live ENTSO-E and World Bank data retrieved for United Kingdom"
-        : "Using embedded UK grid knowledge (live data unavailable)",
+      outputSummary:
+        liveCount > 0
+          ? `Live data retrieved for ${liveCount}/${request.targetCountries.length} countries`
+          : `Using embedded grid knowledge (live data unavailable for ${scopeLabel})`,
     });
-    stepComplete(job, 2, "Fetching live UK grid data", s2Duration, completedSteps[completedSteps.length - 1].outputSummary);
+    stepComplete(job, 2, "Fetching live grid data", s2Duration, completedSteps[completedSteps.length - 1].outputSummary);
 
     // ── Step 3: Parallel site analysis ────────────────────────────────────
     const s3Start = Date.now();
     stepStart(
       job,
       3,
-      "Analysing UK candidate sites",
-      `Running deep-dive site analysis across ${shortlistedRegions.length} UK regions`,
+      "Analysing candidate sites",
+      `Running deep-dive analysis across ${regionTargets.length} regions in ${scopeLabel}`,
     );
 
     const analysisResults = await Promise.allSettled(
-      shortlistedRegions.map((region) =>
-        analyseUKRegion(openai, region, regionLiveData[region], request),
+      regionTargets.map((target) =>
+        analyseRegion(
+          openai,
+          target,
+          liveData[target.country] ?? { entsoe: "", worldBank: "" },
+          request,
+        ),
       ),
     );
 
@@ -600,20 +749,23 @@ export async function runResearchAgent(
       .filter((r): r is PromiseFulfilledResult<SiteCandidate[]> => r.status === "fulfilled")
       .flatMap((r) => r.value);
 
-    // ── Hard filter: reject any non-UK sites ──────────────────────────────
-    const allCandidates = filterNonUKSites(rawCandidates);
+    // ── Hard scope filter ──────────────────────────────────────────────────
+    const allCandidates = filterToScope(rawCandidates, request.targetCountries);
 
-    if (allCandidates.length === 0) throw new Error("No valid UK candidate sites found");
+    if (allCandidates.length === 0) {
+      throw new Error(`No valid candidate sites found within ${scopeLabel}`);
+    }
 
     const s3Duration = Date.now() - s3Start;
+    const countriesFound = [...new Set(allCandidates.map((c) => c.country))].join(", ");
     completedSteps.push({
       step: 3,
-      title: "Analysing UK candidate sites",
-      description: "Deep-dive UK site analysis complete",
+      title: "Analysing candidate sites",
+      description: "Deep-dive site analysis complete",
       durationMs: s3Duration,
-      outputSummary: `Identified ${allCandidates.length} UK candidate sites across ${shortlistedRegions.length} regions`,
+      outputSummary: `Identified ${allCandidates.length} candidate sites in ${countriesFound}`,
     });
-    stepComplete(job, 3, "Analysing UK candidate sites", s3Duration, completedSteps[completedSteps.length - 1].outputSummary);
+    stepComplete(job, 3, "Analysing candidate sites", s3Duration, completedSteps[completedSteps.length - 1].outputSummary);
 
     // ── Step 4: Synthesis ─────────────────────────────────────────────────
     const s4Start = Date.now();
@@ -621,7 +773,7 @@ export async function runResearchAgent(
 
     const synthesis = await synthesiseResults(openai, allCandidates, request);
 
-    // Build final ranked site list
+    // Merge rankings with candidate detail; force canonical country name
     const rankedSites: SiteRecommendation[] = synthesis.rankings
       .map((ranking) => {
         const candidate = allCandidates.find(
@@ -629,9 +781,12 @@ export async function runResearchAgent(
         );
         if (!candidate) return null;
 
+        // Resolve canonical country from targetCountries
+        const canonicalCountry = resolveCanonicalCountry(ranking.country, request.targetCountries);
+
         return {
           rank: ranking.rank,
-          country: "United Kingdom",   // hard-normalised — never trust AI-returned country
+          country: canonicalCountry,
           location: candidate.location,
           region: candidate.region,
           overallScore: ranking.overallScore,
@@ -654,9 +809,9 @@ export async function runResearchAgent(
     completedSteps.push({
       step: 4,
       title: "Ranking and synthesising",
-      description: "Final UK recommendations produced",
+      description: "Final recommendations produced",
       durationMs: s4Duration,
-      outputSummary: `Ranked ${rankedSites.length} UK sites. Top pick: ${rankedSites[0]?.location} (score: ${rankedSites[0]?.overallScore})`,
+      outputSummary: `Ranked ${rankedSites.length} sites across ${scopeLabel}. Top pick: ${rankedSites[0]?.location}, ${rankedSites[0]?.country} (score: ${rankedSites[0]?.overallScore})`,
     });
     stepComplete(job, 4, "Ranking and synthesising", s4Duration, completedSteps[completedSteps.length - 1].outputSummary);
 
@@ -664,7 +819,7 @@ export async function runResearchAgent(
     const content: SiteSelectionContent = {
       generatedAt: new Date().toISOString(),
       agentSteps: completedSteps,
-      shortlistedCountries: shortlistedRegions,   // regions used as the country list
+      shortlistedCountries: request.targetCountries,
       rankedSites,
       executiveSummary: synthesis.executiveSummary,
       methodology: synthesis.methodology,
@@ -679,7 +834,7 @@ export async function runResearchAgent(
 
     const validated = siteSelectionContentSchema.safeParse(content);
     if (!validated.success) {
-      console.error("Site selection content validation failed:", validated.error.errors);
+      console.error("Content validation failed:", validated.error.errors);
       throw new Error("Generated content failed schema validation");
     }
 
@@ -689,7 +844,6 @@ export async function runResearchAgent(
     job.reportId = reportId;
     emit(job, "complete", { reportId });
 
-    // Close all SSE listeners
     for (const res of job.listeners) res.end();
     job.listeners.clear();
   } catch (err: any) {

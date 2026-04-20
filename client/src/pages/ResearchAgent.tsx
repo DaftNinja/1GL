@@ -17,8 +17,9 @@ import logoUrl from "@/assets/1giglabs-logo.png";
 import {
   BookOpen, Mail, ArrowLeft, Zap, Leaf, Clock, DollarSign,
   CheckCircle2, Loader2, AlertCircle, MapPin, Star, ChevronDown, ChevronUp,
-  BarChart3, Shield,
+  BarChart3, Shield, Globe, X,
 } from "lucide-react";
+import { GIGLABS_COUNTRIES } from "@shared/schema";
 import type { SiteSelectionContent, SiteRecommendation, AgentStep } from "@shared/schema";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -32,9 +33,12 @@ interface AgentEvent {
   durationMs?: number;
   reportId?: number;
   message?: string;
+  countries?: string[];
+  scopeLabel?: string;
 }
 
 interface FormValues {
+  targetCountries: string[];
   powerRequirementMW: number;
   sustainabilityTarget: number;
   timelineMonths: number;
@@ -85,7 +89,9 @@ function AgentStepRow({ step, isActive }: { step: AgentStep; isActive: boolean }
         )}
       </div>
       {!isActive && step.durationMs > 0 && (
-        <span className="ml-auto shrink-0 text-xs text-slate-400 mt-0.5">{(step.durationMs / 1000).toFixed(1)}s</span>
+        <span className="ml-auto shrink-0 text-xs text-slate-400 mt-0.5">
+          {(step.durationMs / 1000).toFixed(1)}s
+        </span>
       )}
     </div>
   );
@@ -119,7 +125,6 @@ function SiteCard({ site }: { site: SiteRecommendation }) {
       </CardHeader>
 
       <CardContent className="pt-0">
-        {/* Score breakdown */}
         <div className="grid grid-cols-5 gap-1 mb-3">
           {(["power", "renewable", "cost", "regulatory", "risk"] as const).map((k) => (
             <div key={k} className="text-center">
@@ -131,11 +136,10 @@ function SiteCard({ site }: { site: SiteRecommendation }) {
           ))}
         </div>
 
-        {/* Key metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
           <div className="flex items-center gap-1 text-slate-600">
             <Zap className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
-            <span>{site.gridCapacityMW.toLocaleString()} MW grid</span>
+            <span>{site.gridCapacityMW.toLocaleString()} MW</span>
           </div>
           <div className="flex items-center gap-1 text-slate-600">
             <Leaf className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -159,10 +163,8 @@ function SiteCard({ site }: { site: SiteRecommendation }) {
           </p>
         )}
 
-        {/* Recommendation */}
         <p className="text-sm text-slate-700 mb-3 leading-relaxed">{site.recommendation}</p>
 
-        {/* Expand/collapse */}
         <button
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
@@ -212,41 +214,158 @@ function SiteCard({ site }: { site: SiteRecommendation }) {
   );
 }
 
+// ── Country multi-select ──────────────────────────────────────────────────────
+
+function CountryPicker({
+  selected,
+  onChange,
+  error,
+}: {
+  selected: string[];
+  onChange: (countries: string[]) => void;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = (GIGLABS_COUNTRIES as readonly string[]).filter(
+    (c) => c.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  function toggle(country: string) {
+    if (selected.includes(country)) {
+      onChange(selected.filter((c) => c !== country));
+    } else {
+      onChange([...selected, country]);
+    }
+  }
+
+  return (
+    <div className="space-y-2" ref={ref}>
+      <Label className="flex items-center gap-1.5">
+        <Globe className="w-3.5 h-3.5 text-blue-500" />
+        Countries to Research
+        <span className="text-red-500 ml-0.5">*</span>
+      </Label>
+
+      {/* Selected badges */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((c) => (
+            <Badge
+              key={c}
+              variant="secondary"
+              className="flex items-center gap-1 pr-1 cursor-pointer"
+              onClick={() => toggle(c)}
+            >
+              {c}
+              <X className="w-3 h-3 text-slate-400 hover:text-slate-700" />
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {/* Dropdown trigger */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md border bg-white text-left ${error ? "border-red-400" : "border-slate-300"} hover:border-slate-400 transition-colors`}
+        >
+          <span className={selected.length === 0 ? "text-slate-400" : "text-slate-700"}>
+            {selected.length === 0
+              ? "Select one or more countries…"
+              : `${selected.length} country${selected.length > 1 ? " countries" : ""} selected`}
+          </span>
+          <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-lg">
+            <div className="p-2 border-b border-slate-100">
+              <Input
+                autoFocus
+                placeholder="Search countries…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="max-h-52 overflow-y-auto">
+              {filtered.length === 0 ? (
+                <p className="text-xs text-slate-400 px-3 py-2">No matches</p>
+              ) : (
+                filtered.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => toggle(c)}
+                    className={`w-full text-left px-3 py-1.5 text-sm flex items-center justify-between hover:bg-slate-50 transition-colors ${selected.includes(c) ? "text-blue-600 font-medium" : "text-slate-700"}`}
+                  >
+                    {c}
+                    {selected.includes(c) && <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {selected.length === 0 && !error && (
+        <p className="text-xs text-slate-400">
+          Which country or countries would you like to research for data centre site selection?
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ResearchAgent() {
   const { toast } = useToast();
 
-  // Form state
   const [form, setForm] = useState<FormValues>({
+    targetCountries: [],
     powerRequirementMW: 50,
     sustainabilityTarget: 60,
     timelineMonths: 24,
     budgetSensitivity: "Medium",
     additionalRequirements: "",
   });
+  const [countryError, setCountryError] = useState("");
 
   // Agent state
   const [jobId, setJobId] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<AgentStep[]>([]);
   const [activeStep, setActiveStep] = useState<{ title: string; description: string } | null>(null);
+  const [activeScope, setActiveScope] = useState<string | null>(null);
   const [reportId, setReportId] = useState<number | null>(null);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Load completed report
   const { data: report } = useQuery<{ content: SiteSelectionContent }>({
     queryKey: ["research-agent-report", reportId],
-    queryFn: () => apiRequest("GET", `/api/research-agent/report/${reportId}`).then((r) => r.json()),
+    queryFn: () =>
+      apiRequest("GET", `/api/research-agent/report/${reportId}`).then((r) => r.json()),
     enabled: reportId !== null,
   });
 
-  // Cleanup SSE on unmount
   useEffect(() => {
-    return () => {
-      eventSourceRef.current?.close();
-    };
+    return () => { eventSourceRef.current?.close(); };
   }, []);
 
   function connectSSE(jid: string) {
@@ -257,7 +376,9 @@ export default function ResearchAgent() {
       try {
         const event: AgentEvent = JSON.parse(e.data);
 
-        if (event.type === "step_start") {
+        if (event.type === "scope") {
+          setActiveScope(event.scopeLabel ?? null);
+        } else if (event.type === "step_start") {
           setActiveStep({ title: event.title ?? "", description: event.description ?? "" });
         } else if (event.type === "step_complete") {
           const step: AgentStep = {
@@ -286,7 +407,6 @@ export default function ResearchAgent() {
     };
 
     es.onerror = () => {
-      // Only treat as error if we haven't received a complete event yet
       if (isRunning) {
         setAgentError("Connection lost. The analysis may still be running — please refresh and check your reports.");
         setIsRunning(false);
@@ -297,9 +417,18 @@ export default function ResearchAgent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Validate country selection
+    if (form.targetCountries.length === 0) {
+      setCountryError("Please select at least one country to research.");
+      return;
+    }
+    setCountryError("");
+
     setJobId(null);
     setCompletedSteps([]);
     setActiveStep(null);
+    setActiveScope(null);
     setReportId(null);
     setAgentError(null);
     setIsRunning(true);
@@ -325,6 +454,7 @@ export default function ResearchAgent() {
     setJobId(null);
     setCompletedSteps([]);
     setActiveStep(null);
+    setActiveScope(null);
     setReportId(null);
     setAgentError(null);
     setIsRunning(false);
@@ -371,12 +501,11 @@ export default function ResearchAgent() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* Header */}
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Data Centre Site Finder</h2>
           <p className="text-slate-500 mt-1 text-sm">
-            AI-powered analysis across European power markets. Provide your requirements and our agent
-            screens countries, fetches live grid data, and ranks the best locations for your deployment.
+            AI-powered analysis for any country or combination of countries. Select your target market(s),
+            set requirements, and the agent screens regions, fetches live grid data, and ranks the best locations.
           </p>
         </div>
 
@@ -391,23 +520,32 @@ export default function ResearchAgent() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* Country selection — required */}
+                <CountryPicker
+                  selected={form.targetCountries}
+                  onChange={(countries) => {
+                    setForm((f) => ({ ...f, targetCountries: countries }));
+                    if (countries.length > 0) setCountryError("");
+                  }}
+                  error={countryError}
+                />
+
                 {/* Power requirement */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="power" className="flex items-center gap-1.5">
+                    <Label className="flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5 text-yellow-500" />
                       Power Requirement
                     </Label>
                     <span className="text-sm font-semibold text-slate-700 tabular-nums">{form.powerRequirementMW} MW</span>
                   </div>
                   <Slider
-                    id="power"
                     min={1}
                     max={500}
                     step={1}
                     value={[form.powerRequirementMW]}
                     onValueChange={([v]) => setForm((f) => ({ ...f, powerRequirementMW: v }))}
-                    className="w-full"
                   />
                   <p className="text-xs text-slate-400">IT load in MW (1–500 MW)</p>
                 </div>
@@ -427,7 +565,6 @@ export default function ResearchAgent() {
                     step={5}
                     value={[form.sustainabilityTarget]}
                     onValueChange={([v]) => setForm((f) => ({ ...f, sustainabilityTarget: v }))}
-                    className="w-full"
                   />
                 </div>
 
@@ -446,7 +583,6 @@ export default function ResearchAgent() {
                     step={6}
                     value={[form.timelineMonths]}
                     onValueChange={([v]) => setForm((f) => ({ ...f, timelineMonths: v }))}
-                    className="w-full"
                   />
                   <p className="text-xs text-slate-400">Maximum acceptable grid connection timeline</p>
                 </div>
@@ -477,7 +613,7 @@ export default function ResearchAgent() {
                   <Label htmlFor="additional">Additional Requirements (optional)</Label>
                   <Input
                     id="additional"
-                    placeholder="e.g. Tier III+ facility, proximity to financial hub, specific country preferences..."
+                    placeholder="e.g. Tier III+ facility, proximity to financial hub, specific connectivity requirements…"
                     value={form.additionalRequirements}
                     onChange={(e) => setForm((f) => ({ ...f, additionalRequirements: e.target.value }))}
                   />
@@ -492,13 +628,24 @@ export default function ResearchAgent() {
           </Card>
         )}
 
+        {/* Active scope banner */}
+        {(isRunning || isDone) && activeScope && (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <Globe className="w-4 h-4 shrink-0 text-blue-500" />
+            <span>
+              <span className="font-medium">Researching data centre sites in: </span>
+              {activeScope}
+            </span>
+          </div>
+        )}
+
         {/* Agent progress */}
         {(isRunning || (completedSteps.length > 0 && !isDone)) && !agentError && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                Analysing European Power Markets…
+                Analysing{activeScope ? ` ${activeScope}` : "…"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -507,7 +654,13 @@ export default function ResearchAgent() {
               ))}
               {activeStep && (
                 <AgentStepRow
-                  step={{ step: completedSteps.length + 1, title: activeStep.title, description: activeStep.description, durationMs: 0, outputSummary: "" }}
+                  step={{
+                    step: completedSteps.length + 1,
+                    title: activeStep.title,
+                    description: activeStep.description,
+                    durationMs: 0,
+                    outputSummary: "",
+                  }}
                   isActive
                 />
               )}
@@ -536,6 +689,15 @@ export default function ResearchAgent() {
         {/* Results */}
         {isDone && content && (
           <>
+            {/* Scope confirmation */}
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+              <span>
+                <span className="font-medium">Research scope: </span>
+                {content.shortlistedCountries.join(", ")}
+              </span>
+            </div>
+
             {/* Agent steps recap */}
             <Card>
               <CardHeader>
@@ -557,12 +719,9 @@ export default function ResearchAgent() {
                 <CardTitle className="text-base">Executive Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{content.executiveSummary}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {content.shortlistedCountries.map((c) => (
-                    <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
-                  ))}
-                </div>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  {content.executiveSummary}
+                </p>
               </CardContent>
             </Card>
 
