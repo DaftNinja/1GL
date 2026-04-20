@@ -1,0 +1,122 @@
+From 709c56e5fe909f2eae530aafce80861f4b542672 Mon Sep 17 00:00:00 2001
+From: Andrew McCreath <andrew@1giglabs.dev>
+Date: Mon, 20 Apr 2026 10:02:56 +0000
+Subject: [PATCH] Add remaining European countries to country dropdown
+
+Expand GIGLABS_COUNTRIES (shared/schema.ts) to cover the rest of
+Europe alphabetically, in addition to the existing UK, US, Brazil,
+France, Netherlands and Sweden entries. Several of the new entries
+(Ireland, Germany, Spain, Norway, Finland) already had country-
+specific chart blocks wired up in PowerTrends.tsx but were not
+selectable from the dropdown.
+
+Also extend COUNTRY_CODE_MAP in server/worldBankData.ts with ISO
+3166-1 alpha-2 codes for each new European country, so World Bank
+indicator lookups resolve correctly for them.
+---
+ server/worldBankData.ts | 29 ++++++++++++++++++++++++++
+ shared/schema.ts        | 45 +++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 72 insertions(+), 2 deletions(-)
+
+diff --git a/server/worldBankData.ts b/server/worldBankData.ts
+index b3e9b78..0f2b502 100644
+--- a/server/worldBankData.ts
++++ b/server/worldBankData.ts
+@@ -44,6 +44,35 @@ const COUNTRY_CODE_MAP: Record<string, string> = {
+   "Poland":          "PL",
+   "Switzerland":     "CH",
+   "Austria":         "AT",
++  "Albania":         "AL",
++  "Andorra":         "AD",
++  "Belarus":         "BY",
++  "Bosnia and Herzegovina": "BA",
++  "Bulgaria":        "BG",
++  "Croatia":         "HR",
++  "Cyprus":          "CY",
++  "Czechia":         "CZ",
++  "Estonia":         "EE",
++  "Greece":          "GR",
++  "Hungary":         "HU",
++  "Iceland":         "IS",
++  "Kosovo":          "XK",
++  "Latvia":          "LV",
++  "Liechtenstein":   "LI",
++  "Lithuania":       "LT",
++  "Luxembourg":      "LU",
++  "Malta":           "MT",
++  "Moldova":         "MD",
++  "Monaco":          "MC",
++  "Montenegro":      "ME",
++  "North Macedonia": "MK",
++  "Romania":         "RO",
++  "San Marino":      "SM",
++  "Serbia":          "RS",
++  "Slovakia":        "SK",
++  "Slovenia":        "SI",
++  "Ukraine":         "UA",
++  "Vatican City":    "VA",
+   "Japan":           "JP",
+   "South Korea":     "KR",
+   "Australia":       "AU",
+diff --git a/shared/schema.ts b/shared/schema.ts
+index edfab98..53eb88f 100644
+--- a/shared/schema.ts
++++ b/shared/schema.ts
+@@ -160,11 +160,52 @@ export const tamAnalyses = pgTable("tam_analyses", {
+ 
+ export const GIGLABS_COUNTRIES = [
+   "United Kingdom",
+-  "United States",
+-  "Brazil",
++  "Albania",
++  "Andorra",
++  "Austria",
++  "Belarus",
++  "Belgium",
++  "Bosnia and Herzegovina",
++  "Bulgaria",
++  "Croatia",
++  "Cyprus",
++  "Czechia",
++  "Denmark",
++  "Estonia",
++  "Finland",
+   "France",
++  "Germany",
++  "Greece",
++  "Hungary",
++  "Iceland",
++  "Ireland",
++  "Italy",
++  "Kosovo",
++  "Latvia",
++  "Liechtenstein",
++  "Lithuania",
++  "Luxembourg",
++  "Malta",
++  "Moldova",
++  "Monaco",
++  "Montenegro",
+   "Netherlands",
++  "North Macedonia",
++  "Norway",
++  "Poland",
++  "Portugal",
++  "Romania",
++  "San Marino",
++  "Serbia",
++  "Slovakia",
++  "Slovenia",
++  "Spain",
+   "Sweden",
++  "Switzerland",
++  "Ukraine",
++  "Vatican City",
++  "United States",
++  "Brazil",
+ ] as const;
+ 
+ export const STELLANOR_COUNTRIES = GIGLABS_COUNTRIES;
+-- 
+2.43.0
+
