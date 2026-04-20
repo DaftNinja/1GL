@@ -1,4 +1,4 @@
-import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, auditLogs, reportComments, reportAssignments, reportActivity, oneGLDatacentres, type Analysis, type InsertAnalysis, type TamAnalysis, type InsertTamAnalysis, type PowerTrendAnalysis, type InsertPowerTrendAnalysis, type VerifiedExecutive, type InsertVerifiedExecutive, type AuditLog, type InsertAuditLog, type ReportComment, type InsertReportComment, type ReportAssignment, type InsertReportAssignment, type ReportActivity, type InsertReportActivity, type OneGLDatacentre, type InsertOneGLDatacentre } from "@shared/schema";
+import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, auditLogs, reportComments, reportAssignments, reportActivity, oneGLDatacentres, siteSelectionReports, type Analysis, type InsertAnalysis, type TamAnalysis, type InsertTamAnalysis, type PowerTrendAnalysis, type InsertPowerTrendAnalysis, type VerifiedExecutive, type InsertVerifiedExecutive, type AuditLog, type InsertAuditLog, type ReportComment, type InsertReportComment, type ReportAssignment, type InsertReportAssignment, type ReportActivity, type InsertReportActivity, type OneGLDatacentre, type InsertOneGLDatacentre, type SiteSelectionReport, type InsertSiteSelectionReport } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -35,6 +35,9 @@ export interface IStorage {
   getReportActivity(analysisId: number, limit?: number): Promise<ReportActivity[]>;
   listOneGLDatacentres(): Promise<OneGLDatacentre[]>;
   upsertOneGLDatacentres(records: InsertOneGLDatacentre[]): Promise<{ inserted: number; updated: number }>;
+  createSiteSelectionReport(report: InsertSiteSelectionReport): Promise<SiteSelectionReport>;
+  getSiteSelectionReport(id: number): Promise<SiteSelectionReport | undefined>;
+  listSiteSelectionReports(userId?: string | null): Promise<SiteSelectionReport[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -265,6 +268,26 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return { inserted, updated };
+  }
+}
+
+  async createSiteSelectionReport(report: InsertSiteSelectionReport): Promise<SiteSelectionReport> {
+    const [created] = await db.insert(siteSelectionReports).values(report).returning();
+    return created;
+  }
+
+  async getSiteSelectionReport(id: number): Promise<SiteSelectionReport | undefined> {
+    const [report] = await db.select().from(siteSelectionReports).where(eq(siteSelectionReports.id, id));
+    return report;
+  }
+
+  async listSiteSelectionReports(userId?: string | null): Promise<SiteSelectionReport[]> {
+    if (userId) {
+      return db.select().from(siteSelectionReports)
+        .where(eq(siteSelectionReports.userId, userId))
+        .orderBy(desc(siteSelectionReports.createdAt));
+    }
+    return db.select().from(siteSelectionReports).orderBy(desc(siteSelectionReports.createdAt));
   }
 }
 

@@ -11,6 +11,8 @@ import { registerChatRoutes } from "./replit_integrations/chat/routes";
 import { registerImageRoutes } from "./replit_integrations/image/routes";
 import { registerAudioRoutes } from "./replit_integrations/audio/routes";
 import { isAuthenticated } from "./auth/setup";
+import { createJob, getJob, runResearchAgent } from "./researchAgent";
+import { siteSelectionRequestSchema } from "@shared/schema";
 
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -2147,6 +2149,83 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
       console.error("ORS isochrones error:", err);
       res.status(500).json({ message: err.message || "Failed to generate isochrones" });
     }
+  });
+
+  // ── Research Agent ──────────────────────────────────────────────────────────
+
+  // POST /api/research-agent/run — validate request, start agent async, return jobId
+  app.post(api.researchAgent.run.path, isAuthenticated, async (req, res) => {
+    try {
+      const request = siteSelectionRequestSchema.parse(req.body);
+      const jobId = crypto.randomUUID();
+      const job = createJob(jobId);
+      res.status(200).json({ jobId });
+
+      // Fire-and-forget: agent runs after response is sent
+      runResearchAgent(getOpenAI(), request, job, async (content) => {
+        const report = await storage.createSiteSelectionReport({
+          userId: (req.session as any).userId ?? null,
+          userEmail: (req.session as any).userEmail ?? null,
+          request: request as any,
+          content: content as any,
+        });
+        return report.id;
+      }).catch((err) => {
+        console.error("Research agent fatal error:", err);
+      });
+    } catch (err: any) {
+      if (err?.name === "ZodError") {
+        return res.status(400).json({ message: err.errors?.[0]?.message ?? "Invalid request" });
+      }
+      console.error("Research agent run error:", err);
+      res.status(500).json({ message: err.message || "Internal server error" });
+    }
+  });
+
+  // GET /api/research-agent/stream/:jobId — SSE stream of agent progress events
+  app.get(api.researchAgent.stream.path, isAuthenticated, (req, res) => {
+    const job = getJob(req.params.jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    // Replay buffered events
+    for (const event of job.events) {
+      res.write(event);
+    }
+
+    // If job is already finished, close immediately
+    if (job.status === "complete" || job.status === "error") {
+      res.end();
+      return;
+    }
+
+    // Subscribe to live events
+    job.listeners.add(res);
+    req.on("close", () => {
+      job.listeners.delete(res);
+    });
+  });
+
+  // GET /api/research-agent/report/:id — retrieve a saved report by DB id
+  app.get(api.researchAgent.get.path, isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    const report = await storage.getSiteSelectionReport(id);
+    if (!report) return res.status(404).json({ message: "Report not found" });
+    return res.json(report);
+  });
+
+  // GET /api/research-agent/reports — list all reports for the authenticated user
+  app.get(api.researchAgent.list.path, isAuthenticated, async (req, res) => {
+    const userId = (req.session as any).userId ?? null;
+    const reports = await storage.listSiteSelectionReports(userId);
+    return res.json(reports);
   });
 
   return httpServer;
