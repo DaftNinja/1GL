@@ -501,6 +501,8 @@ export const siteRecommendationSchema = z.object({
   country: z.string(),
   location: z.string(),
   region: z.string(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   overallScore: z.number(),
   scoreBreakdown: z.object({
     power: z.number(),

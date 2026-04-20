@@ -439,6 +439,8 @@ const siteAnalysisOutputSchema = z.object({
     z.object({
       location: z.string(),
       region: z.string(),
+      lat: z.number().optional(),
+      lng: z.number().optional(),
       gridCapacityMW: z.number(),
       renewableAccessPercent: z.number(),
       estimatedPriceMWh: z.number(),
@@ -502,6 +504,8 @@ Return JSON only — location and region MUST be within ${target.country}:
     {
       "location": "specific city or area within ${target.country}",
       "region": "sub-national area within ${target.country}",
+      "lat": WGS84 decimal latitude (e.g. 51.5074),
+      "lng": WGS84 decimal longitude (e.g. -0.1278),
       "gridCapacityMW": number,
       "renewableAccessPercent": number,
       "estimatedPriceMWh": number,
@@ -789,6 +793,8 @@ export async function runResearchAgent(
           country: canonicalCountry,
           location: candidate.location,
           region: candidate.region,
+          lat: candidate.lat,
+          lng: candidate.lng,
           overallScore: ranking.overallScore,
           scoreBreakdown: candidate.scoreBreakdown,
           gridCapacityMW: candidate.gridCapacityMW,

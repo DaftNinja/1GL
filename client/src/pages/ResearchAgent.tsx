@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import "leaflet/dist/leaflet.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -97,11 +98,14 @@ function AgentStepRow({ step, isActive }: { step: AgentStep; isActive: boolean }
   );
 }
 
-function SiteCard({ site }: { site: SiteRecommendation }) {
+function SiteCard({ site, highlighted }: { site: SiteRecommendation; highlighted: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Card className={`border ${scoreBg(site.overallScore)} shadow-sm`}>
+    <Card
+      id={`site-card-${site.rank}`}
+      className={`border ${scoreBg(site.overallScore)} shadow-sm transition-shadow duration-500 ${highlighted ? "ring-2 ring-blue-400 shadow-blue-100 shadow-md" : ""}`}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -332,6 +336,156 @@ function CountryPicker({
   );
 }
 
+// ── Site map ─────────────────────────────────────────────────────────────────
+
+function markerColor(score: number) {
+  if (score >= 80) return "#10b981"; // emerald
+  if (score >= 60) return "#3b82f6"; // blue
+  if (score >= 40) return "#f59e0b"; // amber
+  return "#ef4444";                  // red
+}
+
+function SiteMap({
+  sites,
+  onSiteClick,
+}: {
+  sites: SiteRecommendation[];
+  onSiteClick: (rank: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const onSiteClickRef = useRef(onSiteClick);
+  onSiteClickRef.current = onSiteClick;
+
+  const plotted = sites.filter((s) => s.lat != null && s.lng != null);
+
+  useEffect(() => {
+    if (!containerRef.current || plotted.length === 0) return;
+
+    let cancelled = false;
+
+    import("leaflet").then((L) => {
+      if (cancelled || !containerRef.current) return;
+
+      // Destroy any existing instance
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+
+      const map = (L as any).map(containerRef.current, {
+        scrollWheelZoom: false,
+        zoomControl: true,
+      });
+      mapRef.current = map;
+
+      (L as any).tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      }).addTo(map);
+
+      const bounds: [number, number][] = [];
+
+      plotted.forEach((site) => {
+        const lat = site.lat!;
+        const lng = site.lng!;
+        bounds.push([lat, lng]);
+
+        const color = markerColor(site.overallScore);
+
+        const tooltipHtml = `
+          <div style="min-width:175px;font-family:system-ui,sans-serif">
+            <div style="font-weight:700;font-size:13px;margin-bottom:2px">#${site.rank} ${site.location}</div>
+            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${site.country} · Score ${site.overallScore}/100</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12px">
+              <span style="color:#6b7280">⚡ MW avail.</span><span style="font-weight:600">${site.gridCapacityMW.toLocaleString()} MW</span>
+              <span style="color:#6b7280">🌿 Renewable</span><span style="font-weight:600">${site.renewableAccessPercent}%</span>
+              <span style="color:#6b7280">💶 Cost</span><span style="font-weight:600">€${site.estimatedPriceMWh}/MWh</span>
+              <span style="color:#6b7280">⏱ Connect</span><span style="font-weight:600">${site.connectionTimelineMonths} mo</span>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:#3b82f6">Click to view details ↓</div>
+          </div>`;
+
+        const marker = (L as any).circleMarker([lat, lng], {
+          radius: 13,
+          fillColor: color,
+          color: "#fff",
+          weight: 2.5,
+          opacity: 1,
+          fillOpacity: 0.9,
+        });
+
+        // Rank label inside marker using divIcon overlay
+        const labelIcon = (L as any).divIcon({
+          className: "",
+          html: `<div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;pointer-events:none">${site.rank}</div>`,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+        });
+        const labelMarker = (L as any).marker([lat, lng], { icon: labelIcon, interactive: false });
+
+        marker.bindTooltip(tooltipHtml, {
+          sticky: false,
+          direction: "top",
+          offset: [0, -14],
+          opacity: 1,
+        });
+
+        marker.on("click", () => onSiteClickRef.current(site.rank));
+        marker.on("mouseover", function (this: any) {
+          this.setStyle({ radius: 16, weight: 3 });
+        });
+        marker.on("mouseout", function (this: any) {
+          this.setStyle({ radius: 13, weight: 2.5 });
+        });
+
+        marker.addTo(map);
+        labelMarker.addTo(map);
+      });
+
+      if (bounds.length === 1) {
+        map.setView(bounds[0], 9);
+      } else {
+        map.fitBounds((L as any).latLngBounds(bounds).pad(0.2));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [plotted.map((s) => s.rank).join(",")]);
+
+  if (plotted.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+        <MapPin className="w-4 h-4 text-blue-500" />
+        <span className="text-sm font-medium text-slate-700">Site Locations</span>
+        <span className="text-xs text-slate-400 ml-1">— hover to preview, click to jump to details</span>
+      </div>
+      <div ref={containerRef} style={{ height: 420, width: "100%", zIndex: 0 }} />
+      <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-3">
+        {[
+          { label: "Score ≥ 80", color: "#10b981" },
+          { label: "60–79",      color: "#3b82f6" },
+          { label: "40–59",      color: "#f59e0b" },
+          { label: "< 40",       color: "#ef4444" },
+        ].map(({ label, color }) => (
+          <span key={label} className="flex items-center gap-1.5 text-xs text-slate-500">
+            <span style={{ background: color }} className="inline-block w-3 h-3 rounded-full" />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ResearchAgent() {
@@ -355,7 +509,17 @@ export default function ResearchAgent() {
   const [reportId, setReportId] = useState<number | null>(null);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [highlightedRank, setHighlightedRank] = useState<number | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const handleMapSiteClick = useCallback((rank: number) => {
+    const el = document.getElementById(`site-card-${rank}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedRank(rank);
+      setTimeout(() => setHighlightedRank(null), 2000);
+    }
+  }, []);
 
   const { data: report } = useQuery<{ content: SiteSelectionContent }>({
     queryKey: ["research-agent-report", reportId],
@@ -458,6 +622,7 @@ export default function ResearchAgent() {
     setReportId(null);
     setAgentError(null);
     setIsRunning(false);
+    setHighlightedRank(null);
   }
 
   const content: SiteSelectionContent | undefined = report?.content;
@@ -725,6 +890,9 @@ export default function ResearchAgent() {
               </CardContent>
             </Card>
 
+            {/* Map */}
+            <SiteMap sites={content.rankedSites} onSiteClick={handleMapSiteClick} />
+
             {/* Ranked sites */}
             <div>
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -733,7 +901,7 @@ export default function ResearchAgent() {
               </h3>
               <div className="space-y-4">
                 {content.rankedSites.map((site) => (
-                  <SiteCard key={site.rank} site={site} />
+                  <SiteCard key={site.rank} site={site} highlighted={highlightedRank === site.rank} />
                 ))}
               </div>
             </div>
