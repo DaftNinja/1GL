@@ -13,6 +13,7 @@ import { registerAudioRoutes } from "./replit_integrations/audio/routes";
 import { isAuthenticated } from "./auth/setup";
 import { createJob, getJob, runResearchAgent } from "./researchAgent";
 import { siteSelectionRequestSchema } from "@shared/schema";
+import { registerDataCentreSiteRoutes } from "./dataCentreSites/routes";
 
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -2227,6 +2228,9 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     const reports = await storage.listSiteSelectionReports(userId);
     return res.json(reports);
   });
+
+  // Data Centre Site Selection — geospatial API layer
+  registerDataCentreSiteRoutes(app);
 
   return httpServer;
 }
