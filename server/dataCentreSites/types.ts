@@ -162,6 +162,27 @@ export interface OverpassParsedData {
 
 // ── Grid analysis ──────────────────────────────────────────────────────────────
 
+export interface UNFuelSlot {
+  capacityMW:     number;
+  generationGWh:  number;
+  percentOfTotal: number;
+}
+
+/** UN Energy Statistics fuel-mix breakdown — present for APAC countries. */
+export interface GridComposition {
+  coal:    UNFuelSlot;
+  gas:     UNFuelSlot;
+  hydro:   UNFuelSlot;
+  wind:    UNFuelSlot;
+  solar:   UNFuelSlot;
+  nuclear: UNFuelSlot;
+  totalCapacityMW:    number;
+  totalGenerationGWh: number;
+  renewablesPercent:  number;
+  year: number;
+  source: "UN_ENERGY_STATS";
+}
+
 export interface GridAnalysisResult {
   country: string;
   region?: string;
@@ -172,6 +193,19 @@ export interface GridAnalysisResult {
   substations: SiteFeature[];   // GeoJSON point features for map overlay
   notes: string;
   cacheHit?: boolean;
+
+  // UN Energy Statistics enrichment (APAC countries)
+  gridComposition?: GridComposition | null;
+  regionalCapacityMW?: number;
+  connectionQueueMonths?: number;
+  gridStabilityScore?: number;
+  dataQuality?: {
+    manual_data_age_years: number;
+    un_data_age_years:     number;
+    consistent:            boolean | null;
+    delta_pct?:            number;
+  };
+  warnings?: string[];
 }
 
 // ── Cadastral ──────────────────────────────────────────────────────────────────

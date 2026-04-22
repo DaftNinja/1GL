@@ -206,6 +206,22 @@ export const GIGLABS_COUNTRIES = [
   "Vatican City",
   "United States",
   "Brazil",
+  // APAC
+  "India",
+  "Malaysia",
+  "Singapore",
+  "Japan",
+  "Australia",
+  "China",
+  "South Korea",
+  "Indonesia",
+  "Thailand",
+  "Philippines",
+  "Vietnam",
+  "New Zealand",
+  "Pakistan",
+  "Bangladesh",
+  "Sri Lanka",
 ] as const;
 
 export const STELLANOR_COUNTRIES = GIGLABS_COUNTRIES;

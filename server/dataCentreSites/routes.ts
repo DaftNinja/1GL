@@ -29,7 +29,8 @@ import { z } from "zod";
 import { isAuthenticated } from "../auth/setup";
 import { queryOverpass } from "./overpass";
 import { scoreSites } from "./scoring";
-import { getGridAnalysis } from "./entsoeGrid";
+import { getGridAnalysis as getEntsoeGridAnalysis } from "./entsoeGrid";
+import { getGridAnalysis as getApacGridAnalysis } from "../adapters/apac/index";
 import { getCadastralParcels } from "./cadastral/index";
 import {
   searchCache,
@@ -42,7 +43,68 @@ import type {
   SiteFilters,
   SiteFeature,
   SiteSearchResult,
+  GridAnalysisResult,
+  GridComposition,
+  OverpassSubstation,
 } from "./types";
+
+// ── APAC country routing ───────────────────────────────────────────────────────
+// These countries are served by the APAC adapter (manual lookup + UN Energy Stats)
+// rather than ENTSO-E, which only covers Europe.
+const APAC_COUNTRIES = new Set([
+  "India", "Malaysia", "Singapore", "Japan", "Australia",
+  "China", "South Korea", "Indonesia", "Thailand", "Philippines",
+  "Vietnam", "New Zealand", "Pakistan", "Bangladesh", "Sri Lanka",
+]);
+
+/**
+ * Unified grid analysis dispatcher.
+ * APAC → manual + UN Energy Stats (parallel, < 500 ms).
+ * Europe → ENTSO-E (existing path).
+ * Always returns a GridAnalysisResult; never throws.
+ */
+async function resolveGridAnalysis(
+  country: string,
+  region:  string | undefined,
+  substations: OverpassSubstation[],
+): Promise<GridAnalysisResult> {
+  if (APAC_COUNTRIES.has(country)) {
+    const apac = await getApacGridAnalysis(country, region);
+    const warnings = apac.warnings ?? [];
+
+    return {
+      country,
+      region,
+      dataAvailable: !!(apac.regionalCapacity || apac.gridComposition),
+      renewableSharePercent: apac.renewablesShare ?? undefined,
+      substations:   [],   // Overpass substations still handled by the search pipeline
+      notes: [
+        apac.regionalCapacity
+          ? `Manual grid data available for ${country}${region ? ` / ${region}` : ""}.`
+          : `No manual grid entry for ${country}${region ? ` / ${region}` : ""}.`,
+        apac.gridComposition
+          ? `UN Energy Stats: ${apac.gridComposition.totalCapacityMW.toLocaleString()} MW total capacity, ${apac.gridComposition.renewablesPercent}% renewables (${apac.gridComposition.year}).`
+          : "UN Energy Statistics unavailable.",
+        ...warnings,
+      ].join(" "),
+      gridComposition:       (apac.gridComposition as GridComposition | null | undefined) ?? null,
+      regionalCapacityMW:    apac.regionalCapacity?.totalCapacityMW,
+      connectionQueueMonths: apac.regionalCapacity?.connectionQueueMonths,
+      gridStabilityScore:    apac.regionalCapacity?.gridStabilityScore,
+      dataQuality: apac.dataQuality ? {
+        manual_data_age_years: apac.dataQuality.manual_data_age_years,
+        un_data_age_years:     apac.dataQuality.un_data_age_years,
+        consistent:            apac.dataQuality.consistency?.consistent ?? null,
+        delta_pct:             apac.dataQuality.consistency?.delta_pct,
+      } : undefined,
+      warnings,
+    };
+  }
+
+  // European / other countries — ENTSO-E path
+  const result = await getEntsoeGridAnalysis(country, region, substations);
+  return result;
+}
 
 // ── Preset bounding boxes for popular DC regions ───────────────────────────────
 // These give well-known starting points; the API also accepts custom bbox params.
@@ -82,6 +144,33 @@ export const REGION_PRESETS: Record<string, BoundingBox> = {
 
   // Poland
   "Warsaw":              { south: 52.1,  west: 20.8,  north: 52.4,  east: 21.3 },
+
+  // ── APAC ──────────────────────────────────────────────────────────────────
+
+  // India
+  "Delhi NCR":           { south: 28.4,  west: 76.8,  north: 28.9,  east: 77.4 },
+  "Mumbai":              { south: 18.9,  west: 72.7,  north: 19.3,  east: 73.1 },
+  "Chennai":             { south: 12.9,  west: 80.1,  north: 13.2,  east: 80.4 },
+  "Hyderabad":           { south: 17.3,  west: 78.3,  north: 17.6,  east: 78.7 },
+  "Bangalore":           { south: 12.8,  west: 77.4,  north: 13.1,  east: 77.8 },
+
+  // Malaysia
+  "Johor Bahru":         { south: 1.4,   west: 103.6, north: 1.7,   east: 104.0},
+  "Kuala Lumpur":        { south: 3.0,   west: 101.5, north: 3.3,   east: 101.8},
+  "Cyberjaya":           { south: 2.85,  west: 101.6, north: 3.0,   east: 101.8},
+
+  // Singapore
+  "Singapore":           { south: 1.2,   west: 103.6, north: 1.5,   east: 104.0},
+
+  // Japan
+  "Tokyo":               { south: 35.5,  west: 139.4, north: 35.9,  east: 140.0},
+  "Osaka":               { south: 34.5,  west: 135.3, north: 34.8,  east: 135.7},
+  "Fukuoka":             { south: 33.5,  west: 130.2, north: 33.7,  east: 130.6},
+
+  // Australia
+  "Sydney":              { south: -34.1, west: 150.9, north: -33.7, east: 151.4},
+  "Melbourne":           { south: -38.1, west: 144.8, north: -37.7, east: 145.2},
+  "Canberra":            { south: -35.5, west: 149.0, north: -35.2, east: 149.3},
 };
 
 // ── Maximum bbox dimensions to protect Overpass ────────────────────────────────
@@ -218,13 +307,13 @@ export function registerDataCentreSiteRoutes(app: Express): void {
         processingNotes.push(`Cadastral data served from 24h cache (${cadastralParcels.length} parcels).`);
       }
 
-      // 3. ENTSO-E grid analysis
+      // 3. Grid analysis — ENTSO-E for Europe, UN Energy Stats for APAC
       const gridKey = `grid:${params.country}:${params.region ?? ""}`;
       let gridResult = gridCache.get(gridKey);
       let gridAvailable = false;
 
       if (!gridResult) {
-        gridResult = await getGridAnalysis(
+        gridResult = await resolveGridAnalysis(
           params.country,
           params.region,
           overpassData.substations,
@@ -233,7 +322,13 @@ export function registerDataCentreSiteRoutes(app: Express): void {
       }
       gridAvailable = gridResult.dataAvailable;
       processingNotes.push(gridResult.notes);
-      if (gridAvailable) dataSources.push("ENTSO-E Transparency Platform");
+      if (gridAvailable) {
+        dataSources.push(
+          APAC_COUNTRIES.has(params.country)
+            ? "UN Energy Statistics Database + Manual Grid Reference"
+            : "ENTSO-E Transparency Platform",
+        );
+      }
 
       // 4. Scoring
       const filters: SiteFilters = {
@@ -327,10 +422,8 @@ export function registerDataCentreSiteRoutes(app: Express): void {
         return res.json({ ...cached, cacheHit: true });
       }
 
-      // For the standalone grid-analysis endpoint we don't have Overpass
-      // substations — the caller can supply bbox params to get them if needed.
-      // For now we call getGridAnalysis with no substations.
-      const result = await getGridAnalysis(country, region, []);
+      // Route to APAC adapter or ENTSO-E depending on country.
+      const result = await resolveGridAnalysis(country, region, []);
       gridCache.set(cacheKey, result);
       return res.json({ ...result, cacheHit: false });
     },
