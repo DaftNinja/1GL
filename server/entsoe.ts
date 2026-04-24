@@ -392,6 +392,42 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
     const elapsed = Date.now() - t0;
     console.error(`[prices] ${country} (${eicInfo.name}): FAILED in ${elapsed}ms — ${err.message}`);
 
+    // For Poland, try PSE as fallback when ENTSO-E fails
+    if (country === "Poland") {
+      try {
+        console.log(`[prices] Poland: attempting PSE fallback`);
+        const { getPolishPricesForENTSOEFallback } = await import("./pseData");
+        const pseResult = await getPolishPricesForENTSOEFallback();
+        if (pseResult) {
+          const today = new Date().toISOString().split("T")[0];
+          const result: PriceResult = {
+            country,
+            eicCode: eicInfo.eic,
+            monthly: [
+              {
+                year: parseInt(today.slice(0, 4)),
+                month: parseInt(today.slice(5, 7)),
+                avgEurMwh: pseResult.avgEurMwh,
+                minEurMwh: pseResult.avgEurMwh, // Don't have min/max from PSE
+                maxEurMwh: pseResult.avgEurMwh,
+                sampleCount: 24, // Hourly data
+              },
+            ],
+            latestDayAvg: pseResult.avgEurMwh,
+            latestDayDate: today,
+            annualAvg: {},
+            currency: "EUR",
+            fetchedAt: new Date().toISOString(),
+          };
+          console.log(`[prices] Poland: PSE fallback succeeded, ${pseResult.avgEurMwh} EUR/MWh (converted from PLN at ${pseResult.conversionRate})`);
+          cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
+          return result;
+        }
+      } catch (pseErr: any) {
+        console.warn(`[prices] Poland: PSE fallback also failed — ${pseErr.message}`);
+      }
+    }
+
     // For Germany, try Energy-Charts as fallback when ENTSO-E fails
     if (country === "Germany") {
       try {
