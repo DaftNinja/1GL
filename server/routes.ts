@@ -2229,6 +2229,64 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     return res.json(reports);
   });
 
+  // Energy-Charts API — German electricity data (fallback for ENTSO-E)
+  app.get("/api/energy-charts/signal", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanSignal } = await import("./energyChartsData");
+      const signal = await getGermanSignal();
+      if (!signal) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json(signal);
+    } catch (err: any) {
+      console.error("[energy-charts] /signal error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/prices", isAuthenticated, async (req, res) => {
+    try {
+      const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+      const { getGermanDayAheadPrices } = await import("./energyChartsData");
+      const prices = await getGermanDayAheadPrices(date);
+      if (!prices) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json({ date, prices });
+    } catch (err: any) {
+      console.error("[energy-charts] /prices error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/generation", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanGenerationMix } = await import("./energyChartsData");
+      const mix = await getGermanGenerationMix();
+      if (!mix) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json(mix);
+    } catch (err: any) {
+      console.error("[energy-charts] /generation error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/cross-border", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanCrossBorder } = await import("./energyChartsData");
+      const flows = await getGermanCrossBorder();
+      if (!flows) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json({ flows });
+    } catch (err: any) {
+      console.error("[energy-charts] /cross-border error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Data Centre Site Selection — geospatial API layer
   registerDataCentreSiteRoutes(app);
 

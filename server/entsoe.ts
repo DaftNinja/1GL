@@ -391,6 +391,73 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
   } catch (err: any) {
     const elapsed = Date.now() - t0;
     console.error(`[prices] ${country} (${eicInfo.name}): FAILED in ${elapsed}ms — ${err.message}`);
+
+    // For Germany, try Energy-Charts as fallback when ENTSO-E fails
+    if (country === "Germany") {
+      try {
+        console.log(`[prices] Germany: attempting Energy-Charts fallback`);
+        const { getGermanDayAheadPrices, recordEnergyChartsUsedAsFallback } = await import("./energyChartsData");
+        recordEnergyChartsUsedAsFallback();
+
+        const today = new Date().toISOString().split("T")[0];
+        const prices = await getGermanDayAheadPrices(today);
+        if (prices && prices.length > 0) {
+          // Convert hourly prices to monthly format for compatibility
+          const byMonth = new Map<string, number[]>();
+          for (const point of prices) {
+            const d = new Date(point.unix_timestamp * 1000);
+            const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+            if (!byMonth.has(month)) byMonth.set(month, []);
+            byMonth.get(month)!.push(point.price_eur);
+          }
+
+          const monthly: MonthlyPrice[] = [];
+          for (const [ym, priceList] of byMonth.entries()) {
+            if (priceList.length === 0) continue;
+            const [y, m] = ym.split("-").map(Number);
+            const avg = priceList.reduce((a, b) => a + b, 0) / priceList.length;
+            monthly.push({
+              year: y,
+              month: m,
+              avgEurMwh: Math.round(avg * 100) / 100,
+              minEurMwh: Math.round(Math.min(...priceList) * 100) / 100,
+              maxEurMwh: Math.round(Math.max(...priceList) * 100) / 100,
+              sampleCount: priceList.length,
+            });
+          }
+
+          if (monthly.length > 0) {
+            monthly.sort((a, b) => {
+              if (a.year !== b.year) return a.year - b.year;
+              return a.month - b.month;
+            });
+
+            const latestDay = today;
+            const latestDayAvg = Math.round(
+              (prices.reduce((sum, p) => sum + p.price_eur, 0) / prices.length) * 100
+            ) / 100;
+
+            const result: PriceResult = {
+              country,
+              eicCode: eicInfo.eic,
+              monthly,
+              latestDayAvg,
+              latestDayDate: latestDay,
+              annualAvg: {},
+              currency: "EUR",
+              fetchedAt: new Date().toISOString(),
+            };
+
+            console.log(`[prices] Germany: Energy-Charts fallback succeeded, latest ${latestDayAvg} EUR/MWh`);
+            cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
+            return result;
+          }
+        }
+      } catch (ecErr: any) {
+        console.warn(`[prices] Germany: Energy-Charts fallback also failed — ${ecErr.message}`);
+      }
+    }
+
     // Serve stale cache rather than returning null — keeps the map populated
     // during ENTSO-E outages or transient maintenance windows.
     if (cached) {
