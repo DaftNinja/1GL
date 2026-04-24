@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, insertAnalysisSchema, analysisContentSchema } from './schema';
+import { analyses, tamAnalyses, powerTrendAnalyses, verifiedExecutives, siteSelectionReports, insertAnalysisSchema, analysisContentSchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -131,6 +131,39 @@ export const api = {
       responses: {
         200: z.object({ success: z.boolean() }),
         404: errorSchemas.notFound,
+      },
+    },
+  },
+  researchAgent: {
+    run: {
+      method: 'POST' as const,
+      path: '/api/research-agent/run',
+      responses: {
+        200: z.object({ jobId: z.string() }),
+        400: errorSchemas.validation,
+        500: errorSchemas.internal,
+      },
+    },
+    stream: {
+      method: 'GET' as const,
+      path: '/api/research-agent/stream/:jobId',
+      responses: {
+        200: z.string(), // SSE stream
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/research-agent/report/:id',
+      responses: {
+        200: z.custom<typeof siteSelectionReports.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    list: {
+      method: 'GET' as const,
+      path: '/api/research-agent/reports',
+      responses: {
+        200: z.array(z.custom<typeof siteSelectionReports.$inferSelect>()),
       },
     },
   },

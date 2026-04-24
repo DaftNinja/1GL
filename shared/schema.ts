@@ -160,11 +160,68 @@ export const tamAnalyses = pgTable("tam_analyses", {
 
 export const GIGLABS_COUNTRIES = [
   "United Kingdom",
+  "Albania",
+  "Andorra",
+  "Austria",
+  "Belarus",
+  "Belgium",
+  "Bosnia and Herzegovina",
+  "Bulgaria",
+  "Croatia",
+  "Cyprus",
+  "Czechia",
+  "Denmark",
+  "Estonia",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "Iceland",
+  "Ireland",
+  "Italy",
+  "Kosovo",
+  "Latvia",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Malta",
+  "Moldova",
+  "Monaco",
+  "Montenegro",
+  "Netherlands",
+  "North Macedonia",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "San Marino",
+  "Serbia",
+  "Slovakia",
+  "Slovenia",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "Ukraine",
+  "Vatican City",
   "United States",
   "Brazil",
-  "France",
-  "Netherlands",
-  "Sweden",
+  // APAC
+  "India",
+  "Malaysia",
+  "Singapore",
+  "Japan",
+  "Australia",
+  "China",
+  "South Korea",
+  "Indonesia",
+  "Thailand",
+  "Philippines",
+  "Vietnam",
+  "New Zealand",
+  "Pakistan",
+  "Bangladesh",
+  "Sri Lanka",
 ] as const;
 
 export const STELLANOR_COUNTRIES = GIGLABS_COUNTRIES;
@@ -425,5 +482,90 @@ export const insertOneGLDatacentreSchema = createInsertSchema(oneGLDatacentres).
 
 export type OneGLDatacentre = typeof oneGLDatacentres.$inferSelect;
 export type InsertOneGLDatacentre = z.infer<typeof insertOneGLDatacentreSchema>;
+
+// === RESEARCH AGENT — SITE SELECTION REPORTS ===
+export const siteSelectionReports = pgTable("site_selection_reports", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"),
+  userEmail: text("user_email"),
+  request: jsonb("request").notNull(),
+  content: jsonb("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const siteSelectionRequestSchema = z.object({
+  targetCountries: z
+    .array(z.string().min(1))
+    .min(1, "Please select at least one country to research"),
+  powerRequirementMW: z.number().min(1).max(2000),
+  sustainabilityTarget: z.number().min(0).max(100),
+  timelineMonths: z.number().min(6).max(60),
+  budgetSensitivity: z.enum(["Low", "Medium", "High"]),
+  additionalRequirements: z.string().optional(),
+});
+
+export const agentStepSchema = z.object({
+  step: z.number(),
+  title: z.string(),
+  description: z.string(),
+  durationMs: z.number(),
+  outputSummary: z.string(),
+});
+
+export const siteRecommendationSchema = z.object({
+  rank: z.number(),
+  country: z.string(),
+  location: z.string(),
+  region: z.string(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  overallScore: z.number(),
+  scoreBreakdown: z.object({
+    power: z.number(),
+    renewable: z.number(),
+    cost: z.number(),
+    regulatory: z.number(),
+    risk: z.number(),
+  }),
+  gridCapacityMW: z.number(),
+  renewableAccessPercent: z.number(),
+  estimatedPriceMWh: z.number(),
+  connectionTimelineMonths: z.number(),
+  averagePUE: z.number(),
+  coolingAdvantage: z.string(),
+  keyStrengths: z.array(z.string()),
+  keyRisks: z.array(z.string()),
+  recommendation: z.string(),
+  liveDataSnapshot: z.object({
+    currentPriceMWh: z.number().optional(),
+    renewableSharePercent: z.number().optional(),
+    dominantFuel: z.string().optional(),
+    dataFetchedAt: z.string().optional(),
+  }).optional(),
+});
+
+export const siteSelectionContentSchema = z.object({
+  generatedAt: z.string(),
+  agentSteps: z.array(agentStepSchema),
+  shortlistedCountries: z.array(z.string()),
+  rankedSites: z.array(siteRecommendationSchema),
+  executiveSummary: z.string(),
+  methodology: z.string(),
+  dataSources: z.array(z.object({
+    source: z.string(),
+    publisher: z.string(),
+    year: z.number(),
+    description: z.string(),
+  })).optional(),
+});
+
+export const insertSiteSelectionReportSchema = createInsertSchema(siteSelectionReports).omit({ id: true, createdAt: true });
+
+export type SiteSelectionReport = typeof siteSelectionReports.$inferSelect;
+export type InsertSiteSelectionReport = z.infer<typeof insertSiteSelectionReportSchema>;
+export type SiteSelectionRequest = z.infer<typeof siteSelectionRequestSchema>;
+export type SiteRecommendation = z.infer<typeof siteRecommendationSchema>;
+export type SiteSelectionContent = z.infer<typeof siteSelectionContentSchema>;
+export type AgentStep = z.infer<typeof agentStepSchema>;
 
 export * from "./models/chat";
