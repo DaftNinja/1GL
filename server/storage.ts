@@ -269,6 +269,7 @@ export class DatabaseStorage implements IStorage {
     }
     return { inserted, updated };
   }
+  }
 
   async createSiteSelectionReport(report: InsertSiteSelectionReport): Promise<SiteSelectionReport> {
     const [created] = await db.insert(siteSelectionReports).values(report).returning();
