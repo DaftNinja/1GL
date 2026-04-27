@@ -1235,14 +1235,14 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const skippedCount = INTERCONNECTOR_PAIRS.length - activePairs.length;
 
   const fetchStart = Date.now();
-  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=4 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
+  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=3 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const limit = pLimit(2); // 2 pairs at a time; each pair is sequential → max 2 concurrent ENTSO-E requests
+  const limit = pLimit(3); // 3 pairs in parallel; each pair fetches 2 directions in parallel → ~6 concurrent requests
 
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
@@ -1251,18 +1251,19 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
         const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
 
-        // Sequential directional fetches — halves peak request rate vs. concurrent
-        const outResult = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
-        await new Promise(r => setTimeout(r, 250));
-        const inResult  = await fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd);
+        // Parallel directional fetches with 429 rate-limit recovery (exponential backoff in fetchDirectionalFlow)
+        const [outFlow, inFlow] = await Promise.allSettled([
+          fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd),
+          fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
+        ]);
 
-        const outMw = outResult.value;
-        const inMw  = inResult.value;
+        const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
+        const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
         const netMw = inMw - outMw;
 
         // Propagate the latest data timestamp from either direction
-        const outTs = outResult.ts;
-        const inTs  = inResult.ts;
+        const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
+        const inTs  = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
         const pairTs = Math.max(outTs, inTs);
         if (pairTs > maxDataTs) maxDataTs = pairTs;
 
