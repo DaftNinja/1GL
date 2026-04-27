@@ -1308,6 +1308,17 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
     console.log(`[ENTSOE A11] borders NO data (error 999 or no TSO submission): ${bordersNoData.join(", ")}`);
   }
 
+  // API response audit for frontend debugging
+  console.log(`[ENTSOE A11] Sending to client: ${flows.length} pairs total`);
+  console.log(`[ENTSOE A11] Response format check: first pair = ${flows[0] ? `${flows[0].from}→${flows[0].to} (netMw=${flows[0].netMw})` : "N/A"}`);
+  if (flows.length > 0) {
+    const nonZeroFlows = flows.filter(f => Math.abs(f.netMw) >= 10);
+    console.log(`[ENTSOE A11] Non-zero flows (|netMw| >= 10): ${nonZeroFlows.length} / ${flows.length}`);
+    if (nonZeroFlows.length > 0) {
+      console.log(`[ENTSOE A11] Sample non-zero: ${nonZeroFlows.slice(0, 5).map(f => `${f.from}→${f.to}:${f.netMw}MW`).join(", ")}`);
+    }
+  }
+
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
 
   // Persist hourOffset=0 to disk for cross-restart cache warm-up.
