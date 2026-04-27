@@ -29,9 +29,9 @@ const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 // Validated against ENTSO-E Transparency Platform March 2026
 const COUNTRY_EIC: Record<string, { eic: string; flowEic?: string; name: string; currency?: string; note?: string }> = {
   // Western & Northern Europe
-  "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit" },
+  "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit; NSL/NSL2 interconnector flows (NO/NL) published via ENTSO-E A11" },
   "Ireland":             { eic: "10Y1001A1001A59C", name: "IE", note: "SEM (Single Electricity Market)" },
-  "Norway":              { eic: "10Y1001A1001A48H", name: "NO" },
+  "Norway":              { eic: "10Y1001A1001A48H", flowEic: "10YNO-1---2F", name: "NO", note: "NordPool operator; A11 cross-border flows via 10YNO-1---2F (NO price area)" },
   "Sweden":              { eic: "10Y1001A1001A46L", flowEic: "10Y1001A1001A44P", name: "SE3", note: "SE3 for day-ahead prices (Stockholm); SE1 flowEic for cross-border flows (NO/FI/PL borders)" },
   "Denmark":             { eic: "10YDK-1--------W", name: "DK", note: "DK1 (Western Denmark / Nord Pool)" },
   "Finland":             { eic: "10YFI-1--------U", name: "FI" },
@@ -936,6 +936,12 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
 }
 
 // ─── Cross-border Physical Flows (documentType A11) ─────────────────────────
+// NOTE: NordPool (Norway, Sweden, Denmark, Finland) internal borders (NO↔SE, NO↔FI, NO↔DK)
+// may return ENTSO-E error 999 (no TSO submission) because NordPool publishes flows via its own
+// API (https://www.nordpoolgroup.com) not ENTSO-E A11. However, interconnectors with Continental
+// Europe (NO↔NL via NSL2, NO↔GB via NSL) should be published via ENTSO-E A11. If these show
+// no data, it may indicate: (1) ENTSO-E hasn't received submissions from TSOs, or (2) data lag
+// (typically 24h for some TSOs). Consider https://www.nordpoolgroup.com for NordPool internal flows.
 
 const CROSS_BORDER_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -1096,7 +1102,12 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
       return { value: qty, ts };
     } catch (err: any) {
       if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-        return { value: 0, ts: 0 }; // TSO hasn't submitted data — not an error
+        // TSO hasn't submitted data — log for debugging NordPool borders
+        const isNordPool = fromEic.includes("NO") || toEic.includes("NO");
+        if (isNordPool) {
+          console.log(`[ENTSOE A11] ${fromEic}→${toEic}: No TSO submission (ENTSO-E 999) — NordPool may require fallback to https://www.nordpoolgroup.com`);
+        }
+        return { value: 0, ts: 0 };
       }
       if (err.message?.includes("429") && attempt < MAX_429_RETRIES) {
         const delay = 8000 * (attempt + 1); // 8s, 16s, 24s
