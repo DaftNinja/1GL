@@ -29,9 +29,9 @@ const ENTSOE_BASE = "https://web-api.tp.entsoe.eu/api";
 // Validated against ENTSO-E Transparency Platform March 2026
 const COUNTRY_EIC: Record<string, { eic: string; flowEic?: string; name: string; currency?: string; note?: string }> = {
   // Western & Northern Europe
-  "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit" },
+  "United Kingdom":      { eic: "10YGB----------A", name: "UK", currency: "GBP", note: "No ENTSO-E day-ahead prices post-Brexit; NSL/NSL2 interconnector flows (NO/NL) published via ENTSO-E A11" },
   "Ireland":             { eic: "10Y1001A1001A59C", name: "IE", note: "SEM (Single Electricity Market)" },
-  "Norway":              { eic: "10Y1001A1001A48H", name: "NO" },
+  "Norway":              { eic: "10Y1001A1001A48H", flowEic: "10YNO-1---2F", name: "NO", note: "NordPool operator; A11 cross-border flows via 10YNO-1---2F (NO price area)" },
   "Sweden":              { eic: "10Y1001A1001A46L", flowEic: "10Y1001A1001A44P", name: "SE3", note: "SE3 for day-ahead prices (Stockholm); SE1 flowEic for cross-border flows (NO/FI/PL borders)" },
   "Denmark":             { eic: "10YDK-1--------W", name: "DK", note: "DK1 (Western Denmark / Nord Pool)" },
   "Finland":             { eic: "10YFI-1--------U", name: "FI" },
@@ -391,6 +391,109 @@ export async function getCountryDayAheadPrices(country: string): Promise<PriceRe
   } catch (err: any) {
     const elapsed = Date.now() - t0;
     console.error(`[prices] ${country} (${eicInfo.name}): FAILED in ${elapsed}ms — ${err.message}`);
+
+    // For Poland, try PSE as fallback when ENTSO-E fails
+    if (country === "Poland") {
+      try {
+        console.log(`[prices] Poland: attempting PSE fallback`);
+        const { getPolishPricesForENTSOEFallback } = await import("./pseData");
+        const pseResult = await getPolishPricesForENTSOEFallback();
+        if (pseResult) {
+          const today = new Date().toISOString().split("T")[0];
+          const result: PriceResult = {
+            country,
+            eicCode: eicInfo.eic,
+            monthly: [
+              {
+                year: parseInt(today.slice(0, 4)),
+                month: parseInt(today.slice(5, 7)),
+                avgEurMwh: pseResult.avgEurMwh,
+                minEurMwh: pseResult.avgEurMwh, // Don't have min/max from PSE
+                maxEurMwh: pseResult.avgEurMwh,
+                sampleCount: 24, // Hourly data
+              },
+            ],
+            latestDayAvg: pseResult.avgEurMwh,
+            latestDayDate: today,
+            annualAvg: {},
+            currency: "EUR",
+            fetchedAt: new Date().toISOString(),
+          };
+          console.log(`[prices] Poland: PSE fallback succeeded, ${pseResult.avgEurMwh} EUR/MWh (converted from PLN at ${pseResult.conversionRate})`);
+          cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
+          return result;
+        }
+      } catch (pseErr: any) {
+        console.warn(`[prices] Poland: PSE fallback also failed — ${pseErr.message}`);
+      }
+    }
+
+    // For Germany, try Energy-Charts as fallback when ENTSO-E fails
+    if (country === "Germany") {
+      try {
+        console.log(`[prices] Germany: attempting Energy-Charts fallback`);
+        const { getGermanDayAheadPrices, recordEnergyChartsUsedAsFallback } = await import("./energyChartsData");
+        recordEnergyChartsUsedAsFallback();
+
+        const today = new Date().toISOString().split("T")[0];
+        const prices = await getGermanDayAheadPrices(today);
+        if (prices && prices.length > 0) {
+          // Convert hourly prices to monthly format for compatibility
+          const byMonth = new Map<string, number[]>();
+          for (const point of prices) {
+            const d = new Date(point.unix_timestamp * 1000);
+            const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+            if (!byMonth.has(month)) byMonth.set(month, []);
+            byMonth.get(month)!.push(point.price_eur);
+          }
+
+          const monthly: MonthlyPrice[] = [];
+          for (const [ym, priceList] of byMonth.entries()) {
+            if (priceList.length === 0) continue;
+            const [y, m] = ym.split("-").map(Number);
+            const avg = priceList.reduce((a, b) => a + b, 0) / priceList.length;
+            monthly.push({
+              year: y,
+              month: m,
+              avgEurMwh: Math.round(avg * 100) / 100,
+              minEurMwh: Math.round(Math.min(...priceList) * 100) / 100,
+              maxEurMwh: Math.round(Math.max(...priceList) * 100) / 100,
+              sampleCount: priceList.length,
+            });
+          }
+
+          if (monthly.length > 0) {
+            monthly.sort((a, b) => {
+              if (a.year !== b.year) return a.year - b.year;
+              return a.month - b.month;
+            });
+
+            const latestDay = today;
+            const latestDayAvg = Math.round(
+              (prices.reduce((sum, p) => sum + p.price_eur, 0) / prices.length) * 100
+            ) / 100;
+
+            const result: PriceResult = {
+              country,
+              eicCode: eicInfo.eic,
+              monthly,
+              latestDayAvg,
+              latestDayDate: latestDay,
+              annualAvg: {},
+              currency: "EUR",
+              fetchedAt: new Date().toISOString(),
+            };
+
+            console.log(`[prices] Germany: Energy-Charts fallback succeeded, latest ${latestDayAvg} EUR/MWh`);
+            cache.set(cacheKey, { data: result, fetchedAt: Date.now() });
+            return result;
+          }
+        }
+      } catch (ecErr: any) {
+        console.warn(`[prices] Germany: Energy-Charts fallback also failed — ${ecErr.message}`);
+      }
+    }
+
     // Serve stale cache rather than returning null — keeps the map populated
     // during ENTSO-E outages or transient maintenance windows.
     if (cached) {
@@ -833,6 +936,12 @@ export async function getAllCountriesPriceSummary(): Promise<CountrySummary[]> {
 }
 
 // ─── Cross-border Physical Flows (documentType A11) ─────────────────────────
+// NOTE: NordPool (Norway, Sweden, Denmark, Finland) internal borders (NO↔SE, NO↔FI, NO↔DK)
+// may return ENTSO-E error 999 (no TSO submission) because NordPool publishes flows via its own
+// API (https://www.nordpoolgroup.com) not ENTSO-E A11. However, interconnectors with Continental
+// Europe (NO↔NL via NSL2, NO↔GB via NSL) should be published via ENTSO-E A11. If these show
+// no data, it may indicate: (1) ENTSO-E hasn't received submissions from TSOs, or (2) data lag
+// (typically 24h for some TSOs). Consider https://www.nordpoolgroup.com for NordPool internal flows.
 
 const CROSS_BORDER_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -993,7 +1102,12 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
       return { value: qty, ts };
     } catch (err: any) {
       if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-        return { value: 0, ts: 0 }; // TSO hasn't submitted data — not an error
+        // TSO hasn't submitted data — log for debugging NordPool borders
+        const isNordPool = fromEic.includes("NO") || toEic.includes("NO");
+        if (isNordPool) {
+          console.log(`[ENTSOE A11] ${fromEic}→${toEic}: No TSO submission (ENTSO-E 999) — NordPool may require fallback to https://www.nordpoolgroup.com`);
+        }
+        return { value: 0, ts: 0 };
       }
       if (err.message?.includes("429") && attempt < MAX_429_RETRIES) {
         const delay = 8000 * (attempt + 1); // 8s, 16s, 24s
@@ -1121,14 +1235,14 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const skippedCount = INTERCONNECTOR_PAIRS.length - activePairs.length;
 
   const fetchStart = Date.now();
-  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=4 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
+  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=3 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
 
   const flows: CrossBorderFlow[] = [];
   let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const limit = pLimit(2); // 2 pairs at a time; each pair is sequential → max 2 concurrent ENTSO-E requests
+  const limit = pLimit(3); // 3 pairs in parallel; each pair fetches 2 directions in parallel → ~6 concurrent requests
 
   const results = await Promise.allSettled(
     activePairs.map((pair) =>
@@ -1137,18 +1251,19 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
         const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
         if (!fromEic || !toEic) return null;
 
-        // Sequential directional fetches — halves peak request rate vs. concurrent
-        const outResult = await fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd);
-        await new Promise(r => setTimeout(r, 250));
-        const inResult  = await fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd);
+        // Parallel directional fetches with 429 rate-limit recovery (exponential backoff in fetchDirectionalFlow)
+        const [outFlow, inFlow] = await Promise.allSettled([
+          fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd),
+          fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
+        ]);
 
-        const outMw = outResult.value;
-        const inMw  = inResult.value;
+        const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
+        const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
         const netMw = inMw - outMw;
 
         // Propagate the latest data timestamp from either direction
-        const outTs = outResult.ts;
-        const inTs  = inResult.ts;
+        const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
+        const inTs  = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
         const pairTs = Math.max(outTs, inTs);
         if (pairTs > maxDataTs) maxDataTs = pairTs;
 
@@ -1191,6 +1306,17 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   }
   if (bordersNoData.length > 0) {
     console.log(`[ENTSOE A11] borders NO data (error 999 or no TSO submission): ${bordersNoData.join(", ")}`);
+  }
+
+  // API response audit for frontend debugging
+  console.log(`[ENTSOE A11] Sending to client: ${flows.length} pairs total`);
+  console.log(`[ENTSOE A11] Response format check: first pair = ${flows[0] ? `${flows[0].from}→${flows[0].to} (netMw=${flows[0].netMw})` : "N/A"}`);
+  if (flows.length > 0) {
+    const nonZeroFlows = flows.filter(f => Math.abs(f.netMw) >= 10);
+    console.log(`[ENTSOE A11] Non-zero flows (|netMw| >= 10): ${nonZeroFlows.length} / ${flows.length}`);
+    if (nonZeroFlows.length > 0) {
+      console.log(`[ENTSOE A11] Sample non-zero: ${nonZeroFlows.slice(0, 5).map(f => `${f.from}→${f.to}:${f.netMw}MW`).join(", ")}`);
+    }
   }
 
   cache.set(cacheKey, { data: flows, fetchedAt: Date.now() });
