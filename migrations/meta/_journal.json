@@ -1,27 +1,5 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1742910000000,
-      "tag": "0000_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1743120000000,
-      "tag": "0001_drop_baxtel_datacentres",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1745452800000,
-      "tag": "0002_add_site_selection_reports",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }

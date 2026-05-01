@@ -2229,6 +2229,170 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     return res.json(reports);
   });
 
+  // PSE API — Polish electricity data (primary source for Poland + ENTSO-E fallback)
+  app.get("/api/pse/generation/:date", isAuthenticated, async (req, res) => {
+    try {
+      const { date } = req.params;
+      // Validate date format YYYY-MM-DD
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      const { getPolishGenerationMix } = await import("./pseData");
+      const result = await getPolishGenerationMix(date || undefined);
+      if (!result) {
+        return res.status(503).json({ error: "PSE API unavailable" });
+      }
+      res.json({
+        ...result,
+        _meta: { source: "PSE", fetchedAt: result.fetchedAt, cacheAge: "24h" },
+      });
+    } catch (err: any) {
+      console.error("[pse] /generation error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/pse/prices/:date", isAuthenticated, async (req, res) => {
+    try {
+      const { date } = req.params;
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      const { getPolishRCEPrices } = await import("./pseData");
+      const result = await getPolishRCEPrices(date || undefined);
+      if (!result) {
+        return res.status(503).json({ error: "PSE API unavailable" });
+      }
+      res.json({
+        ...result,
+        _meta: {
+          source: "PSE",
+          note: "RCE prices converted from PLN to EUR",
+          conversionRate: result.conversionRate,
+          fetchedAt: result.fetchedAt,
+        },
+      });
+    } catch (err: any) {
+      console.error("[pse] /prices error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/pse/cross-border/:date", isAuthenticated, async (req, res) => {
+    try {
+      const { date } = req.params;
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      const { getPolishCrossBorder } = await import("./pseData");
+      const result = await getPolishCrossBorder(date || undefined);
+      if (!result) {
+        return res.status(503).json({ error: "PSE API unavailable" });
+      }
+      res.json({
+        ...result,
+        _meta: { source: "PSE", note: "Positive = import, negative = export", fetchedAt: result.fetchedAt },
+      });
+    } catch (err: any) {
+      console.error("[pse] /cross-border error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/pse/demand/:date", isAuthenticated, async (req, res) => {
+    try {
+      const { date } = req.params;
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      const { getPolishDemand } = await import("./pseData");
+      const result = await getPolishDemand(date || undefined);
+      if (!result) {
+        return res.status(503).json({ error: "PSE API unavailable" });
+      }
+      res.json({
+        ...result,
+        _meta: { source: "PSE", fetchedAt: result.fetchedAt },
+      });
+    } catch (err: any) {
+      console.error("[pse] /demand error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/pse/exchange-rate", isAuthenticated, async (req, res) => {
+    try {
+      const { getPLNtoEURRate } = await import("./pseData");
+      const rate = await getPLNtoEURRate();
+      res.json({
+        pln_to_eur: Math.round(rate * 10000) / 10000,
+        timestamp: new Date().toISOString(),
+        source: "ECB or cached fallback",
+      });
+    } catch (err: any) {
+      console.error("[pse] /exchange-rate error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Energy-Charts API — German electricity data (fallback for ENTSO-E)
+  app.get("/api/energy-charts/signal", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanSignal } = await import("./energyChartsData");
+      const signal = await getGermanSignal();
+      if (!signal) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json(signal);
+    } catch (err: any) {
+      console.error("[energy-charts] /signal error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/prices", isAuthenticated, async (req, res) => {
+    try {
+      const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+      const { getGermanDayAheadPrices } = await import("./energyChartsData");
+      const prices = await getGermanDayAheadPrices(date);
+      if (!prices) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json({ date, prices });
+    } catch (err: any) {
+      console.error("[energy-charts] /prices error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/generation", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanGenerationMix } = await import("./energyChartsData");
+      const mix = await getGermanGenerationMix();
+      if (!mix) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json(mix);
+    } catch (err: any) {
+      console.error("[energy-charts] /generation error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/energy-charts/cross-border", isAuthenticated, async (req, res) => {
+    try {
+      const { getGermanCrossBorder } = await import("./energyChartsData");
+      const flows = await getGermanCrossBorder();
+      if (!flows) {
+        return res.status(503).json({ error: "Energy-Charts API unavailable" });
+      }
+      res.json({ flows });
+    } catch (err: any) {
+      console.error("[energy-charts] /cross-border error:", err.message);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Data Centre Site Selection — geospatial API layer
   registerDataCentreSiteRoutes(app);
 
