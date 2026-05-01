@@ -596,35 +596,49 @@ export default function CrossBorderFlows() {
       const flowMap = new Map<string, CrossBorderFlow>();
       for (const flow of flows) flowMap.set(`${flow.from}-${flow.to}`, flow);
 
-      // ── Comprehensive arc audit (DevTools → Console, filter "[EU arcs]") ──────
+      // ── DETAILED AUDIT: API response → coordinate matching → rendering ────────
       const coordKeys = new Set([...Object.keys(CAPITALS), ...Object.keys(CENTROIDS)]);
-      console.log(`[EU arcs] coord map has ${coordKeys.size} entries: ${[...coordKeys].sort().join(", ")}`);
-      console.log(`[EU arcs] API returned ${flows.length} pairs: ${[...flowMap.keys()].join(", ")}`);
+
+      console.group("🔍 [EU arcs] DIAGNOSTIC AUDIT");
+      console.log(`📍 Coordinate map: ${coordKeys.size} entries`, [...coordKeys].sort());
+      console.log(`📦 API response: ${flows.length} pairs`);
+      console.log("📋 Sample API pairs (first 5):", flows.slice(0, 5).map(f => `${f.from}→${f.to}`));
+      console.log("📊 ENTSO-E pair format check:", {
+        firstPair: flows[0] ? `${flows[0].from} (type: ${typeof flows[0].from})` : "no pairs",
+        exampleFormat: flows[0] ? `${flows[0].from}→${flows[0].to}` : "N/A",
+      });
 
       const rendered: string[] = [];
       const missingFlow: string[] = [];
       const missingCoord: string[] = [];
       const filtered: string[] = [];
 
+      // Create a matrix showing which borders match and why they don't
+      const auditTable: Array<{ pair: string; found: boolean; reason?: string; netMw?: number }> = [];
+
       for (const ic of INTERCONNECTORS) {
         const flow = flowMap.get(`${ic.from}-${ic.to}`) || flowMap.get(`${ic.to}-${ic.from}`);
         const fromCoord = CAPITALS[ic.from] ?? CENTROIDS[ic.from];
         const toCoord = CAPITALS[ic.to] ?? CENTROIDS[ic.to];
+        const pairLabel = `${ic.from}→${ic.to}`;
 
         if (!flow) {
-          missingFlow.push(`${ic.from}→${ic.to}`);
+          missingFlow.push(pairLabel);
+          auditTable.push({ pair: pairLabel, found: false, reason: "no API data" });
           continue;
         }
         if (!fromCoord || !toCoord) {
           const why = [
-            !fromCoord ? `${ic.from} not in coord map` : null,
-            !toCoord   ? `${ic.to} not in coord map`   : null,
-          ].filter(Boolean).join(", ");
-          missingCoord.push(`${ic.from}→${ic.to} (${why})`);
+            !fromCoord ? `${ic.from} not in coords` : null,
+            !toCoord   ? `${ic.to} not in coords`   : null,
+          ].filter(Boolean).join(" + ");
+          missingCoord.push(`${pairLabel} (${why})`);
+          auditTable.push({ pair: pairLabel, found: false, reason: `missing coords: ${why}`, netMw: flow.netMw });
           continue;
         }
         if (Math.abs(flow.netMw) < 10) {
-          filtered.push(`${ic.from}→${ic.to} (${flow.outMw}out/${flow.inMw}in net=${flow.netMw}MW)`);
+          filtered.push(`${pairLabel} [${flow.outMw}↗ / ${flow.inMw}↙ / net=${flow.netMw}MW]`);
+          auditTable.push({ pair: pairLabel, found: false, reason: `filtered: |${flow.netMw}| < 10 MW`, netMw: flow.netMw });
           continue;
         }
 
@@ -632,7 +646,8 @@ export default function CrossBorderFlows() {
         const exporterCoord = CAPITALS[exporterName] ?? CENTROIDS[exporterName] ?? fromCoord;
         const importerCoord = CAPITALS[importerName] ?? CENTROIDS[importerName] ?? toCoord;
 
-        rendered.push(`${ic.from}→${ic.to}(${flow.netMw}MW)`);
+        rendered.push(`${pairLabel}(${flow.netMw}MW)`);
+        auditTable.push({ pair: pairLabel, found: true, netMw: flow.netMw });
         arcs.push({
           originLat: exporterCoord[0], originLng: exporterCoord[1],
           destLat: importerCoord[0], destLng: importerCoord[1],
@@ -644,10 +659,16 @@ export default function CrossBorderFlows() {
         });
       }
 
-      console.log(`[EU arcs] Rendered (${rendered.length}): ${rendered.join(", ") || "none"}`);
-      if (filtered.length)     console.log(`[EU arcs] Filtered netMw<10 (${filtered.length}): ${filtered.join(", ")}`);
-      if (missingFlow.length)  console.log(`[EU arcs] No API data (${missingFlow.length}): ${missingFlow.join(", ")}`);
-      if (missingCoord.length) console.log(`[EU arcs] No coord match (${missingCoord.length}): ${missingCoord.join(", ")}`);
+      console.log(`✅ RENDERED (${rendered.length}/${INTERCONNECTORS.length}):`, rendered.length > 0 ? rendered : "none");
+      console.log(`⛔ MISSING FLOW DATA (${missingFlow.length}):`, missingFlow.length > 0 ? missingFlow : "none");
+      console.log(`🚫 MISSING COORDINATES (${missingCoord.length}):`, missingCoord.length > 0 ? missingCoord : "none");
+      console.log(`⏬ FILTERED: netMw < 10 (${filtered.length}):`, filtered.length > 0 ? filtered : "none");
+
+      console.log("📈 Full audit matrix (missing pairs details):");
+      auditTable.filter(r => !r.found).forEach(row => {
+        console.log(`  ${row.pair}: ${row.reason}${row.netMw !== undefined ? ` (netMw=${row.netMw})` : ""}`);
+      });
+      console.groupEnd();
     }
 
     // Regional/aggregate BAs — excluded to avoid overlapping summary arcs
