@@ -266,6 +266,21 @@ export default function ENTSOETransmissionMap() {
   });
   const prices = pricesResponse?.data;
 
+  // Log API response details
+  useEffect(() => {
+    if (pricesResponse) {
+      console.group("📊 [Price Map] /api/entsoe/all-prices response");
+      console.log("Meta:", pricesResponse._meta);
+      console.log("Countries:", pricesResponse.data.length);
+      console.log("Sample countries (first 5):", pricesResponse.data.slice(0, 5).map(c => ({
+        country: c.country,
+        price: c.latestMonthAvg,
+        label: c.latestMonthLabel
+      })));
+      console.groupEnd();
+    }
+  }, [pricesResponse]);
+
   const { data: geoData, isLoading: isGeoLoading, error: geoError } = useQuery<GeoJSON.FeatureCollection>({
     queryKey: ["/api/geo/europe"],
     queryFn: () => fetch("/api/geo/europe", { credentials: "include" }).then(r => {
