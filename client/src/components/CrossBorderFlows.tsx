@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -313,7 +314,8 @@ class FlowSVGLayer {
 
   private _draw() {
     for (const arc of this.arcs) {
-      if (Math.abs(arc.netMw) < 10) continue;
+      // Arc visibility is already filtered by the component, so we just render all arcs here
+      // No additional filtering needed since filtering happens in the parent component
       const relevant = this._isRelevant(arc);
       const color = mwToColorHex(arc.netMw);
       const weight = lineWeight(arc.netMw);
@@ -399,6 +401,7 @@ export default function CrossBorderFlows() {
   const [hoveredArc, setHoveredArc] = useState<FlowArc | null>(null);
   const [tooltipLatLng, setTooltipLatLng] = useState<L.LatLng | null>(null);
   const [hourOffset, setHourOffset] = useState("0");
+  const [minFlowThreshold, setMinFlowThreshold] = useState(10); // MW visibility threshold
   const [searchStatus, setSearchStatus] = useState<"loading" | "refining" | "searching" | "done" | "exhausted">("loading");
   const refinedRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -636,9 +639,9 @@ export default function CrossBorderFlows() {
           auditTable.push({ pair: pairLabel, found: false, reason: `missing coords: ${why}`, netMw: flow.netMw });
           continue;
         }
-        if (Math.abs(flow.netMw) < 10) {
+        if (Math.abs(flow.netMw) < minFlowThreshold) {
           filtered.push(`${pairLabel} [${flow.outMw}↗ / ${flow.inMw}↙ / net=${flow.netMw}MW]`);
-          auditTable.push({ pair: pairLabel, found: false, reason: `filtered: |${flow.netMw}| < 10 MW`, netMw: flow.netMw });
+          auditTable.push({ pair: pairLabel, found: false, reason: `filtered: |${flow.netMw}| < ${minFlowThreshold} MW`, netMw: flow.netMw });
           continue;
         }
 
@@ -742,7 +745,7 @@ export default function CrossBorderFlows() {
 
     flowLayerRef.current.setArcs(arcs);
     flowLayerRef.current.setSelected(selected);
-  }, [mapReady, flows, interchange]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapReady, flows, interchange, minFlowThreshold]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Rebuild label markers ────────────────────────────────────────────────────
 
@@ -921,6 +924,21 @@ export default function CrossBorderFlows() {
                 ))}
               </SelectContent>
             </Select>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md h-8 text-xs">
+              <span className="text-slate-600 font-medium shrink-0">Min flow:</span>
+              <Slider
+                value={[minFlowThreshold]}
+                onValueChange={([v]) => setMinFlowThreshold(v)}
+                min={0}
+                max={100}
+                step={5}
+                className="w-24"
+                data-testid="slider-min-flow"
+              />
+              <span className="text-slate-500 w-8 text-right">{minFlowThreshold} MW</span>
+            </div>
+
             <Button
               size="sm" variant="outline"
               onClick={() => { refetchEu(); refetchUs(); }}
