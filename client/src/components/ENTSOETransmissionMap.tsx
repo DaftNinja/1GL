@@ -629,6 +629,12 @@ export default function ENTSOETransmissionMap() {
             <span className="ml-2 text-xs text-slate-400 hidden sm:inline">— — Interconnector (width = NTC capacity)</span>
           </div>
 
+          <div className="mt-2 p-2.5 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-xs text-blue-900 leading-relaxed">
+              <span className="font-semibold">❄️ Negative prices?</span> When renewable generation exceeds demand (high wind/solar output), prices go negative. Power generators PAY to avoid shutting down, and consumers GET PAID to consume. Common in France (nuclear excess), Germany/Belgium (renewable peaks), and windy Nordic regions.
+            </p>
+          </div>
+
           <DataSourceStatus
             meta={pricesResponse?._meta}
             sourceName="ENTSO-E"
