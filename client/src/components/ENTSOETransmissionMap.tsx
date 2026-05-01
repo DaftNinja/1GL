@@ -266,6 +266,21 @@ export default function ENTSOETransmissionMap() {
   });
   const prices = pricesResponse?.data;
 
+  // Log API response details
+  useEffect(() => {
+    if (pricesResponse) {
+      console.group("📊 [Price Map] /api/entsoe/all-prices response");
+      console.log("Meta:", pricesResponse._meta);
+      console.log("Countries:", pricesResponse.data.length);
+      console.log("Sample countries (first 5):", pricesResponse.data.slice(0, 5).map(c => ({
+        country: c.country,
+        price: c.latestMonthAvg,
+        label: c.latestMonthLabel
+      })));
+      console.groupEnd();
+    }
+  }, [pricesResponse]);
+
   const { data: geoData, isLoading: isGeoLoading, error: geoError } = useQuery<GeoJSON.FeatureCollection>({
     queryKey: ["/api/geo/europe"],
     queryFn: () => fetch("/api/geo/europe", { credentials: "include" }).then(r => {
@@ -451,14 +466,22 @@ export default function ENTSOETransmissionMap() {
     for (const [country, [lat, lng]] of Object.entries(CENTROIDS)) {
       const price = priceMap.get(country) ?? null;
       const isEst = estimatedMap.get(country)?.estimated ?? false;
+      const est = estimatedMap.get(country);
       const color = priceToColor(price);
       const text = price != null ? `${isEst ? "~" : ""}€${price.toFixed(0)}` : "—";
+      const dataSource = country === "United Kingdom"
+        ? "Elexon N2EX (7-day avg, GBP→EUR)"
+        : "ENTSO-E bidding zone";
+      const tooltipText = price != null
+        ? `<strong>${country}</strong><br/>€${price.toFixed(2)}/MWh<br/><span style="font-size:9px;color:#666">${dataSource}</span>${isEst ? `<br/><span style="font-size:9px;color:#3b82f6">${est?.note}</span>` : ""}`
+        : `<strong>${country}</strong><br/><span style="color:#999">No data</span>`;
       const icon = L.divIcon({
-        html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:white;border:1.5px solid ${color};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;color:${color};white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.15);pointer-events:none;line-height:1.4">${text}</div>`,
+        html: `<div style="display:inline-block;transform:translate(-50%,-50%);background:white;border:1.5px solid ${color};border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700;color:${color};white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.15);cursor:help;line-height:1.4">${text}</div>`,
         className: "",
         iconAnchor: [0, 0],
       });
       const marker = L.marker([lat, lng], { icon, interactive: false });
+      marker.bindTooltip(tooltipText, { sticky: true, className: "leaflet-tooltip-price" });
       marker.addTo(map);
       dataLayersRef.current.push(marker);
     }
@@ -574,6 +597,9 @@ export default function ENTSOETransmissionMap() {
                 Day-ahead electricity prices{latestMonthLabel ? ` · ${latestMonthLabel}` : ""} · Interconnector capacities (NTC)
                 <span className="ml-2 text-blue-500">· Click a country to view generation by type</span>
               </p>
+              <p className="text-xs text-slate-400 mt-1">
+                <span className="font-medium text-slate-500">ℹ️ Bidding zone prices</span> (may differ from national average due to transmission congestion) · Updated hourly · Negative prices indicate excess renewable generation
+              </p>
             </div>
 
             {cheapest && mostExpensive && (
@@ -601,6 +627,12 @@ export default function ENTSOETransmissionMap() {
               </span>
             ))}
             <span className="ml-2 text-xs text-slate-400 hidden sm:inline">— — Interconnector (width = NTC capacity)</span>
+          </div>
+
+          <div className="mt-2 p-2.5 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-xs text-blue-900 leading-relaxed">
+              <span className="font-semibold">❄️ Negative prices?</span> When renewable generation exceeds demand (high wind/solar output), prices go negative. Power generators PAY to avoid shutting down, and consumers GET PAID to consume. Common in France (nuclear excess), Germany/Belgium (renewable peaks), and windy Nordic regions.
+            </p>
           </div>
 
           <DataSourceStatus
@@ -737,7 +769,7 @@ export default function ENTSOETransmissionMap() {
           )}
 
           <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-400">
-            <span>Source: ENTSO-E Transparency Platform · EU GISCO Country Boundaries (60M scale){showPowerPlants ? " · WRI Global Power Plant Database" : ""} · 24-hour cache</span>
+            <span>Prices: ENTSO-E day-ahead bidding zones (UK via Elexon N2EX) · Boundaries: EU GISCO (60M){showPowerPlants ? " · Plants: WRI Global" : ""} · Updated hourly · Negative prices indicate renewable generation excess</span>
             {hoveredCountry && (
               <span className="font-medium text-slate-600">
                 {hoveredCountry}: {priceLabel(priceMap.get(hoveredCountry) ?? null)}
