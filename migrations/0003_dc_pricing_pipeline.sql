@@ -66,3 +66,13 @@ CREATE TABLE IF NOT EXISTS "dc_pricing_discrepancies" (
   "resolved_at" timestamp,
   "created_at" timestamp DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS "data_collection_sources" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "source_name" varchar NOT NULL,
+  "source_type" varchar NOT NULL,
+  "website_url" varchar,
+  "description" text,
+  "is_active" boolean DEFAULT true,
+  "created_at" timestamp DEFAULT now()
+);
