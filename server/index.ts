@@ -7,6 +7,8 @@ import { registerAuthRoutes } from "./auth/routes";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db, pool } from "./db";
 import path from "path";
+import adminDcPricingRouter from "./routes/adminDcPricing";
+import { startScrapingScheduler } from "./dataCentreSites/scraping/scheduler";
 
 const app = express();
 const httpServer = createServer(app);
@@ -135,7 +137,11 @@ const PUBLIC_API_PATHS = [
   });
 
   registerAuthRoutes(app);
+  app.use(adminDcPricingRouter);
   await registerRoutes(httpServer, app);
+
+  // Start DC pricing scraping scheduler
+  startScrapingScheduler();
 
   // ── ENTSO-E connectivity diagnostic ──────────────────────────────────────
   // Runs once at startup: makes one real A44 request for Germany and logs the
