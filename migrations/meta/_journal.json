@@ -13,7 +13,7 @@
       "idx": 1,
       "version": "7",
       "when": 1714556400000,
-      "tag": "0003_dc_pricing_pipeline",
+      "tag": "0003_add_dc_scraping_tables",
       "breakpoints": false
     }
   ]
