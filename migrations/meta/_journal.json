@@ -1,5 +1,20 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1714556400000,
+      "tag": "0002_add_site_selection_reports",
+      "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1714556400000,
+      "tag": "0003_dc_pricing_pipeline",
+      "breakpoints": false
+    }
+  ]
 }
