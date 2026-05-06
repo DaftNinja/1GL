@@ -180,12 +180,20 @@ async function fetchEntsoe(params: Record<string, string>): Promise<any> {
     url.searchParams.set(k, v);
   }
 
+  const fetchStart = Date.now();
   const response = await fetch(url.toString(), {
     headers: { Accept: "application/xml" },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
+  const fetchTime = Date.now() - fetchStart;
 
+  const xmlStart = Date.now();
   const xml = await response.text();
+  const xmlTime = Date.now() - xmlStart;
+
+  if (fetchTime > 10000 || xmlTime > 5000) {
+    console.log(`[ENTSOE PERF] ${params.documentType || "?"} fetch=${fetchTime}ms xml=${xmlTime}ms status=${response.status}`);
+  }
 
   // Check for error acknowledgement (ENTSO-E returns XML even on 400)
   if (xml.includes("Acknowledgement_MarketDocument")) {
@@ -1088,9 +1096,12 @@ function parseFlowQuantity(doc: any): { qty: number; ts: number } {
 async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart: string, periodEnd: string): Promise<{ value: number; ts: number }> {
   const MAX_429_RETRIES = 3;
   let lastErr: any;
+  const pairLabel = `${fromEic}→${toEic}`;
+  const pairStart = Date.now();
 
   for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
     try {
+      const fetchStart = Date.now();
       const doc = await fetchEntsoe({
         documentType: "A11",
         in_Domain: toEic,
@@ -1098,32 +1109,39 @@ async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart:
         periodStart,
         periodEnd,
       });
+      const fetchTime = Date.now() - fetchStart;
       const { qty, ts } = parseFlowQuantity(doc);
+      const totalTime = Date.now() - pairStart;
+      if (totalTime > 5000) {
+        console.log(`[ENTSOE A11 SLOW] ${pairLabel}: fetch=${fetchTime}ms, parse=${totalTime - fetchTime}ms, total=${totalTime}ms`);
+      }
       return { value: qty, ts };
     } catch (err: any) {
       if (err.message?.includes("999") || err.message?.includes("No matching data")) {
         // TSO hasn't submitted data — log for debugging NordPool borders
         const isNordPool = fromEic.includes("NO") || toEic.includes("NO");
         if (isNordPool) {
-          console.log(`[ENTSOE A11] ${fromEic}→${toEic}: No TSO submission (ENTSO-E 999) — NordPool may require fallback to https://www.nordpoolgroup.com`);
+          console.log(`[ENTSOE A11] ${pairLabel}: No TSO submission (ENTSO-E 999) — NordPool may require fallback to https://www.nordpoolgroup.com`);
         }
         return { value: 0, ts: 0 };
       }
       if (err.message?.includes("429") && attempt < MAX_429_RETRIES) {
         const delay = 8000 * (attempt + 1); // 8s, 16s, 24s
+        console.log(`[ENTSOE A11 RETRY] ${pairLabel}: Got 429, sleeping ${delay}ms before retry ${attempt + 1}/${MAX_429_RETRIES}`);
         await new Promise(r => setTimeout(r, delay));
         lastErr = err;
         continue;
       }
       // Log unexpected errors once per pair (not per request)
       if (!err.message?.includes("429")) {
-        console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: ${err.message}`);
+        console.warn(`[ENTSOE A11] ${pairLabel}: ${err.message}`);
       }
       return { value: 0, ts: 0 };
     }
   }
   // All 429 retries exhausted
-  console.warn(`[ENTSOE A11] ${fromEic}→${toEic}: rate limited after ${MAX_429_RETRIES} retries`);
+  const totalTime = Date.now() - pairStart;
+  console.warn(`[ENTSOE A11 RATELIMIT] ${pairLabel}: rate limited after ${MAX_429_RETRIES} retries, total time=${totalTime}ms`);
   return { value: 0, ts: 0 };
 }
 
