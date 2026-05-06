@@ -914,15 +914,20 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
     try {
       const country = req.query.country as string;
       if (!country) return res.status(400).json({ message: "country parameter required" });
+      console.log(`[PRICES] Fetching for: ${country}`);
       const { getCountryDayAheadPrices, isEntsoeConfigured } = await import("./entsoe");
       if (!isEntsoeConfigured()) {
         return res.status(503).json({ message: "ENTSOE_API_KEY not configured", configured: false });
       }
       const data = await getCountryDayAheadPrices(country);
-      if (!data) return res.status(404).json({ message: `No ENTSO-E data available for: ${country}` });
+      if (!data) {
+        console.log(`[PRICES] No data for: ${country}`);
+        return res.status(404).json({ message: `No ENTSO-E price data available for: ${country}` });
+      }
+      console.log(`[PRICES] Returning ${data.monthly?.length || 0} months for ${country}`);
       res.json(data);
     } catch (err: any) {
-      console.error("ENTSO-E prices route error:", err);
+      console.error("[PRICES] Error:", err.message);
       res.status(500).json({ message: "Failed to fetch ENTSO-E price data", error: err.message });
     }
   });
@@ -1563,12 +1568,15 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
 
   app.get("/api/nged/generation-register", isAuthenticated, async (req, res) => {
     try {
+      console.log("[NGED-GCR] Fetching generation register...");
       const { getGenerationRegister } = await import("./ngedData");
       const data = await getGenerationRegister();
+      console.log(`[NGED-GCR] Returned ${data.generators?.length || 0} generators`);
       res.json(data);
     } catch (err: any) {
-      console.error("NGED generation register error:", err);
+      console.error("[NGED-GCR] Error:", err.message, err.code || err.status);
       const resp = ngedErrorResponse(err, "Failed to fetch NGED generation register data");
+      console.error(`[NGED-GCR] Responding with ${resp.status}: ${resp.body.message}`);
       res.status(resp.status).json(resp.body);
     }
   });
