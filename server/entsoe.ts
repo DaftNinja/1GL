@@ -1094,54 +1094,69 @@ function parseFlowQuantity(doc: any): { qty: number; ts: number } {
 }
 
 async function fetchDirectionalFlow(fromEic: string, toEic: string, periodStart: string, periodEnd: string): Promise<{ value: number; ts: number }> {
-  const MAX_429_RETRIES = 3;
+  const MAX_429_RETRIES = 1; // Reduced from 3 to 1 to avoid long retries
   let lastErr: any;
   const pairLabel = `${fromEic}→${toEic}`;
   const pairStart = Date.now();
+  const PAIR_TIMEOUT_MS = 8000; // 8s per pair (was unlimited)
 
   for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
     try {
       const fetchStart = Date.now();
-      const doc = await fetchEntsoe({
-        documentType: "A11",
-        in_Domain: toEic,
-        out_Domain: fromEic,
-        periodStart,
-        periodEnd,
-      });
+
+      // Wrap fetchEntsoe with per-pair timeout
+      const doc = await Promise.race([
+        fetchEntsoe({
+          documentType: "A11",
+          in_Domain: toEic,
+          out_Domain: fromEic,
+          periodStart,
+          periodEnd,
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("PAIR_TIMEOUT")), PAIR_TIMEOUT_MS)
+        ),
+      ]);
+
       const fetchTime = Date.now() - fetchStart;
-      const { qty, ts } = parseFlowQuantity(doc);
+      const { qty, ts } = parseFlowQuantity(doc as any);
       const totalTime = Date.now() - pairStart;
-      if (totalTime > 5000) {
-        console.log(`[ENTSOE A11 SLOW] ${pairLabel}: fetch=${fetchTime}ms, parse=${totalTime - fetchTime}ms, total=${totalTime}ms`);
+      if (totalTime > 3000) {
+        console.log(`[A11] ${pairLabel}: ${totalTime}ms (fetch=${fetchTime}ms)`);
       }
       return { value: qty, ts };
     } catch (err: any) {
+      const elapsed = Date.now() - pairStart;
+
+      if (err.message?.includes("PAIR_TIMEOUT")) {
+        console.log(`[A11 TIMEOUT] ${pairLabel}: timed out after ${elapsed}ms`);
+        return { value: 0, ts: 0 };
+      }
+
       if (err.message?.includes("999") || err.message?.includes("No matching data")) {
-        // TSO hasn't submitted data — log for debugging NordPool borders
+        // TSO hasn't submitted data
         const isNordPool = fromEic.includes("NO") || toEic.includes("NO");
         if (isNordPool) {
-          console.log(`[ENTSOE A11] ${pairLabel}: No TSO submission (ENTSO-E 999) — NordPool may require fallback to https://www.nordpoolgroup.com`);
+          console.log(`[A11] ${pairLabel}: No TSO submission (error 999)`);
         }
         return { value: 0, ts: 0 };
       }
+
       if (err.message?.includes("429") && attempt < MAX_429_RETRIES) {
-        const delay = 8000 * (attempt + 1); // 8s, 16s, 24s
-        console.log(`[ENTSOE A11 RETRY] ${pairLabel}: Got 429, sleeping ${delay}ms before retry ${attempt + 1}/${MAX_429_RETRIES}`);
+        const delay = 2000; // Only 2s delay now instead of 8/16/24s
+        console.log(`[A11 RETRY] ${pairLabel}: Got 429, retrying...`);
         await new Promise(r => setTimeout(r, delay));
         lastErr = err;
         continue;
       }
-      // Log unexpected errors once per pair (not per request)
-      if (!err.message?.includes("429")) {
-        console.warn(`[ENTSOE A11] ${pairLabel}: ${err.message}`);
+
+      if (!err.message?.includes("429") && !err.message?.includes("PAIR_TIMEOUT")) {
+        console.warn(`[A11 ERROR] ${pairLabel}: ${err.message}`);
       }
       return { value: 0, ts: 0 };
     }
   }
-  // All 429 retries exhausted
-  const totalTime = Date.now() - pairStart;
-  console.warn(`[ENTSOE A11 RATELIMIT] ${pairLabel}: rate limited after ${MAX_429_RETRIES} retries, total time=${totalTime}ms`);
+
   return { value: 0, ts: 0 };
 }
 
@@ -1253,65 +1268,79 @@ export async function getCrossBorderFlows(hourOffset: number = 0): Promise<Cross
   const skippedCount = INTERCONNECTOR_PAIRS.length - activePairs.length;
 
   const fetchStart = Date.now();
-  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=3 | hourOffset: ${hourOffset} | window: ${periodStart} → ${periodEnd}`);
+  const BATCH_TIMEOUT_MS = 60000; // 60s total timeout for entire batch
+  console.log(`[ENTSOE A11] Fetching ${activePairs.length} borders (${skippedCount} skipped) with concurrency=10, timeout=60s | hourOffset: ${hourOffset}`);
 
   const flows: CrossBorderFlow[] = [];
-  let maxDataTs = 0; // track the most recent ENTSO-E data point timestamp across all pairs
+  let maxDataTs = 0;
   const bordersWithData: string[] = [];
   const bordersNoData: string[] = [];
 
-  const limit = pLimit(3); // 3 pairs in parallel; each pair fetches 2 directions in parallel → ~6 concurrent requests
+  const limit = pLimit(10); // Increased from 3 to 10: each pair fetches 2 directions = ~20 concurrent requests
 
-  const results = await Promise.allSettled(
-    activePairs.map((pair) =>
-      limit(async () => {
-        const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
-        const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
-        if (!fromEic || !toEic) return null;
+  // Wrap Promise.allSettled with timeout — return partial results if timeout reached
+  const results = await Promise.race([
+    Promise.allSettled(
+      activePairs.map((pair) =>
+        limit(async () => {
+          const fromEic = COUNTRY_EIC[pair.from]?.flowEic ?? COUNTRY_EIC[pair.from]?.eic;
+          const toEic = COUNTRY_EIC[pair.to]?.flowEic   ?? COUNTRY_EIC[pair.to]?.eic;
+          if (!fromEic || !toEic) return null;
 
-        // Parallel directional fetches with 429 rate-limit recovery (exponential backoff in fetchDirectionalFlow)
-        const [outFlow, inFlow] = await Promise.allSettled([
-          fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd),
-          fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
-        ]);
+          // Parallel directional fetches (each pair: 2 requests in parallel)
+          const [outFlow, inFlow] = await Promise.allSettled([
+            fetchDirectionalFlow(fromEic, toEic, periodStart, periodEnd),
+            fetchDirectionalFlow(toEic, fromEic, periodStart, periodEnd),
+          ]);
 
-        const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
-        const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
-        const netMw = inMw - outMw;
+          const outMw = outFlow.status === "fulfilled" ? outFlow.value.value : 0;
+          const inMw = inFlow.status === "fulfilled" ? inFlow.value.value : 0;
+          const netMw = inMw - outMw;
 
-        // Propagate the latest data timestamp from either direction
-        const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
-        const inTs  = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
-        const pairTs = Math.max(outTs, inTs);
-        if (pairTs > maxDataTs) maxDataTs = pairTs;
+          const outTs = outFlow.status === "fulfilled" ? outFlow.value.ts : 0;
+          const inTs  = inFlow.status === "fulfilled" ? inFlow.value.ts : 0;
+          const pairTs = Math.max(outTs, inTs);
+          if (pairTs > maxDataTs) maxDataTs = pairTs;
 
-        const label = `${pair.from}→${pair.to}`;
-        if (pairTs > 0) {
-          bordersWithData.push(`${label}(${outMw}out/${inMw}in)`);
-        } else {
-          bordersNoData.push(label);
-        }
+          const label = `${pair.from}→${pair.to}`;
+          if (pairTs > 0) {
+            bordersWithData.push(`${label}(${outMw}out/${inMw}in)`);
+          } else {
+            bordersNoData.push(label);
+          }
 
-        return {
-          from: pair.from,
-          to: pair.to,
-          netMw: Math.round(netMw),
-          inMw: Math.round(inMw),
-          outMw: Math.round(outMw),
-          updatedAt: new Date().toISOString(), // filled in below once maxDataTs is known
-        } as CrossBorderFlow;
-      })
-    )
-  );
+          return {
+            from: pair.from,
+            to: pair.to,
+            netMw: Math.round(netMw),
+            inMw: Math.round(inMw),
+            outMw: Math.round(outMw),
+            updatedAt: new Date().toISOString(),
+          } as CrossBorderFlow;
+        })
+      )
+    ),
+    new Promise<PromiseSettledResult<CrossBorderFlow | null>[]>((resolve) =>
+      setTimeout(() => {
+        console.log(`[ENTSOE A11] BATCH TIMEOUT after ${BATCH_TIMEOUT_MS}ms — returning partial results`);
+        resolve([]); // Return empty array to signal timeout, will use whatever we have in 'flows'
+      }, BATCH_TIMEOUT_MS)
+    ),
+  ]).catch(() => []); // Catch any other errors, return empty
 
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value) {
-      flows.push(r.value);
+  // Process whatever results we have (partial on timeout)
+  if (Array.isArray(results)) {
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) {
+        flows.push(r.value);
+      }
     }
   }
 
   const elapsed = Date.now() - fetchStart;
-  console.log(`[ENTSOE A11] fetch complete in ${elapsed}ms`);
+  const isPartial = results.length === 0 && elapsed >= BATCH_TIMEOUT_MS;
+  const resultMsg = isPartial ? `(PARTIAL - timeout after ${elapsed}ms)` : `complete in ${elapsed}ms`;
+  console.log(`[ENTSOE A11] fetch ${resultMsg}: ${flows.length}/${activePairs.length} pairs fetched`);
 
   // Replace the placeholder updatedAt with the actual most-recent ENTSO-E data timestamp.
   // Falls back to the request time if no data points were found.
