@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { dcScrapingJobs, dcPricingSnapshots, dcPricingDiscrepancies, insertDcPricingSnapshotSchema, insertDcPricingDiscrepancySchema } from "../../shared/schema";
+import { dcScrapingJobs, dcPricingSnapshots, dcPricingDiscrepancies } from "../../shared/schema";
 import { eq, and, desc, like } from "drizzle-orm";
 import { triggerManualScrape } from "../dataCentreSites/scraping/scheduler";
 
@@ -8,15 +8,30 @@ const router = Router();
 
 // Middleware to check if user is admin
 function requireAdmin(req: Request, res: Response, next: () => void) {
-  const userEmail = (req.session as any)?.userEmail;
+  // Check Passport user first, then fall back to session
+  let userEmail = (req.user as any)?.email || (req.session as any)?.userEmail;
+
   // Allow both personal and 1GL email addresses
   if (userEmail !== "andrew.mccreath@1giglabs.com" && userEmail !== "andrew.mccreath@gmail.com") {
-    return res.status(403).json({ error: "Unauthorized" });
+    console.warn(`[Admin DC Pricing] Unauthorized access attempt. User: ${userEmail}, Path: ${req.path}`);
+    return res.status(403).json({ error: "Unauthorized - Admin access required" });
   }
   next();
 }
 
 router.use(requireAdmin);
+
+// Debug: Health check (requires auth)
+router.get("/api/admin/dc-pricing/health", async (req: Request, res: Response) => {
+  const userEmail = (req.user as any)?.email || (req.session as any)?.userEmail;
+  res.json({
+    ok: true,
+    userEmail,
+    authenticated: req.isAuthenticated(),
+    sessionUser: (req.session as any)?.userEmail,
+    passportUser: (req.user as any)?.email,
+  });
+});
 
 // GET /api/admin/dc-pricing/status
 router.get("/api/admin/dc-pricing/status", async (req: Request, res: Response) => {

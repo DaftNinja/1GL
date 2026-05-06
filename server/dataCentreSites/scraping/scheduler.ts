@@ -123,7 +123,12 @@ async function runScrapingJob(context: "scheduler" | "manual"): Promise<void> {
 }
 
 export function startScrapingScheduler(): void {
-  console.log("[DC Scraping] Scheduler started");
+  console.log("[DC Scraping] Scheduler starting...");
+
+  // Initialize targets first
+  initializeTargets()
+    .then(() => console.log("[DC Scraping] Scheduler initialization complete, ready for scraping"))
+    .catch((err) => console.error("[DC Scraping] Failed to initialize targets:", err));
 
   // Check every hour if any targets are due
   setInterval(async () => {
@@ -145,8 +150,7 @@ export function startScrapingScheduler(): void {
     }
   }, 60 * 60 * 1000); // Every hour
 
-  // Initialize targets if not present
-  initializeTargets().catch((err) => console.error("[DC Scraping] Failed to initialize targets:", err));
+  console.log("[DC Scraping] ✓ Scheduler started (hourly checks enabled)");
 }
 
 async function initializeTargets(): Promise<void> {
