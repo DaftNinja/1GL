@@ -30,20 +30,26 @@ const loginSchema = z.object({
 export function registerAuthRoutes(app: Express): void {
   app.post("/api/auth/register", async (req, res) => {
     try {
+      console.log("[REGISTER] Request body:", { ...req.body, password: "***" });
       const { email, password, firstName, lastName } = registerSchema.parse(req.body);
+      console.log("[REGISTER] Validation passed:", { email, firstName, lastName });
+
       const domain = email.split("@")[1]?.toLowerCase();
 
       if (!domain || BLOCKED_EMAIL_DOMAINS.includes(domain)) {
+        console.log("[REGISTER] Blocked domain:", domain);
         return res.status(400).json({ message: "Please use a work email address. Personal email domains are not accepted." });
       }
 
       const existing = await authStorage.getUserByEmail(email);
       if (existing) {
+        console.log("[REGISTER] Email already exists:", email);
         return res.status(409).json({ message: "An account with this email already exists." });
       }
 
       const hashedPassword = await bcrypt.hash(password, 12);
       const user = await authStorage.createUser({ email, password: hashedPassword, firstName, lastName });
+      console.log("[REGISTER] User created:", { id: user.id, email: user.email });
 
       req.logIn(user, (err) => {
         if (err) {
@@ -67,6 +73,10 @@ export function registerAuthRoutes(app: Express): void {
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.error("[REGISTER] Validation error:", err.errors);
+        const fieldName = err.errors[0]?.path.join(".") || "unknown";
+        const received = req.body[fieldName];
+        console.error(`[REGISTER] Field '${fieldName}' validation failed. Received: ${JSON.stringify(received)}`);
         return res.status(400).json({ message: err.errors[0].message });
       }
       console.error("Registration error:", err);
