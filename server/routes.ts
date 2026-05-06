@@ -1100,15 +1100,22 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
   });
 
   app.get("/api/entsoe/cross-border-flows", isAuthenticated, async (req, res) => {
+    const requestStart = Date.now();
     try {
+      console.log(`[ENTSOE] Request: /api/entsoe/cross-border-flows?hourOffset=${req.query.hourOffset || "0"}`);
       const { getCrossBorderFlows, isEntsoeConfigured } = await import("./entsoe");
       if (!isEntsoeConfigured()) {
         return res.status(503).json({ message: "ENTSOE_API_KEY not configured", configured: false });
       }
       const hourOffset = Math.max(0, Math.min(36, parseInt(req.query.hourOffset as string || "0", 10)));
+
+      console.log(`[ENTSOE] Starting getCrossBorderFlows(${hourOffset})...`);
+      const fetchStart = Date.now();
       const data = await getCrossBorderFlows(hourOffset);
+      const fetchElapsed = Date.now() - fetchStart;
+
       const nonZero = data.filter(f => f.netMw !== 0).length;
-      console.log(`[ENTSOE] cross-border-flows: ${data.length} pairs, ${nonZero} non-zero, hourOffset=${hourOffset}`);
+      console.log(`[ENTSOE] cross-border-flows complete: ${data.length} pairs, ${nonZero} non-zero, fetched in ${fetchElapsed}ms`);
       if (data.length > 0 && nonZero > 0) {
         const top3 = [...data].sort((a, b) => Math.abs(b.netMw) - Math.abs(a.netMw)).slice(0, 3);
         console.log(`[ENTSOE] top flows: ${top3.map(f => `${f.from}→${f.to} ${f.netMw}MW`).join(", ")}`);
@@ -1128,9 +1135,12 @@ CRITICAL: Ground your analysis in real market data and cite specific sources. Al
           ? "ENTSO-E API is temporarily unavailable. Showing last available data."
           : null,
       };
+      const totalElapsed = Date.now() - requestStart;
+      console.log(`[ENTSOE] Response sent in ${totalElapsed}ms total`);
       res.json({ _meta: meta, data });
     } catch (err: any) {
-      console.error("ENTSO-E cross-border flows route error:", err);
+      const totalElapsed = Date.now() - requestStart;
+      console.error(`[ENTSOE] Error after ${totalElapsed}ms:`, err.message);
       res.status(500).json({ message: "Failed to fetch cross-border flow data", error: err.message });
     }
   });

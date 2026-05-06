@@ -49,10 +49,20 @@ app.use((req, res, next) => {
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
+  // Warn if request takes >30s
+  const slowRequestTimeout = setTimeout(() => {
+    const elapsed = Date.now() - start;
+    console.warn(`[SLOW_REQUEST] ${req.method} ${path} still pending after ${elapsed}ms`);
+  }, 30000);
+
   res.on("finish", () => {
+    clearTimeout(slowRequestTimeout);
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (duration > 10000) {
+        logLine = `[SLOW_API] ${logLine}`;
+      }
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
