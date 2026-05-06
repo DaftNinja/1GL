@@ -167,36 +167,50 @@ export function registerAuthRoutes(app: Express): void {
 
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
+      console.log("[FORGOT-PASSWORD] Request received:", { email: req.body.email });
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      console.log("[FORGOT-PASSWORD] Email validation passed:", email);
+
       const user = await authStorage.getUserByEmail(email);
+      console.log("[FORGOT-PASSWORD] User lookup:", user ? "FOUND" : "NOT_FOUND");
 
       if (!user) {
         return res.json({ message: "If that address is registered, you'll receive a reset link shortly." });
       }
 
+      console.log("[FORGOT-PASSWORD] Deleting expired tokens...");
       await authStorage.deleteExpiredPasswordResetTokens();
 
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      console.log("[FORGOT-PASSWORD] Creating reset token, expires:", expiresAt);
       await authStorage.createPasswordResetToken(user.id, token, expiresAt);
 
       const protocol = req.headers["x-forwarded-proto"] || "https";
       const host = req.headers["x-forwarded-host"] || req.headers.host;
       const resetUrl = `${protocol}://${host}/reset-password?token=${token}`;
+      console.log("[FORGOT-PASSWORD] Reset URL:", resetUrl);
 
+      console.log("[FORGOT-PASSWORD] Sending email to:", user.email);
       await sendPasswordResetEmail(user.email, resetUrl);
+      console.log("[FORGOT-PASSWORD] Email sent successfully");
 
       res.json({ message: "If that address is registered, you'll receive a reset link shortly." });
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.error("[FORGOT-PASSWORD] Email validation failed");
         return res.status(400).json({ message: "Please enter a valid email address." });
       }
       const msg = err instanceof Error ? err.message : String(err);
+      console.error("[FORGOT-PASSWORD] Error:", {
+        message: msg,
+        isEmailError: msg.includes("Email not configured") || msg.includes("SMTP"),
+        fullError: err,
+      });
       if (msg.includes("Email not configured") || msg.includes("SMTP")) {
-        console.error("Forgot password SMTP not configured:", msg);
+        console.error("[FORGOT-PASSWORD] SMTP not configured");
         return res.status(503).json({ message: "Password reset is not available — email delivery is not configured. Please contact support." });
       }
-      console.error("[SMTP] Password reset email failed:", (err as any)?.code, msg, (err as any)?.response);
       res.status(500).json({ message: "Failed to send reset email. Please try again." });
     }
   });
