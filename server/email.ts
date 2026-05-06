@@ -19,15 +19,24 @@ function createTransport() {
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
-  const transport = createTransport();
-  const fromAddress = process.env.SMTP_USER;
-
   try {
-  await transport.sendMail({
-    from: `"1GigLabs" <${fromAddress}>`,
-    to: toEmail,
-    subject: "Reset your 1GigLabs password",
-    html: `
+    console.log("[SMTP] Initializing transport...");
+    const host = process.env.SMTP_HOST;
+    const port = process.env.SMTP_PORT;
+    const user = process.env.SMTP_USER;
+    console.log("[SMTP] Config:", { host, port, user: user ? "***" : "NOT_SET" });
+
+    const transport = createTransport();
+    const fromAddress = process.env.SMTP_USER;
+
+    console.log("[SMTP] Sending password reset email to:", toEmail);
+    console.log("[SMTP] From address:", fromAddress);
+
+    const result = await transport.sendMail({
+      from: `"1GigLabs" <${fromAddress}>`,
+      to: toEmail,
+      subject: "Reset your 1GigLabs password",
+      html: `
       <!DOCTYPE html>
       <html>
         <body style="font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 40px 20px;">
@@ -50,15 +59,21 @@ export async function sendPasswordResetEmail(toEmail: string, resetUrl: string):
         </body>
       </html>
     `,
-    text: `Reset your 1GigLabs password\n\nClick this link to reset your password (expires in 1 hour):\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
-  });
+      text: `Reset your 1GigLabs password\n\nClick this link to reset your password (expires in 1 hour):\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
+    });
+    console.log("[SMTP] Email sent successfully:", { messageId: result.messageId, response: result.response });
   } catch (err: any) {
-    console.error("[email] SMTP send failed:", {
+    console.error("[SMTP] Password reset email failed:", {
       message: err.message,
       code: err.code,
-      response: err.response,
+      errno: err.errno,
+      syscall: err.syscall,
       responseCode: err.responseCode,
+      response: err.response,
       command: err.command,
+      rejected: err.rejected,
+      rejectedRecipients: err.rejectedRecipients,
+      stack: err.stack?.split('\n').slice(0, 3).join(' '),
     });
     throw err;
   }
