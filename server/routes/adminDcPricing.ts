@@ -9,7 +9,8 @@ const router = Router();
 // Middleware to check if user is admin
 function requireAdmin(req: Request, res: Response, next: () => void) {
   const userEmail = (req.session as any)?.userEmail;
-  if (userEmail !== "andrew.mccreath@1giglabs.com") {
+  // Allow both personal and 1GL email addresses
+  if (userEmail !== "andrew.mccreath@1giglabs.com" && userEmail !== "andrew.mccreath@gmail.com") {
     return res.status(403).json({ error: "Unauthorized" });
   }
   next();
