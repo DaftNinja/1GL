@@ -536,9 +536,23 @@ Return JSON only — location and region MUST be within ${target.country}:
   const parsed = siteAnalysisOutputSchema.safeParse(raw);
   if (!parsed.success) return [];
 
-  const snapshot: SiteRecommendation["liveDataSnapshot"] = liveData.entsoe
-    ? { dataFetchedAt: new Date().toISOString() }
-    : undefined;
+  // Fetch live grid data to populate liveDataSnapshot with price trends
+  let snapshot: SiteRecommendation["liveDataSnapshot"] = undefined;
+  if (liveData.entsoe) {
+    try {
+      const { getGridAnalysis } = await import("./dataCentreSites/entsoeGrid");
+      const gridData = await getGridAnalysis(target.country, target.region);
+      snapshot = {
+        currentPriceMWh: gridData.currentPriceMWh,
+        priceTrendMonthly: gridData.priceTrendMonthly,
+        priceCurrency: gridData.priceCurrency,
+        renewableSharePercent: gridData.renewableSharePercent,
+        dataFetchedAt: new Date().toISOString(),
+      };
+    } catch {
+      snapshot = { dataFetchedAt: new Date().toISOString() };
+    }
+  }
 
   return parsed.data.sites.slice(0, 2).map((site) => ({
     ...site,

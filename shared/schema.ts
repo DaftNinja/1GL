@@ -538,6 +538,12 @@ export const siteRecommendationSchema = z.object({
   recommendation: z.string(),
   liveDataSnapshot: z.object({
     currentPriceMWh: z.number().optional(),
+    priceTrendMonthly: z.array(z.object({
+      year: z.number(),
+      month: z.number(),
+      avgEurMwh: z.number(),
+    })).optional(),
+    priceCurrency: z.string().optional(),
     renewableSharePercent: z.number().optional(),
     dominantFuel: z.string().optional(),
     dataFetchedAt: z.string().optional(),

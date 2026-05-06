@@ -188,6 +188,8 @@ export interface GridAnalysisResult {
   region?: string;
   dataAvailable: boolean;
   currentPriceMWh?: number;
+  priceTrendMonthly?: Array<{ year: number; month: number; avgEurMwh: number }>;
+  priceCurrency?: string;
   renewableSharePercent?: number;
   generationMix?: Array<{ fuelType: string; avgMw: number }>;
   substations: SiteFeature[];   // GeoJSON point features for map overlay

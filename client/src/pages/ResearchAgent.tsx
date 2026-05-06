@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { GIGLABS_COUNTRIES } from "@shared/schema";
 import type { SiteSelectionContent, SiteRecommendation, AgentStep } from "@shared/schema";
+import { DcPricingPanel } from "@/components/DcPricingPanel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -210,6 +211,13 @@ function SiteCard({ site, highlighted }: { site: SiteRecommendation; highlighted
               <span>Avg PUE: {site.averagePUE.toFixed(2)}</span>
               <span>·</span>
               <span>{site.coolingAdvantage}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <DcPricingPanel
+                country={site.country}
+                gridPriceMwh={site.liveDataSnapshot?.currentPriceMWh ?? site.estimatedPriceMWh}
+                priceTrendMonthly={site.liveDataSnapshot?.priceTrendMonthly}
+              />
             </div>
           </div>
         )}
