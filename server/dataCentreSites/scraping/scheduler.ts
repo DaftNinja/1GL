@@ -1,6 +1,6 @@
 import { db } from "../../db";
 import { dcScrapingTargets, dcScrapingJobs, dcPricingSnapshots } from "../../../shared/schema";
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, desc } from "drizzle-orm";
 import { fetchPage } from "./scraperService";
 import { parseHtml } from "./parser";
 import { SCRAPING_TARGETS } from "./targets";
@@ -188,6 +188,6 @@ async function initializeTargets(): Promise<void> {
 
 export async function triggerManualScrape(): Promise<string> {
   await runScrapingJob("manual");
-  const jobs = await db.select().from(dcScrapingJobs).orderBy((t) => t.startedAt);
-  return jobs[jobs.length - 1]?.id || "unknown";
+  const jobs = await db.select().from(dcScrapingJobs).orderBy(desc(dcScrapingJobs.startedAt));
+  return jobs[0]?.id || "unknown";
 }
