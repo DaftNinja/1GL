@@ -479,4 +479,25 @@ export function registerDataCentreSiteRoutes(app: Express): void {
       });
     },
   );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/data-centre-sites/dc-pricing/:country
+  // Returns curated DC operator pricing with regional averages + callouts
+  // ─────────────────────────────────────────────────────────────────────────
+  app.get(
+    "/api/data-centre-sites/dc-pricing/:country",
+    isAuthenticated,
+    async (req: Request, res: Response) => {
+      const country = decodeURIComponent(req.params.country);
+      const { getDcPricing } = await import("./dcPricing");
+
+      const pricing = getDcPricing(country);
+      res.json({
+        country,
+        entries: pricing,
+        available: pricing.length > 0,
+        vintage: pricing.length > 0 ? pricing[0].vintage : null,
+      });
+    },
+  );
 }

@@ -105,6 +105,8 @@ export async function getGridAnalysis(
       region,
       dataAvailable,
       currentPriceMWh:       prices?.latestDayAvg ?? undefined,
+      priceTrendMonthly:     prices?.monthly?.map((m) => ({ year: m.year, month: m.month, avgEurMwh: m.avgEurMwh })) ?? undefined,
+      priceCurrency:         prices?.currency ?? "EUR",
       renewableSharePercent: gen?.renewableSharePct ?? undefined,
       generationMix:         gen?.fuels.slice(0, 10).map((f) => ({ fuelType: f.fuelType, avgMw: f.avgMw })) ?? undefined,
       substations: subFeatures,
