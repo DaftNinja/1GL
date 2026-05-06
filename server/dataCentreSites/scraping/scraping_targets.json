@@ -1,0 +1,652 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated": "2026-05-06T14:55:00Z",
+    "totalOperators": 32,
+    "categorizedBy": "region",
+    "testDate": "2026-05-06",
+    "lastUpdated": "2026-05-06"
+  },
+  "operators": {
+    "major": [
+      {
+        "id": 1,
+        "operatorName": "Equinix",
+        "website": "equinix.com",
+        "region": "Global",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.equinix.com/data-centers/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": true,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Redirects (301) to https, accessible. Capacity data on main site. Pricing requires contacting sales.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 2,
+        "operatorName": "Digital Realty",
+        "website": "digitalrealty.com",
+        "region": "Global",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.digitalrealty.com/data-centers",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Facility list available. Pricing and capacity require contacting sales team.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 3,
+        "operatorName": "Interxion",
+        "website": "interxion.com",
+        "region": "Europe",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.interxion.com/en/data-centres",
+        "httpStatus": "TIMEOUT",
+        "accessibility": "timeout",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Site timeout during testing. Facility list publicly available when accessible. Pricing requires quote request.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 4,
+        "operatorName": "Iron Mountain",
+        "website": "ironmountain.com",
+        "region": "Global",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.ironmountain.com/data-centers",
+        "httpStatus": "429",
+        "accessibility": "rate_limited",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Rate limiting detected (429). Use ScraperAPI with delay. Facility list available. No public pricing.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 5,
+        "operatorName": "Cologix",
+        "website": "cologix.com",
+        "region": "North America",
+        "countries": ["Canada", "USA"],
+        "pricingPageUrl": "https://cologix.com/data-centers/",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Facility list public. Pricing requires custom quote.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 6,
+        "operatorName": "Lumen",
+        "website": "lumen.com",
+        "region": "Global",
+        "countries": ["USA"],
+        "pricingPageUrl": "https://www.lumen.com/en-us/business/enterprise/data-centers.html",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Large conglomerate, facility list available. Pricing requires contacting sales.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 7,
+        "operatorName": "Rackspace",
+        "website": "rackspace.com",
+        "region": "Global",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.rackspace.com/data-centers",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Managed services provider, facility list public. No public pricing.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 8,
+        "operatorName": "Colt",
+        "website": "colt.net",
+        "region": "Europe",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.colt.net/en/colocation-data-centre",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "European telecom provider, facility list available. Pricing requires RFQ.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 9,
+        "operatorName": "Zenlayer",
+        "website": "zenlayer.com",
+        "region": "Global",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://www.zenlayer.com/locations",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Global edge provider, location list public. Pricing varies by service.",
+        "frequency": "monthly",
+        "priority": "medium"
+      }
+    ],
+    "nordics_benelux": [
+      {
+        "id": 10,
+        "operatorName": "Verne Global",
+        "website": "verneglobal.com",
+        "region": "Iceland",
+        "countries": ["Iceland"],
+        "pricingPageUrl": "https://www.verneglobal.com/data-centre/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": true,
+          "pricePerKwh": true,
+          "facilityList": true,
+          "pueRating": true,
+          "occupancyPercent": false
+        },
+        "notes": "EXCELLENT: Homepage displays €/kWh pricing, MW capacity, PUE 1.13. Renewable energy 100%. Contact form for detailed RFQ.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 11,
+        "operatorName": "Green Mountain",
+        "website": "greenmountain.no",
+        "region": "Norway",
+        "countries": ["Norway"],
+        "pricingPageUrl": "https://greenmountain.no/data-centre/",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": true,
+          "pricePerKwh": true,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "GOOD: Capacity (MW) on homepage. Pricing available via contact form. Renewable power highlighted.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 12,
+        "operatorName": "EvoSwitch",
+        "website": "evoswitch.com",
+        "region": "Netherlands",
+        "countries": ["Netherlands"],
+        "pricingPageUrl": "https://www.evoswitch.com/en/locations",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Location list public (Amsterdam, Zwolle). Pricing requires custom quote.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 13,
+        "operatorName": "NorthC",
+        "website": "northc.se",
+        "region": "Sweden",
+        "countries": ["Sweden"],
+        "pricingPageUrl": "https://www.northc.se/en/data-centres/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Nordic operator, facility list available. Pricing requires RFQ.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 14,
+        "operatorName": "Echelon",
+        "website": "echelon.nl",
+        "region": "Netherlands",
+        "countries": ["Netherlands"],
+        "pricingPageUrl": "https://echelon.nl/data-centres/",
+        "httpStatus": "TIMEOUT",
+        "accessibility": "timeout",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Site timeout during testing. Facility list includes Amsterdam and Zwolle. Consider quarterly schedule.",
+        "frequency": "quarterly",
+        "priority": "low"
+      },
+      {
+        "id": 15,
+        "operatorName": "atNorth",
+        "website": "atnorth.com",
+        "region": "Iceland",
+        "countries": ["Iceland"],
+        "pricingPageUrl": "https://atnorth.com/data-center/",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Icelandic operator, renewable power focused. Facility info available, pricing on request.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 16,
+        "operatorName": "DigiPlex",
+        "website": "digiplex.com",
+        "region": "Nordic",
+        "countries": ["Sweden", "Norway", "Finland"],
+        "pricingPageUrl": "https://www.digiplex.com/en/locations/",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Nordic regional operator, multiple locations. Facility list public.",
+        "frequency": "monthly",
+        "priority": "medium"
+      }
+    ],
+    "germany": [
+      {
+        "id": 17,
+        "operatorName": "e-Shelter",
+        "website": "e-shelter.de",
+        "region": "Germany",
+        "countries": ["Germany"],
+        "pricingPageUrl": "https://www.e-shelter.de/data-center/",
+        "httpStatus": "TIMEOUT",
+        "accessibility": "timeout",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "German operator (Frankfurt, Berlin), site timeout. Facility list available when accessible.",
+        "frequency": "quarterly",
+        "priority": "low"
+      },
+      {
+        "id": 18,
+        "operatorName": "QTS",
+        "website": "qtsdatacenters.com",
+        "region": "Germany",
+        "countries": ["Germany"],
+        "pricingPageUrl": "https://www.qtsdatacenters.com/locations",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": true,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Capacity (MW) available for Frankfurt location. Pricing requires quote.",
+        "frequency": "monthly",
+        "priority": "medium"
+      }
+    ],
+    "france": [
+      {
+        "id": 19,
+        "operatorName": "Telehouse",
+        "website": "telehouse.net",
+        "region": "France",
+        "countries": ["France"],
+        "pricingPageUrl": "https://www.telehouse.net/en/locations",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "European provider, facility list includes Paris. Pricing requires RFQ.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 20,
+        "operatorName": "Scaleway",
+        "website": "scaleway.com",
+        "region": "France",
+        "countries": ["France"],
+        "pricingPageUrl": "https://www.scaleway.com/en/locations/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Cloud provider (Iliad group), availability zones listed. Pricing public but varies by service tier.",
+        "frequency": "monthly",
+        "priority": "medium"
+      },
+      {
+        "id": 21,
+        "operatorName": "OVHcloud",
+        "website": "ovhcloud.com",
+        "region": "France",
+        "countries": ["France"],
+        "pricingPageUrl": "https://www.ovhcloud.com/en/bare-metal/locations/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Large French cloud provider, bare metal pricing public but varies. Facility list available.",
+        "frequency": "monthly",
+        "priority": "medium"
+      }
+    ],
+    "spain_portugal": [
+      {
+        "id": 22,
+        "operatorName": "Solucom",
+        "website": "solucom.com",
+        "region": "Spain",
+        "countries": ["Spain"],
+        "pricingPageUrl": "https://www.solucom.com/data-center/",
+        "httpStatus": "200",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Spanish operator (Madrid), facility info available. Pricing by custom quote.",
+        "frequency": "quarterly",
+        "priority": "low"
+      },
+      {
+        "id": 23,
+        "operatorName": "Nuovamacom",
+        "website": "nuovamacom.com",
+        "region": "Spain",
+        "countries": ["Spain"],
+        "pricingPageUrl": "https://www.nuovamacom.com/data-centers/",
+        "httpStatus": "TIMEOUT",
+        "accessibility": "timeout",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Spanish operator (Barcelona), site timeout. Consider quarterly schedule.",
+        "frequency": "quarterly",
+        "priority": "low"
+      }
+    ],
+    "poland": [
+      {
+        "id": 24,
+        "operatorName": "AtlaNet",
+        "website": "atlas.pl",
+        "region": "Poland",
+        "countries": ["Poland"],
+        "pricingPageUrl": "https://www.atlas.pl/data-center/",
+        "httpStatus": "302",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Polish operator (Warsaw), facility info available. Pricing by RFQ.",
+        "frequency": "quarterly",
+        "priority": "low"
+      }
+    ],
+    "uk_ireland": [
+      {
+        "id": 25,
+        "operatorName": "Kao Data",
+        "website": "kaodata.com",
+        "region": "UK",
+        "countries": ["UK"],
+        "pricingPageUrl": "https://www.kaodata.com/data-centre/",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": true,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": true,
+          "occupancyPercent": false
+        },
+        "notes": "GOOD: UK operator (London), power metrics (PUE) and capacity on site. Pricing requires quote.",
+        "frequency": "monthly",
+        "priority": "high"
+      },
+      {
+        "id": 26,
+        "operatorName": "CenturyLink",
+        "website": "centurylink.com",
+        "region": "UK",
+        "countries": ["UK"],
+        "pricingPageUrl": "https://www.centurylink.com/business/enterprise/data-centers.html",
+        "httpStatus": "301",
+        "accessibility": "accessible",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "Legacy operator (now Lumen), facility list available. Pricing by RFQ.",
+        "frequency": "monthly",
+        "priority": "medium"
+      }
+    ],
+    "legacy": [
+      {
+        "id": 27,
+        "operatorName": "TeleCity",
+        "website": "telecitygroup.com",
+        "region": "Archive",
+        "countries": ["Multi"],
+        "pricingPageUrl": "https://web.archive.org/web/20230101000000*/telecitygroup.com/",
+        "httpStatus": "200",
+        "accessibility": "archive_only",
+        "blockedByRobots": false,
+        "requiresAuth": false,
+        "scrapeable": {
+          "capacityMw": false,
+          "pricePerKwh": false,
+          "facilityList": true,
+          "pueRating": false,
+          "occupancyPercent": false
+        },
+        "notes": "HISTORICAL: Company acquired by Digital Realty. Archive.org only. Use for historical pricing comparison.",
+        "frequency": "quarterly",
+        "priority": "low"
+      }
+    ]
+  },
+  "summary": {
+    "total": 27,
+    "byAccessibility": {
+      "accessible": 20,
+      "timeout": 4,
+      "rate_limited": 1,
+      "archive_only": 1,
+      "blocked": 0
+    },
+    "byScrapableFields": {
+      "pricing_available": 2,
+      "capacity_available": 6,
+      "facility_list_only": 15,
+      "manual_entry_only": 4
+    },
+    "byPriority": {
+      "high": 6,
+      "medium": 15,
+      "low": 6
+    },
+    "recommendations": [
+      "Verne Global & Green Mountain: HIGHEST PRIORITY — pricing + capacity publicly displayed",
+      "Kao Data & Equinix: HIGH PRIORITY — capacity/PUE metrics available",
+      "Timeouts (Interxion, Echelon, e-Shelter, Nuovamacom): Use ScraperAPI with longer timeout or quarterly schedule",
+      "Rate Limited (Iron Mountain): Implement 5-10s delay between requests or use residential proxy pool",
+      "Regional operators (Nordic, Spain, Poland): Mostly manual entry required — pricing not published online",
+      "OVHcloud pricing: Publicly listed but per-service — requires parsing multiple SKU tiers",
+      "Legacy (TeleCity): Historical archive only — use for year-over-year comparison"
+    ]
+  }
+}
