@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ComposedChart, Line, ReferenceArea, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
-import type { DataCentrePricing } from "@shared/dcPricing";
 
 interface MonthlyPrice {
   year: number;
@@ -16,7 +15,7 @@ interface DcPricingPanelProps {
 }
 
 export function DcPricingPanel({ country, gridPriceMwh, priceTrendMonthly }: DcPricingPanelProps) {
-  const [dcPricing, setDcPricing] = useState<DataCentrePricing[] | null>(null);
+  const [dcPricing, setDcPricing] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,15 +126,15 @@ export function DcPricingPanel({ country, gridPriceMwh, priceTrendMonthly }: DcP
                 tick={{ fontSize: 10 }}
                 interval={Math.max(0, Math.floor(chartData.length / 6))}
               />
-              <YAxis tick={{ fontSize: 10 }} domain="dataMin - 5" />
+              <YAxis tick={{ fontSize: 10 }} />
               <Tooltip
                 contentStyle={{ fontSize: "11px", borderRadius: "4px" }}
                 formatter={(value: any) => `€${value.toFixed(0)}/MWh`}
               />
               <Legend wrapperStyle={{ fontSize: "10px" }} />
               <ReferenceArea
-                dataKey="dcMin"
-                shape="dcMax"
+                y1="dcMin"
+                y2="dcMax"
                 fill="#dbeafe"
                 fillOpacity={0.3}
                 name="DC provider band"

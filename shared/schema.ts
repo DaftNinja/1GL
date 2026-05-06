@@ -1,4 +1,4 @@
-import { pgTable, text, serial, jsonb, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, jsonb, timestamp, doublePrecision, uuid, varchar, integer, numeric, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -573,5 +573,89 @@ export type SiteSelectionRequest = z.infer<typeof siteSelectionRequestSchema>;
 export type SiteRecommendation = z.infer<typeof siteRecommendationSchema>;
 export type SiteSelectionContent = z.infer<typeof siteSelectionContentSchema>;
 export type AgentStep = z.infer<typeof agentStepSchema>;
+
+// === DC PRICING PIPELINE ===
+export const dcScrapingTargets = pgTable("dc_scraping_targets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  operatorName: varchar("operator_name").notNull(),
+  website: varchar("website").notNull(),
+  scrapingUrl: varchar("scraping_url").notNull(),
+  region: varchar("region"),
+  country: varchar("country"),
+  dataType: varchar("data_type").notNull(),
+  extractionHints: jsonb("extraction_hints"),
+  parserType: varchar("parser_type").default("html"),
+  frequency: varchar("frequency").default("monthly"),
+  isActive: boolean("is_active").default(true),
+  lastScrapedAt: timestamp("last_scraped_at"),
+  nextScheduledAt: timestamp("next_scheduled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dcPricingSnapshots = pgTable("dc_pricing_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  targetId: uuid("target_id"),
+  operatorName: varchar("operator_name").notNull(),
+  region: varchar("region"),
+  country: varchar("country"),
+  pricePerKwh: numeric("price_per_kwh", { precision: 6, scale: 4 }),
+  pricePerRackMonth: numeric("price_per_rack_month", { precision: 8, scale: 2 }),
+  capacityMw: numeric("capacity_mw", { precision: 8, scale: 2 }),
+  occupancyPercent: numeric("occupancy_percent", { precision: 5, scale: 2 }),
+  pueRating: numeric("pue_rating", { precision: 4, scale: 2 }),
+  rawExtractedText: text("raw_extracted_text"),
+  dataSource: varchar("data_source").notNull(),
+  collectionMethod: varchar("collection_method").default("scrape"),
+  confidence: varchar("confidence").default("medium"),
+  snapshotDate: timestamp("snapshot_date").defaultNow(),
+  notes: text("notes"),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dcScrapingJobs = pgTable("dc_scraping_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobType: varchar("job_type").default("monthly"),
+  triggeredBy: varchar("triggered_by").default("scheduler"),
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  targetsTotal: integer("targets_total").default(0),
+  targetsSuccess: integer("targets_success").default(0),
+  targetsFailed: integer("targets_failed").default(0),
+  recordsSaved: integer("records_saved").default(0),
+  status: varchar("status").default("running"),
+  errorSummary: text("error_summary"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const dcPricingDiscrepancies = pgTable("dc_pricing_discrepancies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  operatorName: varchar("operator_name").notNull(),
+  region: varchar("region"),
+  country: varchar("country"),
+  field: varchar("field").notNull(),
+  sourceA: jsonb("source_a").notNull(),
+  sourceB: jsonb("source_b").notNull(),
+  spreadPercent: numeric("spread_percent", { precision: 6, scale: 2 }),
+  status: varchar("status").default("open"),
+  resolvedBy: varchar("resolved_by"),
+  resolutionNote: text("resolution_note"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDcScrapingTargetSchema = createInsertSchema(dcScrapingTargets).omit({ id: true, createdAt: true });
+export const insertDcPricingSnapshotSchema = createInsertSchema(dcPricingSnapshots).omit({ id: true, createdAt: true });
+export const insertDcScrapingJobSchema = createInsertSchema(dcScrapingJobs).omit({ id: true, createdAt: true });
+export const insertDcPricingDiscrepancySchema = createInsertSchema(dcPricingDiscrepancies).omit({ id: true, createdAt: true });
+
+export type DcScrapingTarget = typeof dcScrapingTargets.$inferSelect;
+export type InsertDcScrapingTarget = z.infer<typeof insertDcScrapingTargetSchema>;
+export type DcPricingSnapshot = typeof dcPricingSnapshots.$inferSelect;
+export type InsertDcPricingSnapshot = z.infer<typeof insertDcPricingSnapshotSchema>;
+export type DcScrapingJob = typeof dcScrapingJobs.$inferSelect;
+export type InsertDcScrapingJob = z.infer<typeof insertDcScrapingJobSchema>;
+export type DcPricingDiscrepancy = typeof dcPricingDiscrepancies.$inferSelect;
+export type InsertDcPricingDiscrepancy = z.infer<typeof insertDcPricingDiscrepancySchema>;
 
 export * from "./models/chat";

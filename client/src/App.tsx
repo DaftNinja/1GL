@@ -11,6 +11,7 @@ import Methodology from "@/pages/Methodology";
 import AuditLogs from "@/pages/AuditLogs";
 import PowerInfrastructure from "@/pages/PowerInfrastructure";
 import ResearchAgent from "@/pages/ResearchAgent";
+import { AdminDcPricing } from "@/pages/AdminDcPricing";
 import { Loader2 } from "lucide-react";
 import { IframeStorageGate } from "@/components/IframeStorageGate";
 
@@ -30,6 +31,7 @@ function AuthenticatedRouter() {
       <Route path="/research-agent" component={ResearchAgent} />
       <Route path="/methodology" component={Methodology} />
       <Route path="/audit-logs" component={AuditLogs} />
+      <Route path="/admin/dc-pricing" component={AdminDcPricing} />
       <Route component={NotFound} />
     </Switch>
   );
