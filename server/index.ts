@@ -1,4 +1,9 @@
-import express, { type Request, Response, NextFunction } from "express";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+import dcMarketRouter from "./routes/dc-market";import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -120,6 +125,12 @@ const PUBLIC_API_PATHS = [
   "/auth/user",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/dc-market/overview",           // added Phase2
+  "/dc-market/operators",          // added Phase2
+  "/dc-market/regions",            // added Phase2
+  "/dc-market/facilities",         // added Phase2
+  "/dc-market/scrape-history",     // added Phase2
+  "/dc-market/facilities-map",
 ];
 
 (async () => {
@@ -137,11 +148,13 @@ const PUBLIC_API_PATHS = [
   });
 
   registerAuthRoutes(app);
-  app.use(adminDcPricingRouter);
-  await registerRoutes(httpServer, app);
+  app.use("/api/dc-market", dcMarketRouter);
+  await registerRoutes(httpServer, app);  // Keep this one
+  app.use(adminDcPricingRouter);  // Move admin routes after registerRoutes
+
 
   // Start DC pricing scraping scheduler
-  startScrapingScheduler();
+  // startScrapingScheduler();
 
   // ── ENTSO-E connectivity diagnostic ──────────────────────────────────────
   // Runs once at startup: makes one real A44 request for Germany and logs the
@@ -204,8 +217,8 @@ const PUBLIC_API_PATHS = [
   httpServer.listen(
     {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      host: "127.0.0.1",
+      // reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

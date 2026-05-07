@@ -14,6 +14,20 @@ import ResearchAgent from "@/pages/ResearchAgent";
 import { AdminDcPricing } from "@/pages/AdminDcPricing";
 import { Loader2 } from "lucide-react";
 import { IframeStorageGate } from "@/components/IframeStorageGate";
+import DcMarket from "@/pages/DcMarket";  // add import
+
+// In AuthenticatedRouter:
+<Switch>
+  <Route path="/" component={PowerTrends} />
+  <Route path="/power-trends" component={PowerTrends} />
+  <Route path="/power-map" component={PowerInfrastructure} />
+  <Route path="/dc-market" component={DcMarket} />  {/* add this */}
+  <Route path="/research-agent" component={ResearchAgent} />
+  <Route path="/methodology" component={Methodology} />
+  <Route path="/audit-logs" component={AuditLogs} />
+  <Route path="/admin/dc-pricing" component={AdminDcPricing} />
+  <Route component={NotFound} />
+</Switch>
 
 function ResetPasswordPage() {
   const search = useSearch();
@@ -28,6 +42,7 @@ function AuthenticatedRouter() {
       <Route path="/" component={PowerTrends} />
       <Route path="/power-trends" component={PowerTrends} />
       <Route path="/power-map" component={PowerInfrastructure} />
+      <Route path="/dc-market" component={DcMarket} />  {/* ADD THIS LINE */}
       <Route path="/research-agent" component={ResearchAgent} />
       <Route path="/methodology" component={Methodology} />
       <Route path="/audit-logs" component={AuditLogs} />
