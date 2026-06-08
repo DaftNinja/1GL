@@ -660,7 +660,7 @@ export default function PowerInfrastructureMap() {
   const [mapReady, setMapReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [enabledFuels, setEnabledFuels] = useState<Set<string>>(new Set(FUEL_TYPES));
+  const [enabledFuels, setEnabledFuels] = useState<Set<string>>(new Set(["Wind", "Nuclear", "Gas", "Hydro"]));
   const [minCapacity, setMinCapacity] = useState(0);
   const [enabledCountries, setEnabledCountries] = useState<Set<string>>(
     new Set(["United Kingdom", "France", "Netherlands", "Sweden"])
