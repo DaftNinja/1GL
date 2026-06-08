@@ -658,7 +658,7 @@ export default function CrossBorderFlows() {
           fromLabel: exporterName, toLabel: importerName,
           fromKey: ic.from, toKey: ic.to,
           source: "eu",
-          extraLine: `${ic.from}→${ic.to}: ${flow.outMw.toLocaleString()} MW · ${ic.to}→${ic.from}: ${flow.inMw.toLocaleString()} MW`,
+          extraLine: `${ic.from}→${ic.to}: ${flow.outMw < 1 ? flow.outMw.toFixed(2) : flow.outMw.toLocaleString()} MW · ${ic.to}→${ic.from}: ${flow.inMw < 1 ? flow.inMw.toFixed(2) : flow.inMw.toLocaleString()} MW`,
         });
       }
 
@@ -1012,7 +1012,7 @@ export default function CrossBorderFlows() {
                   {hoveredArc.fromLabel} → {hoveredArc.toLabel}
                 </div>
                 <div className="text-lg font-black mb-1" style={{ color: mwToColorHex(hoveredArc.netMw) }}>
-                  {Math.abs(hoveredArc.netMw).toLocaleString()} MW
+                  {Math.abs(hoveredArc.netMw) < 1 ? Math.abs(hoveredArc.netMw).toFixed(2) : Math.abs(hoveredArc.netMw).toLocaleString()} MW
                 </div>
                 {hoveredArc.extraLine && (
                   <div className="text-slate-500 text-[10px]">{hoveredArc.extraLine}</div>
