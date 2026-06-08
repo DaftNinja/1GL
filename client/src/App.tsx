@@ -10,7 +10,6 @@ import AuthPage from "@/pages/AuthPage";
 import Methodology from "@/pages/Methodology";
 import AuditLogs from "@/pages/AuditLogs";
 import PowerInfrastructure from "@/pages/PowerInfrastructure";
-import ResearchAgent from "@/pages/ResearchAgent";
 import { Loader2 } from "lucide-react";
 import { IframeStorageGate } from "@/components/IframeStorageGate";
 
@@ -27,7 +26,6 @@ function AuthenticatedRouter() {
       <Route path="/" component={PowerTrends} />
       <Route path="/power-trends" component={PowerTrends} />
       <Route path="/power-map" component={PowerInfrastructure} />
-      <Route path="/research-agent" component={ResearchAgent} />
       <Route path="/methodology" component={Methodology} />
       <Route path="/audit-logs" component={AuditLogs} />
       <Route component={NotFound} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -43,6 +43,13 @@ export default function AuthPage({ initialMode, resetToken }: AuthPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const emailError = mode === "register" ? validateWorkEmail(email) : null;
 
@@ -189,7 +196,24 @@ export default function AuthPage({ initialMode, resetToken }: AuthPageProps) {
               <p className="text-slate-600 text-sm leading-relaxed">
                 If <strong>{email}</strong> is registered, you'll receive a password reset link shortly. Check your spam folder if you don't see it.
               </p>
-              <Button variant="outline" className="w-full" onClick={() => setMode("login")} data-testid="button-back-login">
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={forgotMutation.isPending || resendCooldown > 0}
+                onClick={() => {
+                  forgotMutation.mutate({ email });
+                  setResendCooldown(30);
+                }}
+                data-testid="button-resend-email"
+              >
+                {forgotMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <KeyRound className="w-4 h-4 mr-2" />
+                )}
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Email"}
+              </Button>
+              <Button variant="ghost" className="w-full text-slate-500" onClick={() => setMode("login")} data-testid="button-back-login">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Sign In
               </Button>
             </div>
