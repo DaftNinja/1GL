@@ -6,6 +6,14 @@ function createTransport() {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
+  console.log("[email] SMTP config check:", {
+    SMTP_HOST: host ? `"${host}"` : "MISSING",
+    SMTP_PORT: process.env.SMTP_PORT || "(default 465)",
+    SMTP_USER: user ? `"${user}"` : "MISSING",
+    SMTP_PASS: pass ? `set (${pass.length} chars)` : "MISSING",
+    SMTP_FROM: process.env.SMTP_FROM || "(not set)",
+  });
+
   if (!host || !user || !pass) {
     throw new Error("Email not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS environment variables.");
   }
