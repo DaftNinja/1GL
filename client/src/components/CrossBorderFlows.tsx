@@ -1014,6 +1014,11 @@ export default function CrossBorderFlows() {
                 <div className="text-lg font-black mb-1" style={{ color: mwToColorHex(hoveredArc.netMw) }}>
                   {Math.abs(hoveredArc.netMw) < 1 ? Math.abs(hoveredArc.netMw).toFixed(2) : Math.abs(hoveredArc.netMw).toLocaleString()} MW
                 </div>
+                {hoveredArc.source === "eu" && Math.abs(hoveredArc.netMw) < 1 && (
+                  <div className="text-amber-600 text-[10px] mb-1">
+                    ⚠️ Reported as zero — TSO data may be unavailable or not yet published for this interval.
+                  </div>
+                )}
                 {hoveredArc.extraLine && (
                   <div className="text-slate-500 text-[10px]">{hoveredArc.extraLine}</div>
                 )}
