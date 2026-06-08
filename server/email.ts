@@ -13,14 +13,14 @@ function createTransport() {
   return nodemailer.createTransport({
     host,
     port,
-    secure: true,
+    secure: port === 465,
     auth: { user, pass },
   });
 }
 
 export async function sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
   const transport = createTransport();
-  const fromAddress = process.env.SMTP_USER;
+  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
 
   try {
   await transport.sendMail({
