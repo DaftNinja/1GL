@@ -16,7 +16,7 @@ import { AIContentLabel } from "@/components/AIContentLabel";
 import {
   Zap, TrendingUp, MapPin, RefreshCw, Loader2,
   ChevronDown, ChevronUp, FileCode, Shield, AlertTriangle,
-  Battery, Sun, Wind, Gauge, Scale, Building2, Globe, BookOpen, Mail,
+  Battery, Sun, Wind, Gauge, Scale, Building2, Globe, BookOpen, Mail, Search,
 } from "lucide-react";
 import { Link } from "wouter";
 import html2canvas from "html2canvas";
@@ -491,6 +491,12 @@ export default function PowerTrends() {
               <button className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-testid="button-power-map">
                 <MapPin className="w-4 h-4" />
                 <span className="hidden sm:inline">Power Map</span>
+              </button>
+            </Link>
+            <Link href="/research-agent">
+              <button className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50" data-testid="button-research-agent">
+                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline">Site Finder</span>
               </button>
             </Link>
             <Link href="/methodology">

@@ -103,11 +103,7 @@ export default function GridSignalWidget({ country }: { country: string }) {
             className="flex-shrink-0 w-20 h-20 rounded-full flex flex-col items-center justify-center shadow-inner"
             style={{ backgroundColor: colors.bg, boxShadow: `0 0 0 4px ${colors.ring}40, inset 0 2px 6px rgba(0,0,0,0.06)` }}
           >
-            <span
-              className="text-2xl font-bold cursor-help"
-              style={{ color: colors.text }}
-              title={share > 100 ? "Values above 100% indicate net power export to neighbouring countries — generation exceeds domestic load." : undefined}
-            >{Math.round(share)}%</span>
+            <span className="text-2xl font-bold" style={{ color: colors.text }}>{Math.round(share)}%</span>
             <span className="text-xs font-semibold" style={{ color: colors.text }}>Renewable</span>
           </div>
           {/* Status text */}
@@ -119,9 +115,7 @@ export default function GridSignalWidget({ country }: { country: string }) {
               {colors.label} Signal
             </Badge>
             <p className="text-sm text-slate-700">
-              {share > 100
-                ? `${country}'s grid is generating more renewable energy than domestic demand — surplus is being exported to neighbouring countries.`
-                : share >= 65
+              {share >= 65
                 ? `${country}'s grid is running on mostly renewable energy right now — a good window for high-compute workloads.`
                 : share >= 40
                 ? `Mixed generation — renewables and fossil fuels both contributing significantly.`
