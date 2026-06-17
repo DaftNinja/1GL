@@ -1,0 +1,1272 @@
+{
+  "/Users/andrewmccreath/Documents/GitHub/1GL/.claude/settings.local.json": {
+    "mtime": 1778078176.1439857,
+    "ast_hash": "de8ae643f7939c70a7ce6391a8616390",
+    "semantic_hash": "de8ae643f7939c70a7ce6391a8616390"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/audio-playback-worklet.js": {
+    "mtime": 1774435453.7408192,
+    "ast_hash": "3fb75688f7b1d6d8bd79adb38063792f",
+    "semantic_hash": "3fb75688f7b1d6d8bd79adb38063792f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/audio-utils.ts": {
+    "mtime": 1774435453.7409432,
+    "ast_hash": "2fdbc267ea9f8f5600449a65df63f38b",
+    "semantic_hash": "2fdbc267ea9f8f5600449a65df63f38b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/index.ts": {
+    "mtime": 1774435453.7410657,
+    "ast_hash": "ca1bddb17c011cc7a8558bcb5de0ba6b",
+    "semantic_hash": "ca1bddb17c011cc7a8558bcb5de0ba6b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/useAudioPlayback.ts": {
+    "mtime": 1774435453.7411885,
+    "ast_hash": "effdaae203af2f42a5e343c790100f05",
+    "semantic_hash": "effdaae203af2f42a5e343c790100f05"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/useVoiceRecorder.ts": {
+    "mtime": 1774435453.7413096,
+    "ast_hash": "503828ac165c1a94b0691187eae6bc1b",
+    "semantic_hash": "503828ac165c1a94b0691187eae6bc1b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/replit_integrations/audio/useVoiceStream.ts": {
+    "mtime": 1774435453.7414422,
+    "ast_hash": "b609fe63e889d00da2876b64d17bc3f8",
+    "semantic_hash": "b609fe63e889d00da2876b64d17bc3f8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/App.tsx": {
+    "mtime": 1780913055.5821788,
+    "ast_hash": "9ffb42913dd1304fd4284142c54b0547",
+    "semantic_hash": "9ffb42913dd1304fd4284142c54b0547"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/AIContentLabel.tsx": {
+    "mtime": 1774435453.7430677,
+    "ast_hash": "01f6d523c47e51a29c016dbd6fec3a2f",
+    "semantic_hash": "01f6d523c47e51a29c016dbd6fec3a2f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/BelgiumGridChart.tsx": {
+    "mtime": 1774435453.7432675,
+    "ast_hash": "a56a7d562f412684d91cbcd91de03170",
+    "semantic_hash": "a56a7d562f412684d91cbcd91de03170"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/BrazilGridChart.tsx": {
+    "mtime": 1775384462.6701024,
+    "ast_hash": "f101d7d1d1e81aa4ade799f9597eed9a",
+    "semantic_hash": "f101d7d1d1e81aa4ade799f9597eed9a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/CrossBorderFlows.tsx": {
+    "mtime": 1780913055.582677,
+    "ast_hash": "251da7dd6b33768f2ec6591f9ad02b64",
+    "semantic_hash": "251da7dd6b33768f2ec6591f9ad02b64"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/DataSourceStatus.tsx": {
+    "mtime": 1775384462.6713526,
+    "ast_hash": "ed905bc80a372537e63f35d875c8fa63",
+    "semantic_hash": "ed905bc80a372537e63f35d875c8fa63"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/DcPricingPanel.tsx": {
+    "mtime": 1780912307.371608,
+    "ast_hash": "3fb86a5ec3d1413963c6b8851e968bcb",
+    "semantic_hash": "3fb86a5ec3d1413963c6b8851e968bcb"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/DemandForecast.tsx": {
+    "mtime": 1774435453.7436485,
+    "ast_hash": "b1be8048d6275440dc795868d64ee17b",
+    "semantic_hash": "b1be8048d6275440dc795868d64ee17b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ENTSOETransmissionMap.tsx": {
+    "mtime": 1778076684.384571,
+    "ast_hash": "35fc40a3f3c6fa5ac80d93a1d7214f00",
+    "semantic_hash": "35fc40a3f3c6fa5ac80d93a1d7214f00"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/EONETLayer.tsx": {
+    "mtime": 1775395119.847875,
+    "ast_hash": "3288fbcfd21734c05f7b7449beda9858",
+    "semantic_hash": "3288fbcfd21734c05f7b7449beda9858"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ElectricityPricesChart.tsx": {
+    "mtime": 1775384462.672606,
+    "ast_hash": "aab6f1a704c35dbbaaec5a5b0cb92a83",
+    "semantic_hash": "aab6f1a704c35dbbaaec5a5b0cb92a83"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/EmberEnergyChart.tsx": {
+    "mtime": 1774435453.7445092,
+    "ast_hash": "56ddf942c435c4365c8144aef72e0e42",
+    "semantic_hash": "56ddf942c435c4365c8144aef72e0e42"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/FinlandGridChart.tsx": {
+    "mtime": 1774435453.744841,
+    "ast_hash": "88ab6b3b4b73bd8927604920c34f81b7",
+    "semantic_hash": "88ab6b3b4b73bd8927604920c34f81b7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/Footer.tsx": {
+    "mtime": 1774435453.744982,
+    "ast_hash": "770faecd5528833799b17de29a0c3b26",
+    "semantic_hash": "770faecd5528833799b17de29a0c3b26"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/Forecast14Day.tsx": {
+    "mtime": 1774435453.7452087,
+    "ast_hash": "2eea01628449bee599a5d33da1434668",
+    "semantic_hash": "2eea01628449bee599a5d33da1434668"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/FranceGridChart.tsx": {
+    "mtime": 1774435453.745415,
+    "ast_hash": "750f5ce4eec93dd2fac83ec288b2be5b",
+    "semantic_hash": "750f5ce4eec93dd2fac83ec288b2be5b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/GermanyGridChart.tsx": {
+    "mtime": 1774435453.7456052,
+    "ast_hash": "7be5de90774f52794ba8b908fa54a767",
+    "semantic_hash": "7be5de90774f52794ba8b908fa54a767"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/GreeceGridChart.tsx": {
+    "mtime": 1774435453.745782,
+    "ast_hash": "3700db4d1f055cd3b3880302767fda5c",
+    "semantic_hash": "3700db4d1f055cd3b3880302767fda5c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/GridLosses.tsx": {
+    "mtime": 1774435453.746028,
+    "ast_hash": "4088fe1d3f620263c6bfc2c30566fb9c",
+    "semantic_hash": "4088fe1d3f620263c6bfc2c30566fb9c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/GridSignalWidget.tsx": {
+    "mtime": 1780913055.5831714,
+    "ast_hash": "5fe8916786f9bee0bad46363b5338cef",
+    "semantic_hash": "5fe8916786f9bee0bad46363b5338cef"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/IframeStorageGate.tsx": {
+    "mtime": 1775384462.6729903,
+    "ast_hash": "3ac989df41660a2886e1adc09b6ca4df",
+    "semantic_hash": "3ac989df41660a2886e1adc09b6ca4df"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/InstalledPowerChart.tsx": {
+    "mtime": 1774435453.746601,
+    "ast_hash": "8879f97734a2835635c1ab987e2ac797",
+    "semantic_hash": "8879f97734a2835635c1ab987e2ac797"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/IrelandDCConsumption.tsx": {
+    "mtime": 1774435453.746765,
+    "ast_hash": "fb908312c6f01b655069a198caf55888",
+    "semantic_hash": "fb908312c6f01b655069a198caf55888"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ItalyGridChart.tsx": {
+    "mtime": 1774435453.7469082,
+    "ast_hash": "ee8652121bd59a4cf25808bd68be121a",
+    "semantic_hash": "ee8652121bd59a4cf25808bd68be121a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/MetricCard.tsx": {
+    "mtime": 1774435453.7470422,
+    "ast_hash": "c4c29ddad2e5afde9414564aa5fdefbc",
+    "semantic_hash": "c4c29ddad2e5afde9414564aa5fdefbc"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/NGEDGenerationRegister.tsx": {
+    "mtime": 1774435453.747228,
+    "ast_hash": "50e379db5adf2a97db8af2bc8e7faeff",
+    "semantic_hash": "50e379db5adf2a97db8af2bc8e7faeff"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/NGEDNetworkLayer.tsx": {
+    "mtime": 1774435453.747387,
+    "ast_hash": "b78fffc4b214e1a0b122e9849d59ac51",
+    "semantic_hash": "b78fffc4b214e1a0b122e9849d59ac51"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/NetherlandsGridChart.tsx": {
+    "mtime": 1774435453.7475693,
+    "ast_hash": "1c53eb81c0fac6225bdabdfdc98940ec",
+    "semantic_hash": "1c53eb81c0fac6225bdabdfdc98940ec"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/NorwayGridChart.tsx": {
+    "mtime": 1774435453.747709,
+    "ast_hash": "22c2dac496f96e213b01e28c5762b612",
+    "semantic_hash": "22c2dac496f96e213b01e28c5762b612"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/OEPBenchmarkChart.tsx": {
+    "mtime": 1774435453.7479033,
+    "ast_hash": "843208e6a5ec8746496f7e5512ebafd8",
+    "semantic_hash": "843208e6a5ec8746496f7e5512ebafd8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/PolandGridChart.tsx": {
+    "mtime": 1774435453.748114,
+    "ast_hash": "6ad13bba4c8793b521efdddb22527534",
+    "semantic_hash": "6ad13bba4c8793b521efdddb22527534"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/PowerInfrastructureMap.tsx": {
+    "mtime": 1780913055.583803,
+    "ast_hash": "3c3b8789d8c825403a582d48384a68ab",
+    "semantic_hash": "3c3b8789d8c825403a582d48384a68ab"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/RegionalDemand.tsx": {
+    "mtime": 1774435453.7490861,
+    "ast_hash": "bab8f0033cd128448e42587f749402c8",
+    "semantic_hash": "bab8f0033cd128448e42587f749402c8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/RenShareChart.tsx": {
+    "mtime": 1774435453.7493246,
+    "ast_hash": "727d6a0f7c0b9788f573c977e2440549",
+    "semantic_hash": "727d6a0f7c0b9788f573c977e2440549"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/SSEPMap.tsx": {
+    "mtime": 1774435453.7495,
+    "ast_hash": "fed9abdb1eb1501b83f3744f91174cd5",
+    "semantic_hash": "fed9abdb1eb1501b83f3744f91174cd5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/SeasonalForecast.tsx": {
+    "mtime": 1774435453.7496188,
+    "ast_hash": "8b785f89cbc5d2079fc01515fcf066af",
+    "semantic_hash": "8b785f89cbc5d2079fc01515fcf066af"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/SectionHeader.tsx": {
+    "mtime": 1774435453.749742,
+    "ast_hash": "e191509fae6c39b0a0ed312b4507c8f6",
+    "semantic_hash": "e191509fae6c39b0a0ed312b4507c8f6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/SpainGridChart.tsx": {
+    "mtime": 1774435453.7499452,
+    "ast_hash": "f334d4550ee075478286eeab0239912a",
+    "semantic_hash": "f334d4550ee075478286eeab0239912a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/TECRegister.tsx": {
+    "mtime": 1774435453.75056,
+    "ast_hash": "f47f8d13ad3d298bc1e70b91a084001a",
+    "semantic_hash": "f47f8d13ad3d298bc1e70b91a084001a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/UKPNDistributionLayer.tsx": {
+    "mtime": 1774435453.7507055,
+    "ast_hash": "bae8bd5e6d6ea16f44b0ebf4e4f22408",
+    "semantic_hash": "bae8bd5e6d6ea16f44b0ebf4e4f22408"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/USGridChart.tsx": {
+    "mtime": 1775384462.6755924,
+    "ast_hash": "356af2a133f68834441f665035f75cc0",
+    "semantic_hash": "356af2a133f68834441f665035f75cc0"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/USInterchangeMap.tsx": {
+    "mtime": 1775384462.6769497,
+    "ast_hash": "34e702ccc586d19fa48253081de87653",
+    "semantic_hash": "34e702ccc586d19fa48253081de87653"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/UserMenu.tsx": {
+    "mtime": 1774435453.7508326,
+    "ast_hash": "55c0d95c6f7a3a25685e4e3122f8d655",
+    "semantic_hash": "55c0d95c6f7a3a25685e4e3122f8d655"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/accordion.tsx": {
+    "mtime": 1774435453.7510383,
+    "ast_hash": "1543fc386d0aba4654f3199bf017eaab",
+    "semantic_hash": "1543fc386d0aba4654f3199bf017eaab"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/alert-dialog.tsx": {
+    "mtime": 1774435453.7512395,
+    "ast_hash": "aca8996e4020285a789d58348abce552",
+    "semantic_hash": "aca8996e4020285a789d58348abce552"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/alert.tsx": {
+    "mtime": 1774435453.7513595,
+    "ast_hash": "48dac79c18e0c3ff687c320c6fcf1590",
+    "semantic_hash": "48dac79c18e0c3ff687c320c6fcf1590"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/aspect-ratio.tsx": {
+    "mtime": 1774435453.7514725,
+    "ast_hash": "ea9c6ff6c2931b5089972bfba3fa5c1f",
+    "semantic_hash": "ea9c6ff6c2931b5089972bfba3fa5c1f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/avatar.tsx": {
+    "mtime": 1774435453.7515926,
+    "ast_hash": "404050b77e8b880d3f1c4a3bc6b4be86",
+    "semantic_hash": "404050b77e8b880d3f1c4a3bc6b4be86"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/badge.tsx": {
+    "mtime": 1774435453.7518148,
+    "ast_hash": "4782fd467c5e864d0b6cbd5781b947cb",
+    "semantic_hash": "4782fd467c5e864d0b6cbd5781b947cb"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/breadcrumb.tsx": {
+    "mtime": 1774435453.7519448,
+    "ast_hash": "60485fccd28b1bb7690978d2f0ea91a7",
+    "semantic_hash": "60485fccd28b1bb7690978d2f0ea91a7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/button.tsx": {
+    "mtime": 1774435453.7520733,
+    "ast_hash": "5e47bb94d347cf1b7eace6c0627eff0f",
+    "semantic_hash": "5e47bb94d347cf1b7eace6c0627eff0f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/calendar.tsx": {
+    "mtime": 1774435453.7521966,
+    "ast_hash": "9e04815909cde8531b7f642674b6c45d",
+    "semantic_hash": "9e04815909cde8531b7f642674b6c45d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/card.tsx": {
+    "mtime": 1774435453.7523527,
+    "ast_hash": "a240ab96da0cf8f99c343b4caa4c940b",
+    "semantic_hash": "a240ab96da0cf8f99c343b4caa4c940b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/carousel.tsx": {
+    "mtime": 1774435453.7525637,
+    "ast_hash": "005a47594c5c8f09e27f0ed1f02197cd",
+    "semantic_hash": "005a47594c5c8f09e27f0ed1f02197cd"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/chart.tsx": {
+    "mtime": 1774435453.7526994,
+    "ast_hash": "ce394cb95f74debc23ac7da089a9e9e8",
+    "semantic_hash": "ce394cb95f74debc23ac7da089a9e9e8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/checkbox.tsx": {
+    "mtime": 1774435453.752825,
+    "ast_hash": "ca06e9d95214f6c4b90a760098d21830",
+    "semantic_hash": "ca06e9d95214f6c4b90a760098d21830"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/collapsible.tsx": {
+    "mtime": 1774435453.7529485,
+    "ast_hash": "87cce2923d03d5560ae6838e54e87f60",
+    "semantic_hash": "87cce2923d03d5560ae6838e54e87f60"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/command.tsx": {
+    "mtime": 1774435453.7531424,
+    "ast_hash": "37f4eff9a1d2ae270d94406747e58b83",
+    "semantic_hash": "37f4eff9a1d2ae270d94406747e58b83"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/context-menu.tsx": {
+    "mtime": 1774435453.7533443,
+    "ast_hash": "e13f4d0aa11a5aeccaa8969e9bc28b0b",
+    "semantic_hash": "e13f4d0aa11a5aeccaa8969e9bc28b0b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/dialog.tsx": {
+    "mtime": 1774435453.7534661,
+    "ast_hash": "1cee7ad259ba50554280a78f4a280f8c",
+    "semantic_hash": "1cee7ad259ba50554280a78f4a280f8c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/drawer.tsx": {
+    "mtime": 1774435453.7535868,
+    "ast_hash": "5d1fc2e6dcd8496d69a68a23a9e251e7",
+    "semantic_hash": "5d1fc2e6dcd8496d69a68a23a9e251e7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1774435453.7538111,
+    "ast_hash": "05c108175d0e23b617d211f31eefc6da",
+    "semantic_hash": "05c108175d0e23b617d211f31eefc6da"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/form.tsx": {
+    "mtime": 1774435453.754009,
+    "ast_hash": "1df53cf0afd884a27f799b2ce9917799",
+    "semantic_hash": "1df53cf0afd884a27f799b2ce9917799"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/hover-card.tsx": {
+    "mtime": 1774435453.7541363,
+    "ast_hash": "9c543f39ce8b5e87b91b56ede3c15716",
+    "semantic_hash": "9c543f39ce8b5e87b91b56ede3c15716"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/input-otp.tsx": {
+    "mtime": 1774435453.754261,
+    "ast_hash": "084089343296a7ebcb40fff14c62cb30",
+    "semantic_hash": "084089343296a7ebcb40fff14c62cb30"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/input.tsx": {
+    "mtime": 1774435453.7543955,
+    "ast_hash": "31eae0b7273ea8b1dc8dc5c24e23e0b8",
+    "semantic_hash": "31eae0b7273ea8b1dc8dc5c24e23e0b8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/label.tsx": {
+    "mtime": 1774435453.7545195,
+    "ast_hash": "7ea839d3fa873fb063a9709a79e47561",
+    "semantic_hash": "7ea839d3fa873fb063a9709a79e47561"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/menubar.tsx": {
+    "mtime": 1774435453.7546751,
+    "ast_hash": "d3a68e5d4ce8cc6bd9d58f1a187fc3e5",
+    "semantic_hash": "d3a68e5d4ce8cc6bd9d58f1a187fc3e5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/navigation-menu.tsx": {
+    "mtime": 1774435453.7548733,
+    "ast_hash": "35df5feb9adcc02afdcaa2a1e62f673d",
+    "semantic_hash": "35df5feb9adcc02afdcaa2a1e62f673d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/pagination.tsx": {
+    "mtime": 1774435453.755087,
+    "ast_hash": "de159ac89490951ee82b4991f604e394",
+    "semantic_hash": "de159ac89490951ee82b4991f604e394"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/popover.tsx": {
+    "mtime": 1774435453.755219,
+    "ast_hash": "fc70a6c55ac2e65fef3344cdb78a3258",
+    "semantic_hash": "fc70a6c55ac2e65fef3344cdb78a3258"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/progress.tsx": {
+    "mtime": 1774435453.7553372,
+    "ast_hash": "f99d4c689a0cac272cb0b1e7ea222ba8",
+    "semantic_hash": "f99d4c689a0cac272cb0b1e7ea222ba8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/radio-group.tsx": {
+    "mtime": 1774435453.7554555,
+    "ast_hash": "3ace644678cd101153deee82d72048d9",
+    "semantic_hash": "3ace644678cd101153deee82d72048d9"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/resizable.tsx": {
+    "mtime": 1774435453.7555811,
+    "ast_hash": "53861a766e45ed3c530825a22be2a1af",
+    "semantic_hash": "53861a766e45ed3c530825a22be2a1af"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/scroll-area.tsx": {
+    "mtime": 1774435453.755703,
+    "ast_hash": "c4d63c56a99feb600ed0e9bbcfd70829",
+    "semantic_hash": "c4d63c56a99feb600ed0e9bbcfd70829"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/select.tsx": {
+    "mtime": 1774435453.7558901,
+    "ast_hash": "35642782a97c650f1dea1314046709e0",
+    "semantic_hash": "35642782a97c650f1dea1314046709e0"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/separator.tsx": {
+    "mtime": 1774435453.7560046,
+    "ast_hash": "e970901b62fe8b73d2b9254fad77f583",
+    "semantic_hash": "e970901b62fe8b73d2b9254fad77f583"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/sheet.tsx": {
+    "mtime": 1774435453.7561998,
+    "ast_hash": "9ef21bceff143bfe214ff398ec382dc5",
+    "semantic_hash": "9ef21bceff143bfe214ff398ec382dc5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/sidebar.tsx": {
+    "mtime": 1774435453.7564874,
+    "ast_hash": "f8e10dfb7187ee01473839838d33016e",
+    "semantic_hash": "f8e10dfb7187ee01473839838d33016e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/skeleton.tsx": {
+    "mtime": 1774435453.756617,
+    "ast_hash": "a5a4d6d5551d4c7feb8176a23e7eb07c",
+    "semantic_hash": "a5a4d6d5551d4c7feb8176a23e7eb07c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/slider.tsx": {
+    "mtime": 1774435453.7567418,
+    "ast_hash": "ccbb4f4470af296eafa94f9972e8a4f9",
+    "semantic_hash": "ccbb4f4470af296eafa94f9972e8a4f9"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/switch.tsx": {
+    "mtime": 1774435453.7568674,
+    "ast_hash": "1210b13831d433e8a9488bab91432dd4",
+    "semantic_hash": "1210b13831d433e8a9488bab91432dd4"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/table.tsx": {
+    "mtime": 1774435453.7569964,
+    "ast_hash": "efdbaeb9710b2f60de7c0e18bd4e3528",
+    "semantic_hash": "efdbaeb9710b2f60de7c0e18bd4e3528"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/tabs.tsx": {
+    "mtime": 1774435453.7571187,
+    "ast_hash": "edad06f905be7a7e3634fdbe1b6ad61a",
+    "semantic_hash": "edad06f905be7a7e3634fdbe1b6ad61a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/textarea.tsx": {
+    "mtime": 1774435453.7574687,
+    "ast_hash": "6eb8633e9e461056b9bf88dfaf25fc6d",
+    "semantic_hash": "6eb8633e9e461056b9bf88dfaf25fc6d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/toast.tsx": {
+    "mtime": 1774435453.7576754,
+    "ast_hash": "6b9ed7f669208f6631d1c44bbd556877",
+    "semantic_hash": "6b9ed7f669208f6631d1c44bbd556877"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/toaster.tsx": {
+    "mtime": 1774435453.757797,
+    "ast_hash": "d0e062810c47a46b9bb4e8ea19875a02",
+    "semantic_hash": "d0e062810c47a46b9bb4e8ea19875a02"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/toggle-group.tsx": {
+    "mtime": 1774435453.7579134,
+    "ast_hash": "b99319e56880c541f7bef8fa76f3ed5f",
+    "semantic_hash": "b99319e56880c541f7bef8fa76f3ed5f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/toggle.tsx": {
+    "mtime": 1774435453.7580352,
+    "ast_hash": "17efd9d1af4deef76b194dcbf33aea85",
+    "semantic_hash": "17efd9d1af4deef76b194dcbf33aea85"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/components/ui/tooltip.tsx": {
+    "mtime": 1774435453.7581675,
+    "ast_hash": "85d30b3088cec0a31929176709b73383",
+    "semantic_hash": "85d30b3088cec0a31929176709b73383"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/hooks/use-analysis.ts": {
+    "mtime": 1774435453.7583747,
+    "ast_hash": "9ccd4f9710af7825d72b8591da13e146",
+    "semantic_hash": "9ccd4f9710af7825d72b8591da13e146"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/hooks/use-auth.ts": {
+    "mtime": 1774435453.7585032,
+    "ast_hash": "5ad1f304a77ab63d15a444e406f75aa5",
+    "semantic_hash": "5ad1f304a77ab63d15a444e406f75aa5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/hooks/use-mobile.tsx": {
+    "mtime": 1774435453.758619,
+    "ast_hash": "209b5193af16624cdd89d3591480dd48",
+    "semantic_hash": "209b5193af16624cdd89d3591480dd48"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/hooks/use-presence.ts": {
+    "mtime": 1774435453.7587404,
+    "ast_hash": "c8ee093546f79da9bcf45a6228b2fd8b",
+    "semantic_hash": "c8ee093546f79da9bcf45a6228b2fd8b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/hooks/use-toast.ts": {
+    "mtime": 1774435453.7588716,
+    "ast_hash": "bc4be55df07bc8727d5df9ed7799ad64",
+    "semantic_hash": "bc4be55df07bc8727d5df9ed7799ad64"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/lib/auth-utils.ts": {
+    "mtime": 1774435453.7592056,
+    "ast_hash": "85f7af571253e6352ed3044a7a83474d",
+    "semantic_hash": "85f7af571253e6352ed3044a7a83474d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/lib/gridConstants.ts": {
+    "mtime": 1774435453.7593336,
+    "ast_hash": "492425013cbff857215dd7a9962ecd08",
+    "semantic_hash": "492425013cbff857215dd7a9962ecd08"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/lib/queryClient.ts": {
+    "mtime": 1775384462.6773684,
+    "ast_hash": "79d85fc553c58392473aad735251b1eb",
+    "semantic_hash": "79d85fc553c58392473aad735251b1eb"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/lib/utils.ts": {
+    "mtime": 1774435453.7595744,
+    "ast_hash": "5a6fd53fdcf2be529e9cc0b718fde352",
+    "semantic_hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/main.tsx": {
+    "mtime": 1774435453.7596977,
+    "ast_hash": "0da263f654e858856022667237989393",
+    "semantic_hash": "0da263f654e858856022667237989393"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/AuditLogs.tsx": {
+    "mtime": 1774435453.7599907,
+    "ast_hash": "6325615d35654ee57717c316af4d6316",
+    "semantic_hash": "6325615d35654ee57717c316af4d6316"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/AuthPage.tsx": {
+    "mtime": 1780913055.5845113,
+    "ast_hash": "e06a5de05f9f4f144343379789551893",
+    "semantic_hash": "e06a5de05f9f4f144343379789551893"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/Methodology.tsx": {
+    "mtime": 1775384462.6780303,
+    "ast_hash": "d1e25d9904f2f58d420a0ca2bcbe30c6",
+    "semantic_hash": "d1e25d9904f2f58d420a0ca2bcbe30c6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/PowerInfrastructure.tsx": {
+    "mtime": 1775395011.3237512,
+    "ast_hash": "09a4ddde35f98db053413eb803250de9",
+    "semantic_hash": "09a4ddde35f98db053413eb803250de9"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/PowerTrends.tsx": {
+    "mtime": 1780913055.5855541,
+    "ast_hash": "2e50623d9f040521475de5a8ff6ea2fa",
+    "semantic_hash": "2e50623d9f040521475de5a8ff6ea2fa"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/ResearchAgent.tsx": {
+    "mtime": 1780912840.2458246,
+    "ast_hash": "299baa5fd3b2ae1f9235b829aaefa556",
+    "semantic_hash": "299baa5fd3b2ae1f9235b829aaefa556"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/pages/not-found.tsx": {
+    "mtime": 1774435453.7611568,
+    "ast_hash": "552270d5f49df4a79bc936f4c405f4b5",
+    "semantic_hash": "552270d5f49df4a79bc936f4c405f4b5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/components.json": {
+    "mtime": 1774435453.7612731,
+    "ast_hash": "a76a349f7de9f7618cd959569a5bab34",
+    "semantic_hash": "a76a349f7de9f7618cd959569a5bab34"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/drizzle.config.ts": {
+    "mtime": 1774445684.9640276,
+    "ast_hash": "bf4313bb745243f288ce8ca5fb30a094",
+    "semantic_hash": "bf4313bb745243f288ce8ca5fb30a094"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/migrations/0002_add_site_selection_reports.sql": {
+    "mtime": 1777632422.9787726,
+    "ast_hash": "6f09685f6efd71c5a1b1b1195926c24c",
+    "semantic_hash": "6f09685f6efd71c5a1b1b1195926c24c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/migrations/meta/_journal.json": {
+    "mtime": 1778151500.14206,
+    "ast_hash": "66a12415a3d77dae48096d44d760e606",
+    "semantic_hash": "66a12415a3d77dae48096d44d760e606"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/package.json": {
+    "mtime": 1778151500.147721,
+    "ast_hash": "d18d416ee1093bfadbdf7299fe1abc34",
+    "semantic_hash": "d18d416ee1093bfadbdf7299fe1abc34"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/postcss.config.js": {
+    "mtime": 1774435453.7658145,
+    "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
+    "semantic_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/airfranceklm_outline.json": {
+    "mtime": 1774435453.7665234,
+    "ast_hash": "83aa7a14c4d876475f38caf2a0ccd402",
+    "semantic_hash": "83aa7a14c4d876475f38caf2a0ccd402"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/elinor_outline.json": {
+    "mtime": 1774435453.76692,
+    "ast_hash": "674df0b99322513c66c1188ae4217583",
+    "semantic_hash": "674df0b99322513c66c1188ae4217583"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/equinor_outline.json": {
+    "mtime": 1774435453.767271,
+    "ast_hash": "b9627014ace6028f1650d0983e6ed39c",
+    "semantic_hash": "b9627014ace6028f1650d0983e6ed39c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ericsson_outline.json": {
+    "mtime": 1774435453.7676032,
+    "ast_hash": "ca644c19b390a84a9308dfb2c0d5503c",
+    "semantic_hash": "ca644c19b390a84a9308dfb2c0d5503c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/hm_outline.json": {
+    "mtime": 1774435453.7680929,
+    "ast_hash": "ef79e6f8d3bb004520dcfa856c80cda6",
+    "semantic_hash": "ef79e6f8d3bb004520dcfa856c80cda6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ica_gruppen_outline.json": {
+    "mtime": 1774435453.7694688,
+    "ast_hash": "3cd2e54f440418cc7077de639c7d2715",
+    "semantic_hash": "3cd2e54f440418cc7077de639c7d2715"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ikea_outline.json": {
+    "mtime": 1774435453.7696776,
+    "ast_hash": "dde614ed579a45f860d0f51cb6dd7e05",
+    "semantic_hash": "dde614ed579a45f860d0f51cb6dd7e05"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/lufthansa_outline.json": {
+    "mtime": 1774435453.7700236,
+    "ast_hash": "f9bbe0200c93dc4c09558b6701ef2ffd",
+    "semantic_hash": "f9bbe0200c93dc4c09558b6701ef2ffd"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/novo_outline.json": {
+    "mtime": 1774435453.7703536,
+    "ast_hash": "ac854068737c90bbcae1ebcb0de4165a",
+    "semantic_hash": "ac854068737c90bbcae1ebcb0de4165a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/sainsburys_outline.json": {
+    "mtime": 1774435453.770692,
+    "ast_hash": "699057bdf49b1002bc7acbffbe57e2c0",
+    "semantic_hash": "699057bdf49b1002bc7acbffbe57e2c0"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/tesco_outline.json": {
+    "mtime": 1774435453.7710366,
+    "ast_hash": "9ff60133f09e86e7a1e5d9ffd7eba354",
+    "semantic_hash": "9ff60133f09e86e7a1e5d9ffd7eba354"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ubs_outline.json": {
+    "mtime": 1774435453.771387,
+    "ast_hash": "138188375cdf5b566b915fff8ae082d2",
+    "semantic_hash": "138188375cdf5b566b915fff8ae082d2"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/volvo_outline.json": {
+    "mtime": 1774435453.7717226,
+    "ast_hash": "8bc76d1cc8b8df57ff910a4c54713fd8",
+    "semantic_hash": "8bc76d1cc8b8df57ff910a4c54713fd8"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/script/build.ts": {
+    "mtime": 1775384462.681121,
+    "ast_hash": "9e94cd8fcb095e42dc2918601e4b7a20",
+    "semantic_hash": "9e94cd8fcb095e42dc2918601e4b7a20"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/script/seed.ts": {
+    "mtime": 1774435453.7735462,
+    "ast_hash": "71387e69a7243f1322dbb40def8b9746",
+    "semantic_hash": "71387e69a7243f1322dbb40def8b9746"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/adapters/apac/index.ts": {
+    "mtime": 1777014530.5434868,
+    "ast_hash": "98e6bd8fbabd8953451a133a68854c21",
+    "semantic_hash": "98e6bd8fbabd8953451a133a68854c21"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/adapters/apac/sources/__tests__/unEnergyStats.test.ts": {
+    "mtime": 1777014530.5438943,
+    "ast_hash": "49823d1cc241c665f2c6c325d1d5813f",
+    "semantic_hash": "49823d1cc241c665f2c6c325d1d5813f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/adapters/apac/sources/unEnergyStats.ts": {
+    "mtime": 1777014530.5446823,
+    "ast_hash": "10402a9dce4724d6ade43b6ab750a2ca",
+    "semantic_hash": "10402a9dce4724d6ade43b6ab750a2ca"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/auth/index.ts": {
+    "mtime": 1775384462.6820083,
+    "ast_hash": "a67a4d71046b0e238ab835d03850e90f",
+    "semantic_hash": "a67a4d71046b0e238ab835d03850e90f"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/auth/routes.ts": {
+    "mtime": 1780912307.379796,
+    "ast_hash": "53e82b98c35fe0fc61aa01b61ab0b821",
+    "semantic_hash": "53e82b98c35fe0fc61aa01b61ab0b821"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/auth/setup.ts": {
+    "mtime": 1775395185.1800222,
+    "ast_hash": "8608ae3c3fc0658e005b1dc2be444f0a",
+    "semantic_hash": "8608ae3c3fc0658e005b1dc2be444f0a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/auth/storage.ts": {
+    "mtime": 1774435739.1544492,
+    "ast_hash": "f01e86a701ab6d6053dd3cbd56e6d86d",
+    "semantic_hash": "f01e86a701ab6d6053dd3cbd56e6d86d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/auth/strategy.ts": {
+    "mtime": 1774435924.1348274,
+    "ast_hash": "f38a60ed1b0c5d9eb16a66f5b5e60918",
+    "semantic_hash": "f38a60ed1b0c5d9eb16a66f5b5e60918"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/collaboration.ts": {
+    "mtime": 1774435783.5475872,
+    "ast_hash": "10b42e160c8d8bad9d8b6652d47b869c",
+    "semantic_hash": "10b42e160c8d8bad9d8b6652d47b869c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/data/dc-insights.json": {
+    "mtime": 1775641743.5232162,
+    "ast_hash": "20a0712e0189b2dff21dbb786fc7434d",
+    "semantic_hash": "20a0712e0189b2dff21dbb786fc7434d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/data/electricity_prices.json": {
+    "mtime": 1774435453.7778783,
+    "ast_hash": "804db68163f5971d2720b17f58646bac",
+    "semantic_hash": "804db68163f5971d2720b17f58646bac"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/data/mastr_de.json": {
+    "mtime": 1774435453.778094,
+    "ast_hash": "92a071e5e4994724ae605428b09dfc10",
+    "semantic_hash": "92a071e5e4994724ae605428b09dfc10"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/cache.ts": {
+    "mtime": 1780913055.585781,
+    "ast_hash": "ec257f120bc73005609a3392f6597a0b",
+    "semantic_hash": "ec257f120bc73005609a3392f6597a0b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/cadastral/france.ts": {
+    "mtime": 1780913055.5860305,
+    "ast_hash": "5f4d9ace7d037d8291a98b4c2a34392d",
+    "semantic_hash": "5f4d9ace7d037d8291a98b4c2a34392d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/cadastral/index.ts": {
+    "mtime": 1780913055.5863094,
+    "ast_hash": "7e4bd985c2380246850aeb3c017c3979",
+    "semantic_hash": "7e4bd985c2380246850aeb3c017c3979"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/cadastral/netherlands.ts": {
+    "mtime": 1780913055.5865886,
+    "ast_hash": "53f6d81f1de8a89e81fb6cb797d1c8a4",
+    "semantic_hash": "53f6d81f1de8a89e81fb6cb797d1c8a4"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/cadastral/uk.ts": {
+    "mtime": 1780913055.5868075,
+    "ast_hash": "57fbea544368f78cdf08415b9d3904ad",
+    "semantic_hash": "57fbea544368f78cdf08415b9d3904ad"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/dcPricing.ts": {
+    "mtime": 1780912307.3825114,
+    "ast_hash": "2fcd38f3199536b00384897f25cbe859",
+    "semantic_hash": "2fcd38f3199536b00384897f25cbe859"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/entsoeGrid.ts": {
+    "mtime": 1780912840.2676852,
+    "ast_hash": "f6f54b457cfacf3f062b7a787dae86b7",
+    "semantic_hash": "f6f54b457cfacf3f062b7a787dae86b7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/overpass.ts": {
+    "mtime": 1780913055.587036,
+    "ast_hash": "72be4394b28aa6397c359f6d2f97cef5",
+    "semantic_hash": "72be4394b28aa6397c359f6d2f97cef5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/routes.ts": {
+    "mtime": 1780912840.2850652,
+    "ast_hash": "a97d74a10e5cd8acc84f6d9cbcd2c8ce",
+    "semantic_hash": "a97d74a10e5cd8acc84f6d9cbcd2c8ce"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/scoring.ts": {
+    "mtime": 1780913055.5872684,
+    "ast_hash": "6e650e3f2a7ad3230aa670f7199b365d",
+    "semantic_hash": "6e650e3f2a7ad3230aa670f7199b365d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dataCentreSites/types.ts": {
+    "mtime": 1780912840.3027253,
+    "ast_hash": "6ae6d8930dc1d808249fac768ca268d2",
+    "semantic_hash": "6ae6d8930dc1d808249fac768ca268d2"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/db.ts": {
+    "mtime": 1774435453.778228,
+    "ast_hash": "1ac4f346ed66cb486daeb082b67a8655",
+    "semantic_hash": "1ac4f346ed66cb486daeb082b67a8655"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/dcInsightsData.ts": {
+    "mtime": 1775641743.5236435,
+    "ast_hash": "52bc40355db346773c094ed20ad86d5e",
+    "semantic_hash": "52bc40355db346773c094ed20ad86d5e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/eiaData.ts": {
+    "mtime": 1775384462.6911309,
+    "ast_hash": "c7926c806f987d13f30dd1ee2fb0b96e",
+    "semantic_hash": "c7926c806f987d13f30dd1ee2fb0b96e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/elia.ts": {
+    "mtime": 1774435453.7785141,
+    "ast_hash": "1f5ff81e6270cf223d59eae8789a9481",
+    "semantic_hash": "1f5ff81e6270cf223d59eae8789a9481"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/email.ts": {
+    "mtime": 1780913055.5875638,
+    "ast_hash": "a8bf8b11cdffb55391caebdca14ccb5b",
+    "semantic_hash": "a8bf8b11cdffb55391caebdca14ccb5b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ember.ts": {
+    "mtime": 1774435453.778876,
+    "ast_hash": "f9269af2ce43415d7c975d8b40881173",
+    "semantic_hash": "f9269af2ce43415d7c975d8b40881173"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/energyChartsData.ts": {
+    "mtime": 1777632415.2459393,
+    "ast_hash": "84a5535398af963abeb5ebc418b68aee",
+    "semantic_hash": "84a5535398af963abeb5ebc418b68aee"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/energyChartsHealth.ts": {
+    "mtime": 1777632415.2462568,
+    "ast_hash": "e0f5efccfc210a1ac39580a5b855c4ef",
+    "semantic_hash": "e0f5efccfc210a1ac39580a5b855c4ef"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/energycharts.ts": {
+    "mtime": 1774435453.7790668,
+    "ast_hash": "8674d2455cf529e78ee777e872d75975",
+    "semantic_hash": "8674d2455cf529e78ee777e872d75975"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/entsoe.ts": {
+    "mtime": 1780912307.3868513,
+    "ast_hash": "df4860babc93b2d4efce482c3af1103e",
+    "semantic_hash": "df4860babc93b2d4efce482c3af1103e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/entsoeHealth.ts": {
+    "mtime": 1775384462.6926944,
+    "ast_hash": "f38bbad0f4a634b03ef4e301fb02c9c4",
+    "semantic_hash": "f38bbad0f4a634b03ef4e301fb02c9c4"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/enwData.ts": {
+    "mtime": 1774435453.7795417,
+    "ast_hash": "6414ac3d6a73673370b0a102709c6635",
+    "semantic_hash": "6414ac3d6a73673370b0a102709c6635"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/eonetData.ts": {
+    "mtime": 1775395099.2788377,
+    "ast_hash": "0c3c40e0189f63144f4d0f482589a605",
+    "semantic_hash": "0c3c40e0189f63144f4d0f482589a605"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/epiasData.ts": {
+    "mtime": 1775384462.6931007,
+    "ast_hash": "ecb76c9079f817ec19d80834b20743ee",
+    "semantic_hash": "ecb76c9079f817ec19d80834b20743ee"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/fingrid.ts": {
+    "mtime": 1774435453.7797697,
+    "ast_hash": "1c50c7b7bd6ec9b6b2bd3a947a516f63",
+    "semantic_hash": "1c50c7b7bd6ec9b6b2bd3a947a516f63"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/index.ts": {
+    "mtime": 1780912307.3878727,
+    "ast_hash": "fcaa8b1744eb144116247c66f425884c",
+    "semantic_hash": "fcaa8b1744eb144116247c66f425884c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/irelandData.ts": {
+    "mtime": 1774435453.7801938,
+    "ast_hash": "14939fea317d339263967db4c3edf9d7",
+    "semantic_hash": "14939fea317d339263967db4c3edf9d7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/marketResearchData.ts": {
+    "mtime": 1774435453.7804189,
+    "ast_hash": "fbba45ff16d3006821464cc674d65ef6",
+    "semantic_hash": "fbba45ff16d3006821464cc674d65ef6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ned.ts": {
+    "mtime": 1774435453.7807422,
+    "ast_hash": "f4e33d865e08b51d6a9d8ab993472d31",
+    "semantic_hash": "f4e33d865e08b51d6a9d8ab993472d31"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/nesoData.ts": {
+    "mtime": 1775384462.6942186,
+    "ast_hash": "6f4982fba3e141ce85b9a7b2d0ab4c40",
+    "semantic_hash": "6f4982fba3e141ce85b9a7b2d0ab4c40"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/nesoDemand.ts": {
+    "mtime": 1774447950.595119,
+    "ast_hash": "50ad148ec9273941e769b4a0bdaa2966",
+    "semantic_hash": "50ad148ec9273941e769b4a0bdaa2966"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/nesoExtended.ts": {
+    "mtime": 1774447953.8855875,
+    "ast_hash": "b82ab69011fb20714150958ff35c6507",
+    "semantic_hash": "b82ab69011fb20714150958ff35c6507"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ngedData.ts": {
+    "mtime": 1775384462.6947424,
+    "ast_hash": "f0bee5652beefb1a46d08baa13952b1a",
+    "semantic_hash": "f0bee5652beefb1a46d08baa13952b1a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/npgData.ts": {
+    "mtime": 1774435453.7817845,
+    "ast_hash": "92d83ed9aa354cd0dd758c39a24c4d8e",
+    "semantic_hash": "92d83ed9aa354cd0dd758c39a24c4d8e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/oep.ts": {
+    "mtime": 1774435453.7819135,
+    "ast_hash": "39e7feb348dd9867421564351f87b3a4",
+    "semantic_hash": "39e7feb348dd9867421564351f87b3a4"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/onsData.ts": {
+    "mtime": 1775384462.6952152,
+    "ast_hash": "e56b2be8918255d528e21560f753b106",
+    "semantic_hash": "e56b2be8918255d528e21560f753b106"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/powerplants.ts": {
+    "mtime": 1774435453.7821224,
+    "ast_hash": "38cb29949f661bf67623b4ab96f67904",
+    "semantic_hash": "38cb29949f661bf67623b4ab96f67904"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/pse.ts": {
+    "mtime": 1774435453.7823255,
+    "ast_hash": "e80ef45f34c9679a98189c98023fef6b",
+    "semantic_hash": "e80ef45f34c9679a98189c98023fef6b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/pseData.ts": {
+    "mtime": 1777632415.2473764,
+    "ast_hash": "e37ab86b41e3f56aeeabc0248c939e2d",
+    "semantic_hash": "e37ab86b41e3f56aeeabc0248c939e2d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ree.ts": {
+    "mtime": 1774435453.78253,
+    "ast_hash": "5c410dbb63f90efe7de48317dd1698f3",
+    "semantic_hash": "5c410dbb63f90efe7de48317dd1698f3"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/audio/client.ts": {
+    "mtime": 1774435995.1678936,
+    "ast_hash": "9f2b20017bdb8dbc0c9d6b65d74cafcf",
+    "semantic_hash": "9f2b20017bdb8dbc0c9d6b65d74cafcf"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/audio/index.ts": {
+    "mtime": 1774435453.7829983,
+    "ast_hash": "c114c8af5822f1ccf5129bccbf0fce79",
+    "semantic_hash": "c114c8af5822f1ccf5129bccbf0fce79"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/audio/routes.ts": {
+    "mtime": 1774435453.7832224,
+    "ast_hash": "681ba1b6bb49466e9fd8dba9e6f5a84e",
+    "semantic_hash": "681ba1b6bb49466e9fd8dba9e6f5a84e"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/auth/index.ts": {
+    "mtime": 1774435453.783427,
+    "ast_hash": "b09e4a6519a679d36adf663c8c1ed595",
+    "semantic_hash": "b09e4a6519a679d36adf663c8c1ed595"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/auth/replitAuth.ts": {
+    "mtime": 1774435453.7835534,
+    "ast_hash": "1af7c45d7b058428670f03cdb0f7b4aa",
+    "semantic_hash": "1af7c45d7b058428670f03cdb0f7b4aa"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/auth/routes.ts": {
+    "mtime": 1774435453.783756,
+    "ast_hash": "2f12a9b117684f3513a739e7d13889e1",
+    "semantic_hash": "2f12a9b117684f3513a739e7d13889e1"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/auth/storage.ts": {
+    "mtime": 1774435453.7838783,
+    "ast_hash": "9c85d5f5f3acb4bb3d3b5fdd18b5f938",
+    "semantic_hash": "9c85d5f5f3acb4bb3d3b5fdd18b5f938"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/batch/index.ts": {
+    "mtime": 1774435453.7840745,
+    "ast_hash": "2742befb4ce658917647558bbe670574",
+    "semantic_hash": "2742befb4ce658917647558bbe670574"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/batch/utils.ts": {
+    "mtime": 1774435453.7842877,
+    "ast_hash": "f9daae63403670b8b312ac4afc389fef",
+    "semantic_hash": "f9daae63403670b8b312ac4afc389fef"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/chat/index.ts": {
+    "mtime": 1774435453.7848501,
+    "ast_hash": "e6d8893e2d10334a81873d7ca627a886",
+    "semantic_hash": "e6d8893e2d10334a81873d7ca627a886"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/chat/routes.ts": {
+    "mtime": 1774435992.6240761,
+    "ast_hash": "8f88285adc80b973c13291061340425a",
+    "semantic_hash": "8f88285adc80b973c13291061340425a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/chat/storage.ts": {
+    "mtime": 1774435453.7851155,
+    "ast_hash": "55eae98d081ebb6916329ffcde413105",
+    "semantic_hash": "55eae98d081ebb6916329ffcde413105"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/image/client.ts": {
+    "mtime": 1774435993.7988572,
+    "ast_hash": "db1fb68fa4c9309ac3a39cab21f59046",
+    "semantic_hash": "db1fb68fa4c9309ac3a39cab21f59046"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/image/index.ts": {
+    "mtime": 1774435453.7854521,
+    "ast_hash": "0f8eae8782d7a84b7b9628188e7d649d",
+    "semantic_hash": "0f8eae8782d7a84b7b9628188e7d649d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/replit_integrations/image/routes.ts": {
+    "mtime": 1774435453.7855783,
+    "ast_hash": "4affc6b259a8fba0e94a0d97eca028b6",
+    "semantic_hash": "4affc6b259a8fba0e94a0d97eca028b6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/researchAgent.ts": {
+    "mtime": 1780912840.3208766,
+    "ast_hash": "dc35207ef5f873e7c5329458b1e152f6",
+    "semantic_hash": "dc35207ef5f873e7c5329458b1e152f6"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/routes.ts": {
+    "mtime": 1780913055.5882783,
+    "ast_hash": "2fe20b1b57f300234a67fe51d992d153",
+    "semantic_hash": "2fe20b1b57f300234a67fe51d992d153"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/rte.ts": {
+    "mtime": 1774435453.786499,
+    "ast_hash": "022bb372f264b6dcb5f56b203747e16a",
+    "semantic_hash": "022bb372f264b6dcb5f56b203747e16a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ssenData.ts": {
+    "mtime": 1774435453.7866843,
+    "ast_hash": "e27387f9dc02a20911a49c656f2dbd66",
+    "semantic_hash": "e27387f9dc02a20911a49c656f2dbd66"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/static.ts": {
+    "mtime": 1774435453.7870708,
+    "ast_hash": "04697801f55cd57aa43622cff2731e29",
+    "semantic_hash": "04697801f55cd57aa43622cff2731e29"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/statnett.ts": {
+    "mtime": 1774435453.7872121,
+    "ast_hash": "c0a55e34c9ff80eb33a6022770f21586",
+    "semantic_hash": "c0a55e34c9ff80eb33a6022770f21586"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/storage.ts": {
+    "mtime": 1780913055.5885868,
+    "ast_hash": "ea43dac42e3f0e4fe3b5151e3b2faabb",
+    "semantic_hash": "ea43dac42e3f0e4fe3b5151e3b2faabb"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/terna.ts": {
+    "mtime": 1774435453.7875447,
+    "ast_hash": "95a60dcd7d101ca350c23f520333eb9a",
+    "semantic_hash": "95a60dcd7d101ca350c23f520333eb9a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ukgen.ts": {
+    "mtime": 1774435453.78776,
+    "ast_hash": "809729adfcaa923145000f63c9754b47",
+    "semantic_hash": "809729adfcaa923145000f63c9754b47"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ukpn.ts": {
+    "mtime": 1774435453.787966,
+    "ast_hash": "555490e8b9ae02581a8463764686a9b2",
+    "semantic_hash": "555490e8b9ae02581a8463764686a9b2"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/ukpnData.ts": {
+    "mtime": 1774435453.788138,
+    "ast_hash": "8017a60f38691184bbc1f66caac1fc82",
+    "semantic_hash": "8017a60f38691184bbc1f66caac1fc82"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/vite.ts": {
+    "mtime": 1774435453.7882557,
+    "ast_hash": "79107ce4ba3605d99f64bb769f172759",
+    "semantic_hash": "79107ce4ba3605d99f64bb769f172759"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/server/worldBankData.ts": {
+    "mtime": 1780913055.5888088,
+    "ast_hash": "511a9da19be7e4911cb88f5301032044",
+    "semantic_hash": "511a9da19be7e4911cb88f5301032044"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/shared/models/auth.ts": {
+    "mtime": 1774435453.788538,
+    "ast_hash": "f1fddd0c90825082b6cb4ccdb1ac81fc",
+    "semantic_hash": "f1fddd0c90825082b6cb4ccdb1ac81fc"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/shared/models/chat.ts": {
+    "mtime": 1774435453.7886522,
+    "ast_hash": "f9c1651b499876f69275f614bb499de5",
+    "semantic_hash": "f9c1651b499876f69275f614bb499de5"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/shared/routes.ts": {
+    "mtime": 1777014530.5530915,
+    "ast_hash": "050ded5ce2f278a18d173e595c4b05ea",
+    "semantic_hash": "050ded5ce2f278a18d173e595c4b05ea"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/shared/schema.ts": {
+    "mtime": 1780912307.3916576,
+    "ast_hash": "91fc9cc6f08ff99e9888ff6dd6e9045a",
+    "semantic_hash": "91fc9cc6f08ff99e9888ff6dd6e9045a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/tailwind.config.ts": {
+    "mtime": 1774435453.7890778,
+    "ast_hash": "ee24cb15a4ffc17c465a20f8b9d16caf",
+    "semantic_hash": "ee24cb15a4ffc17c465a20f8b9d16caf"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/tsconfig.json": {
+    "mtime": 1774435453.789195,
+    "ast_hash": "1e0fa60a1abb0b4bfeed3e2613a5bfff",
+    "semantic_hash": "1e0fa60a1abb0b4bfeed3e2613a5bfff"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/vite.config.ts": {
+    "mtime": 1774436187.7750466,
+    "ast_hash": "4b7ff86bbb61e457e3f92475525c006c",
+    "semantic_hash": "4b7ff86bbb61e457e3f92475525c006c"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/1GigLabs_Platform_Overview.md": {
+    "mtime": 1775641743.5175865,
+    "ast_hash": "7c1430ea17d7b89accfd9949b7d73c96",
+    "semantic_hash": "7c1430ea17d7b89accfd9949b7d73c96"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/AUTH_DEBUG_GUIDE.md": {
+    "mtime": 1780912307.3665419,
+    "ast_hash": "cf50a42a7484fcf7bdea3920c4b3abda",
+    "semantic_hash": "cf50a42a7484fcf7bdea3920c4b3abda"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/CRITICAL_FIXES_SUMMARY.md": {
+    "mtime": 1780912307.3671207,
+    "ast_hash": "ca2cbe063a0bd4bdb63a93eb6ebacfbf",
+    "semantic_hash": "ca2cbe063a0bd4bdb63a93eb6ebacfbf"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/CROSS_BORDER_API_COMPARISON.md": {
+    "mtime": 1780912307.368108,
+    "ast_hash": "22cdc4cde21f3c6b5ff4b0ed4af2c8e3",
+    "semantic_hash": "22cdc4cde21f3c6b5ff4b0ed4af2c8e3"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/CROSS_BORDER_DEBUGGING.md": {
+    "mtime": 1777632415.2443345,
+    "ast_hash": "d3f418c34ac11ba2ce5dbcf66b99725d",
+    "semantic_hash": "d3f418c34ac11ba2ce5dbcf66b99725d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/README.md": {
+    "mtime": 1780913055.5814407,
+    "ast_hash": "84c33f6547065bca8736589f09242698",
+    "semantic_hash": "84c33f6547065bca8736589f09242698"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/TIMEOUT_DEBUG_GUIDE.md": {
+    "mtime": 1780912307.369453,
+    "ast_hash": "1148b5f6b530e4e4f4c2c930e4243766",
+    "semantic_hash": "1148b5f6b530e4e4f4c2c930e4243766"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/index.html": {
+    "mtime": 1774435453.7403114,
+    "ast_hash": "df9d8826072c313dec5e78fedc4de8a0",
+    "semantic_hash": "df9d8826072c313dec5e78fedc4de8a0"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/requirements.md": {
+    "mtime": 1774435453.741565,
+    "ast_hash": "a79f64521bffc834daca2cdb61eee679",
+    "semantic_hash": "a79f64521bffc834daca2cdb61eee679"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/docker-compose.yml": {
+    "mtime": 1775641743.518523,
+    "ast_hash": "7ea83e2922a2012ac14d686785b46aca",
+    "semantic_hash": "7ea83e2922a2012ac14d686785b46aca"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/1GigLabs-Platform-Documentation.md": {
+    "mtime": 1775641743.5188758,
+    "ast_hash": "202b6200af571f3adba051dd67d84896",
+    "semantic_hash": "202b6200af571f3adba051dd67d84896"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/airfranceklm_visual_design.md": {
+    "mtime": 1774435453.7667677,
+    "ast_hash": "e8bf81cb867d2ef88ee4a4ca79f74cb7",
+    "semantic_hash": "e8bf81cb867d2ef88ee4a4ca79f74cb7"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/elinor_visual_design.md": {
+    "mtime": 1774435453.7670627,
+    "ast_hash": "59ce3e05c8c318c8701bc2c55c53187d",
+    "semantic_hash": "59ce3e05c8c318c8701bc2c55c53187d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/equinor_visual_design.md": {
+    "mtime": 1774435453.7673984,
+    "ast_hash": "bf5e7eca1579e6c07b3372e45c3a5402",
+    "semantic_hash": "bf5e7eca1579e6c07b3372e45c3a5402"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ericsson_visual_design.md": {
+    "mtime": 1774435453.7678778,
+    "ast_hash": "d50a7c968c300cadf29c98922bc9f052",
+    "semantic_hash": "d50a7c968c300cadf29c98922bc9f052"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/hm_visual_design.md": {
+    "mtime": 1774435453.7693217,
+    "ast_hash": "798304c98218e9e908988848fa8faed3",
+    "semantic_hash": "798304c98218e9e908988848fa8faed3"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ikea_visual_design.md": {
+    "mtime": 1774435453.7698226,
+    "ast_hash": "393dd531f63b9c751f4ebeef620eb42d",
+    "semantic_hash": "393dd531f63b9c751f4ebeef620eb42d"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/lufthansa_visual_design.md": {
+    "mtime": 1774435453.7701468,
+    "ast_hash": "926e05cee6d789a8b0ce4b9a19464c1a",
+    "semantic_hash": "926e05cee6d789a8b0ce4b9a19464c1a"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/novo_visual_design.md": {
+    "mtime": 1774435453.7704847,
+    "ast_hash": "a4b2d2b640f3f39563374d30060de022",
+    "semantic_hash": "a4b2d2b640f3f39563374d30060de022"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/sainsburys_visual_design.md": {
+    "mtime": 1774435453.7708285,
+    "ast_hash": "ffc04cf3ab662a3dead9a66919c9238b",
+    "semantic_hash": "ffc04cf3ab662a3dead9a66919c9238b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/tesco_visual_design.md": {
+    "mtime": 1774435453.7711806,
+    "ast_hash": "7cc5292899d11249f2d24c385c13a449",
+    "semantic_hash": "7cc5292899d11249f2d24c385c13a449"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/ubs_visual_design.md": {
+    "mtime": 1774435453.7715085,
+    "ast_hash": "bc3f10ea413d1d32796d81b126f7d120",
+    "semantic_hash": "bc3f10ea413d1d32796d81b126f7d120"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/public/case-studies/volvo_visual_design.md": {
+    "mtime": 1774435453.771852,
+    "ast_hash": "c51625e98f672c4b56d22f2942f99f38",
+    "semantic_hash": "c51625e98f672c4b56d22f2942f99f38"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/replit.md": {
+    "mtime": 1775641743.5192208,
+    "ast_hash": "92faa50de292ee399799b65e8e16087b",
+    "semantic_hash": "92faa50de292ee399799b65e8e16087b"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/public/favicon-192.png": {
+    "mtime": 1776004970.350768,
+    "ast_hash": "1c012c368939ba40846e7797848a6020",
+    "semantic_hash": "1c012c368939ba40846e7797848a6020"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/public/favicon-512.png": {
+    "mtime": 1776004970.3527951,
+    "ast_hash": "4949be549006c34033ae058675574fef",
+    "semantic_hash": "4949be549006c34033ae058675574fef"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/public/favicon.jpg": {
+    "mtime": 1776004970.3541546,
+    "ast_hash": "5804426b6f201b84928a3e2f962ca8b3",
+    "semantic_hash": "5804426b6f201b84928a3e2f962ca8b3"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/public/favicon.png": {
+    "mtime": 1776004970.3549662,
+    "ast_hash": "9d52584d28d3ad781c74a3d0749d76eb",
+    "semantic_hash": "9d52584d28d3ad781c74a3d0749d76eb"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/assets/1giglabs-logo.png": {
+    "mtime": 1774435453.7422373,
+    "ast_hash": "f42595f62dad7aad96e9c0b88c7e8500",
+    "semantic_hash": "f42595f62dad7aad96e9c0b88c7e8500"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/assets/logo.png": {
+    "mtime": 1774435453.742596,
+    "ast_hash": "f42595f62dad7aad96e9c0b88c7e8500",
+    "semantic_hash": "f42595f62dad7aad96e9c0b88c7e8500"
+  },
+  "/Users/andrewmccreath/Documents/GitHub/1GL/client/src/assets/stellanor-logo.png": {
+    "mtime": 1774435453.7428508,
+    "ast_hash": "944756e741c62e9d947ff136801c4226",
+    "semantic_hash": "944756e741c62e9d947ff136801c4226"
+  }
+}
