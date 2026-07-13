@@ -185,7 +185,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     icon: FileText,
     title: "Structured Analysis Generation",
-    description: "GPT-5.1 generates a validated JSON response covering power pricing, grid constraints, regulatory environment, DC power demand, location suitability scores, investor insights, and a market summary.",
+    description: "AI Research Agents generate a validated JSON response covering power pricing, grid constraints, regulatory environment, DC power demand, location suitability scores, investor insights, and a market summary.",
   },
   {
     icon: BarChart3,
@@ -305,7 +305,7 @@ export default function Methodology() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="font-semibold text-slate-700 mb-1 text-xs uppercase tracking-wide">Model</p>
-                <p className="font-bold text-slate-900 text-base">GPT-5.1</p>
+                <p className="font-bold text-slate-900 text-base">AI Research Agents</p>
                 <p className="text-xs text-slate-500">OpenAI — latest reasoning model</p>
               </div>
               <div className="bg-slate-50 rounded-lg p-4">
