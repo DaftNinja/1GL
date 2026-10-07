@@ -1,3 +1,4 @@
+import { cartoTileUrl } from "@/lib/cartoTiles";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
-import { cartoTileUrl } from "@/lib/cartoTiles";
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Radio, AlertTriangle, ZoomIn, ZoomOut, RefreshCw, ArrowRightLeft } from "lucide-react";

@@ -1,3 +1,4 @@
+import { cartoTileUrl } from "@/lib/cartoTiles";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -5,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-import { cartoTileUrl } from "@/lib/cartoTiles";
   Loader2, AlertTriangle, ZoomIn, ZoomOut, Factory,
   ChevronDown, X, Zap, Server, MapPin, Clock,
 } from "lucide-react";
