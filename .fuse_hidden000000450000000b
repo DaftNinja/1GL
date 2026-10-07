@@ -19,11 +19,6 @@ RUN npm ci
 # Copy the full source tree.
 COPY . .
 
-# Vite inlines VITE_* vars at build time. Railway only passes service variables
-# into a Dockerfile build when they are declared as ARG.
-ARG VITE_CARTO_API_KEY
-ENV VITE_CARTO_API_KEY=$VITE_CARTO_API_KEY
-
 # Build Vite frontend  →  dist/public/
 # Build Express server →  dist/index.cjs
 RUN npm run build

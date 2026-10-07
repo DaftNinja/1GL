@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Map, Layers, AlertTriangle, Flame } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { cartoTileUrl } from "@/lib/cartoTiles";
 
 interface SSEPData {
   onshore: GeoJSON.FeatureCollection;

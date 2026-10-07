@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Radio, AlertTriangle, ZoomIn, ZoomOut, ArrowRightLeft } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { cartoTileUrl } from "@/lib/cartoTiles";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -302,7 +301,7 @@ export default function USInterchangeMap() {
       scrollWheelZoom: true,
       attributionControl: true,
     });
-    L.tileLayer(cartoTileUrl("light_nolabels"), {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       maxZoom: 10,
     }).addTo(map);

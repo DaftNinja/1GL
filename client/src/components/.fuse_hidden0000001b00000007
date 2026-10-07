@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-import { cartoTileUrl } from "@/lib/cartoTiles";
   Loader2, AlertTriangle, ZoomIn, ZoomOut, Factory,
   ChevronDown, X, Zap, Server, MapPin, Clock,
 } from "lucide-react";
@@ -898,13 +897,13 @@ export default function PowerInfrastructureMap() {
     map.getPane("choroplethPane")!.style.zIndex = "250";
     map.getPane("choroplethPane")!.style.pointerEvents = "auto";
 
-    L.tileLayer(cartoTileUrl("light_nolabels"), {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       maxZoom: 19,
     }).addTo(map);
 
     // Labels overlay — fades in at zoom ≥ 10 to show street/place names at higher zoom levels
-    const labelsLayer = L.tileLayer(cartoTileUrl("light_only_labels"), {
+    const labelsLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
       attribution: '',
       maxZoom: 19,
       pane: "overlayPane",

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Radio, AlertTriangle, ZoomIn, ZoomOut, ArrowRightLeft } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { cartoTileUrl } from "@/lib/cartoTiles";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

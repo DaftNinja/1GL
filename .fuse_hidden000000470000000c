@@ -25,10 +25,6 @@ SESSION_SECRET=
 # Obtain from: https://platform.openai.com/api-keys
 OPENAI_API_KEY=
 
-# CARTO basemap API key (free, no account): https://carto.com/basemaps/apikey/
-# Build-time, exposed to the browser. Without it maps show an "API KEY REQUIRED" watermark.
-VITE_CARTO_API_KEY=
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EMBED TOKEN — iframe partner authentication (optional)
